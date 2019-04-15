@@ -1,0 +1,65 @@
+# depslib dependency file v1.0
+1540886898 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/MiniUtilities.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/ARRTOSTR.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/AvailableIOUnit.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/CATSTR.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/COMBSTR.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/CSTRTOF.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/DINTF2.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/DRSTR.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/DTOS.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/EXNUMB.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/EXOPTSTR.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/EXSUBSTR.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/EXSUBSTR1.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/FINDMVAL.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/FSTRROC.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/GETFNAME.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/GETINPUTSTRLINE.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/GETKEYWORD.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/GETPATH.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/ISTR.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/LOWCASE.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/NBIT1.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/NSTOKEN.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/NTOKENS.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/ONWARNING.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/RSTR.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/STOD.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/STRCATI.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/TIMER.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/TOFNAME.F
+
+1521381448 source:/home/zhailei/Development/Developing/mcpscu_Developing/LIB/sor/f/MiniUtilities/UPCASE.F
+
+1552981610 source:/home/zhailei/Development/MeanField/mfpscu/LIB/sor/f/MiniUtilities/MiniUtilities.F
+

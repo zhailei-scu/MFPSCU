@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="AppShell" />
+		<Option pch_mode="2" />
+		<Option compiler="pgifortran" />
+		<Build>
+			<Target title="Debug">
+				<Option output="~/meanFieldworkspace/LIB/Debug/AppShell" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="" />
+				<Option object_output="~/meanFieldworkspace/LIB/Debug/" />
+				<Option type="2" />
+				<Option compiler="pgifortran" />
+				<Option createDefFile="1" />
+				<Compiler>
+					<Add option="-Minform=inform" />
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="~/meanFieldworkspace/LIB/Release/AppShell" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="" />
+				<Option object_output="~/meanFieldworkspace/LIB/Release/" />
+				<Option type="2" />
+				<Option compiler="pgifortran" />
+				<Option createDefFile="1" />
+				<Compiler>
+					<Add option="-Minform=inform" />
+					<Add option="-O2" />
+				</Compiler>
+			</Target>
+		</Build>
+		<Unit filename="../sor/AppShell/Nucleation_Grub.F90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="../sor/AppShell/Nucleation_Grub_Test.F90" />
+		<Unit filename="../sor/AppShell/Nucleation_Implant.F90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="../sor/AppShell/Nucleation_SpaceDist.F90">
+			<Option weight="0" />
+		</Unit>
+		<Extensions>
+			<envvars />
+			<code_completion />
+			<lib_finder disable_auto="1" />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
