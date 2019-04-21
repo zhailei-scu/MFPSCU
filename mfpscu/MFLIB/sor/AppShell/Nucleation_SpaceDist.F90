@@ -267,7 +267,7 @@ module NUCLEATION_SPACEDIST
                         MatA(INode) = 0.D0
                         MatB(INode) = m_NodeSpace/TSTEP + (DiffGradient1 + DiffGradient2)
                         MatC(INode) = -DiffGradient2
-                        MatD(INode) = NBPV(IKind,INode)*m_NodeSpace/TSTEP
+                        MatD(INode) = NBPV(IKind,INode)*m_NodeSpace/TSTEP + tempNBPVChangeRate(IKind,INode)*TSTEP
                     else
                         !For surface, the Dirichlet boundary condition is applied
                         DiffGradient1 = m_SURDIFPRE*(NATOMS(IKind)**(-2) + NATOMS(IKind)**(-2))*(m_RNFACTOR**2)/(m_NodeSpace + m_NodeSpace)
@@ -275,7 +275,7 @@ module NUCLEATION_SPACEDIST
                         MatA(INode) = -DiffGradient1
                         MatB(INode) = m_NodeSpace/TSTEP + (DiffGradient1 + DiffGradient2)
                         MatC(INode) = -DiffGradient2
-                        MatD(INode) = NBPV(IKind,INode)*m_NodeSpace/TSTEP
+                        MatD(INode) = NBPV(IKind,INode)*m_NodeSpace/TSTEP + tempNBPVChangeRate(IKind,INode)*TSTEP
                     end if
 
                     if(IKind .eq. 1 .AND. startAnnealing .eq. .false.) then
@@ -312,7 +312,6 @@ module NUCLEATION_SPACEDIST
 
             END DO
 
-            NBPV = NBPV + tempNBPVChangeRate*TSTEP
             TTIME = TTIME + TSTEP
             ITIME = ITIME + 1
 
