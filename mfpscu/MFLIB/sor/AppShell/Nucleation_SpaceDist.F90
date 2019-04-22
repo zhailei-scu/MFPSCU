@@ -291,7 +291,7 @@ module NUCLEATION_SPACEDIST
                 END DO
 
 
-                call ReloveTridag(MatA,MatB,MatC,MatD,NBPV(IKind,1:m_NNodes),m_NNodes,MatW,MatH)
+                call SolveTridag(MatA,MatB,MatC,MatD,NBPV(IKind,1:m_NNodes),m_NNodes,MatW,MatH)
 
                 if(IKind .eq. 1) then
 
@@ -375,7 +375,7 @@ module NUCLEATION_SPACEDIST
     end subroutine NucleationSimu_SpaceDist
 
     !----------------------------------------------------------------------
-    subroutine ReloveTridag(MatrixA,MatrixB,MatrixC,MatrixD,Solver,MatrixSize,w,h)
+    subroutine SolveTridag(MatrixA,MatrixB,MatrixC,MatrixD,Solver,MatrixSize,w,h)
         implicit none
         !---Dummy Vars---
         real(kind=KMCDF),dimension(:),allocatable::MatrixA
@@ -396,17 +396,17 @@ module NUCLEATION_SPACEDIST
         h(1) = MatrixD(1)/w(1)
         DO I = 2,MatrixSize
             w(I) = MatrixB(I) - MatrixC(I)*MatrixA(I)/w(I-1)
-            h(I) = (MatrixD(I) - MatrixA(I-1)*h(I-1))/w(I)
+            h(I) = (MatrixD(I) - MatrixA(I)*h(I-1))/w(I)
         END DO
         Solver(MatrixSize) = h(MatrixSize)
 
-        DO I = MatrixSize-1,1
-            Solver(I) = h(I) - MatrixD(I)*Solver(I+1)/w(I)
+        DO I = MatrixSize-1,1,-1
+            Solver(I) = h(I) - MatrixC(I)*Solver(I+1)/w(I)
         END DO
 
 
         return
-    end subroutine
+    end subroutine SolveTridag
 
     !---------------------------------------------------------------------
     subroutine Cal_Statistic_IMPLANT(NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
