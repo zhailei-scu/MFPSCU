@@ -162,7 +162,7 @@ module MFLIB_GLOBAL
                     call EXTRACT_NUMB(STR,1,N,STRNUMB)
                     if(N .LT. 1) then
                         write(*,*) "MFPSCU ERROR: Too few paramters for &IMPLANTRATE"
-                        write(*,*) "You shoud splecial: '&IMPLANTRATE The implant atoms number per seconds unit volum = ' "
+                        write(*,*) "You shoud splecial: '&IMPLANTRATE The implant flux (1/(cm^2*s)) = ' "
                         pause
                         stop
                     end if
@@ -273,6 +273,8 @@ module MFLIB_GLOBAL
             end select
 
         END DO
+
+        m_Flux = m_Flux/(m_NodeSpace*m_NNodes)
 
         close(hFile)
 
