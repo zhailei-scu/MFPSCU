@@ -25,7 +25,7 @@ module MFLIB_GLOBAL
 
     real(kind=KMCDF)::m_TermTime = 3000               ! (s)
 
-    integer::m_NNodes = 20
+    integer::m_NNodes = 10
 
     real(kind=KMCDF)::m_NodeSpace = 1.D-5             ! (cm)
 

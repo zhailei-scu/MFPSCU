@@ -133,8 +133,16 @@ module NUCLEATION_SPACEDIST
         real(kind=KMCDF),dimension(:),allocatable::N2
         real(kind=KMCDF),dimension(:),allocatable::N3
         real(kind=KMCDF),dimension(:),allocatable::Rave
-        real(kind=KMCDF)::NewAddedAtoms
-        real(kind=KMCDF)::ImplantedNum
+        real(kind=KMCDF),dimension(:),allocatable::NewAddedAtoms
+        real(kind=KMCDF),dimension(:),allocatable::ImplantedNum
+        real(kind=KMCDF),dimension(:),allocatable::FSurfAccum
+        real(kind=KMCDF),dimension(:),allocatable::FOutAccum
+        real(kind=KMCDF),dimension(:),allocatable::CSurfAccum
+        real(kind=KMCDF),dimension(:),allocatable::COutAccum
+        real(kind=KMCDF),dimension(:),allocatable::FSurfEachStep
+        real(kind=KMCDF),dimension(:),allocatable::FOutEachStep
+        real(kind=KMCDF),dimension(:),allocatable::CSurfEachStep
+        real(kind=KMCDF),dimension(:),allocatable::COutEachStep
         logical::startAnnealing
         integer::INode
         real(kind=KMCDF)::Factor
@@ -153,6 +161,26 @@ module NUCLEATION_SPACEDIST
 
         allocate(N1(m_NNodes),N2(m_NNodes),N3(m_NNodes),Rave(m_NNodes))
 
+        allocate(NewAddedAtoms(m_NNodes))
+
+        allocate(ImplantedNum(m_NNodes))
+
+        allocate(FSurfAccum(m_NNodes))
+
+        allocate(FOutAccum(m_NNodes))
+
+        allocate(CSurfAccum(m_NNodes))
+
+        allocate(COutAccum(m_NNodes))
+
+        allocate(FSurfEachStep(m_NNodes))
+
+        allocate(FOutEachStep(m_NNodes))
+
+        allocate(CSurfEachStep(m_NNodes))
+
+        allocate(COutEachStep(m_NNodes))
+
         ITIME = 0
 
         TTIME = 0.D0
@@ -160,6 +188,14 @@ module NUCLEATION_SPACEDIST
         TSTEP = 0.01
 
         ImplantedNum = 0.D0
+
+        FSurfAccum = 0.D0
+
+        FOutAccum = 0.D0
+
+        CSurfAccum = 0.D0
+
+        COutAccum = 0.D0
 
         Pre = 4*PI*m_SURDIFPRE*(m_RNFACTOR)**(1.5D0)
 
@@ -176,6 +212,14 @@ module NUCLEATION_SPACEDIST
             minTimeStep = 1.D32
 
             NewAddedAtoms = 0.D0
+
+            FSurfEachStep = 0.D0
+
+            FOutEachStep = 0.D0
+
+            CSurfEachStep = 0.D0
+
+            COutEachStep = 0.D0
 
             if((sum(NPOWER1Ave)/m_NNodes .GE. m_TargetConCentrat .AND. startAnnealing .eq. .false.) .or. (m_Flux .LE. 0.D0 .AND. startAnnealing .eq. .false.)) then
                 startAnnealing = .true.
@@ -199,20 +243,20 @@ module NUCLEATION_SPACEDIST
 
                             Factor = 0.5D0
 
-                            tempNBPVChangeRate(IKind,INode) =  tempNBPVChangeRate(IKind,INode) - deta
+                            !tempNBPVChangeRate(IKind,INode) =  tempNBPVChangeRate(IKind,INode) - deta
 
                         else
 
                             Factor = 1.D0
 
-                            tempNBPVChangeRate(IKind,INode) =  tempNBPVChangeRate(IKind,INode) - deta
+                            !tempNBPVChangeRate(IKind,INode) =  tempNBPVChangeRate(IKind,INode) - deta
 
-                            tempNBPVChangeRate(JKind,INode) =  tempNBPVChangeRate(JKind,INode) - deta
+                            !tempNBPVChangeRate(JKind,INode) =  tempNBPVChangeRate(JKind,INode) - deta
 
                         end if
 
                         if((IKind + JKind) .LE. m_BKind) then
-                            tempNBPVChangeRate(IKind + JKind,INode) = tempNBPVChangeRate(IKind + JKind,INode) + Factor*deta*(NATOMS(IKind) + NATOMS(JKind))/NATOMS(IKind+JKind)
+                            !tempNBPVChangeRate(IKind + JKind,INode) = tempNBPVChangeRate(IKind + JKind,INode) + Factor*deta*(NATOMS(IKind) + NATOMS(JKind))/NATOMS(IKind+JKind)
                         end if
 
                     END DO
@@ -221,6 +265,8 @@ module NUCLEATION_SPACEDIST
             END DO
 
             TSTEP = maxval(NBPV)*m_MaxChangeRate/maxval(dabs(tempNBPVChangeRate))
+
+            TSTEP = min(TSTEP,1D-8)
 
             tempNBPV = NBPV
 
@@ -250,26 +296,24 @@ module NUCLEATION_SPACEDIST
                 MatD = 0.D0
 
                 DO INode = 1,m_NNodes
-                    if(INode .eq. 1) then
+                    if(INode .eq. 1) then  ! upper surface
                         !For surface, the Dirichlet boundary condition is applied
                         DiffGradient1 = m_SURDIFPRE*(NATOMS(IKind)**(-2))*(m_RNFACTOR**2)/m_NodeSpace
                         DiffGradient2 = m_SURDIFPRE*(NATOMS(IKind)**(-2) + NATOMS(IKind)**(-2))*(m_RNFACTOR**2)/(m_NodeSpace + m_NodeSpace)
-
-!                        write(*,*) "m_SURDIFPRE",m_SURDIFPRE
-!                        write(*,*) "m_NodeSpace",m_NodeSpace
-!                        write(*,*) "m_RNFACTOR",m_RNFACTOR
-!                        write(*,*) "NATOMS(IKind)",NATOMS(IKind)
-!                        write(*,*) "DiffGradient1",DiffGradient1
-!                        write(*,*) "DiffGradient2",DiffGradient2
-!
-!                        pause
 
                         MatA(INode) = 0.D0
                         MatB(INode) = m_NodeSpace/TSTEP + (DiffGradient1 + DiffGradient2)
                         MatC(INode) = -DiffGradient2
                         MatD(INode) = NBPV(IKind,INode)*m_NodeSpace/TSTEP + tempNBPVChangeRate(IKind,INode)*TSTEP
-                    else
+                    else if(INode .eq. m_NNodes) then  ! Low surface
                         !For surface, the Dirichlet boundary condition is applied
+                        DiffGradient1 = m_SURDIFPRE*(NATOMS(IKind)**(-2) + NATOMS(IKind)**(-2))*(m_RNFACTOR**2)/(m_NodeSpace + m_NodeSpace)
+                        DiffGradient2 = m_SURDIFPRE*(NATOMS(IKind)**(-2))*(m_RNFACTOR**2)/m_NodeSpace
+                        MatA(INode) = -DiffGradient1
+                        MatB(INode) = m_NodeSpace/TSTEP + (DiffGradient1 + DiffGradient2)
+                        MatC(INode) = 0.D0
+                        MatD(INode) = NBPV(IKind,INode)*m_NodeSpace/TSTEP + tempNBPVChangeRate(IKind,INode)*TSTEP
+                    else
                         DiffGradient1 = m_SURDIFPRE*(NATOMS(IKind)**(-2) + NATOMS(IKind)**(-2))*(m_RNFACTOR**2)/(m_NodeSpace + m_NodeSpace)
                         DiffGradient2 = m_SURDIFPRE*(NATOMS(IKind)**(-2) + NATOMS(IKind)**(-2))*(m_RNFACTOR**2)/(m_NodeSpace + m_NodeSpace)
                         MatA(INode) = -DiffGradient1
@@ -283,31 +327,48 @@ module NUCLEATION_SPACEDIST
                             if(sum(m_ImplantSpaceDist(1:IImplantLayer)) .GT. (INode-1)*m_NodeSpace .AND.  &
                                 sum(m_ImplantSpaceDist(1:IImplantLayer)) .LE. INode*m_NodeSpace) then
                                     MatD(INode) = MatD(INode) + TSTEP*m_Flux*m_ImplantDist(IImplantLayer)
-                                    NewAddedAtoms = TSTEP*m_Flux*m_ImplantDist(IImplantLayer)
+                                    NewAddedAtoms(IImplantLayer) = TSTEP*m_Flux*m_ImplantDist(IImplantLayer)
                             end if
                         END DO
                     end if
 
                 END DO
 
+                call SolveTridag(IKind,MatA,MatB,MatC,MatD,NBPV,m_NNodes,MatW,MatH)
 
-                call SolveTridag(MatA,MatB,MatC,MatD,NBPV(IKind,1:m_NNodes),m_NNodes,MatW,MatH)
+                DiffGradient2 = m_SURDIFPRE*(NATOMS(IKind)**(-2))*(m_RNFACTOR**2)/m_NodeSpace
+                FOutEachStep(IKind) = DiffGradient2*NBPV(IKind,m_NNodes)
+                COutEachStep(IKind) = DiffGradient2*NBPV(IKind,m_NNodes)*TSTEP/m_NodeSpace
+                FOutAccum(IKind) = FOutAccum(IKind) + FOutEachStep(IKind)
+                COutAccum(IKind) = COutAccum(IKind) + COutEachStep(IKind)
+
+
+                DiffGradient1 = m_SURDIFPRE*(NATOMS(IKind)**(-2))*(m_RNFACTOR**2)/m_NodeSpace
+                FSurfEachStep(IKind) = DiffGradient1*NBPV(IKind,1)
+                CSurfEachStep(IKind) = DiffGradient1*NBPV(IKind,1)*TSTEP/m_NodeSpace
+                FSurfAccum(IKind) = FSurfAccum(IKind) + FSurfEachStep(IKind)
+                CSurfAccum(IKind) = CSurfAccum(IKind) + CSurfEachStep(IKind)
 
                 if(IKind .eq. 1) then
 
+                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out flux from up surface",FSurfAccum(IKind)
+                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out concentrate from up surface",CSurfAccum(IKind)
+                    write(*,fmt="(A50,1x,1ES14.6)") "Out flux from up surface in current step",FSurfEachStep(IKind)
+                    write(*,fmt="(A50,1x,1ES14.6)") "Out concentrate from up surface in current step",CSurfEachStep(IKind)
                     DO INode = 1,m_NNodes
-                        write(*,*) "INode",INode,"NBPV(1,INode)",NBPV(1,INode)
+                        write(*,fmt="(A10,1x,I10,1x,A15,1x,1ES14.6)") "INode",INode,"NBPV(1,INode)",NBPV(1,INode)
                     END DO
-                end if
+                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out flux from lower surface",FOutAccum(IKind)
+                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out concentrate from lower surface",COutAccum(IKind)
+                    write(*,fmt="(A50,1x,1ES14.6)") "Out flux from lower surface in current step",FOutEachStep(IKind)
+                    write(*,fmt="(A50,1x,1ES14.6)") "Out concentrate from lower surface in current step",COutEachStep(IKind)
 
-!                write(*,*) "************",IKind,"********************"
-!                DO INode = 1,m_NNodes
-!                    write(*,*) "NBPV(I,INode)",NBPV(IKind,INode)
-!                    write(*,*) "MatA(INode)",MatA(INode)
-!                    write(*,*) "MatB(INode)",MatB(INode)
-!                    write(*,*) "MatC(INode)",MatC(INode)
-!                    write(*,*) "MatD(INode)",MatD(INode)
-!                END DO
+                    write(*,*) "----------------------------------------"
+                    write(*,*) "sum(NBPV(1,:))",sum(NBPV(1,:))
+                    write(*,*) "sum(NBPV(1,:)) + CSurfAccum(1) + COutAccum(1)",sum(NBPV(1,:)) + CSurfAccum(1) + COutAccum(1)
+                    write(*,*) "(sum(NBPV(1,:)) + CSurfAccum(1) + COutAccum(1))/m_ConCentrat0",(m_ConCentrat0 - (sum(NBPV(1,:)) + CSurfAccum(1) + COutAccum(1)))/m_ConCentrat0
+                    write(*,*) "----------------------------------------"
+                end if
 
 
             END DO
@@ -321,16 +382,12 @@ module NUCLEATION_SPACEDIST
 
                 call Cal_Statistic_IMPLANT(NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
 
-                call Put_Out_IMPLANT(ITIME,TTIME,TSTEP,ImplantedNum,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
+                call Put_Out_IMPLANT(ITIME,TTIME,TSTEP,sum(ImplantedNum),NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
             end if
 
             DO INode = 1,m_NNodes
                 !if(NBPV(m_BKind) .GT. 1.D10) then
                 if(DSQRT(NATOMS(m_BKind))*NBPV(m_BKind,INode) .GT. NPOWER1DIV2Ave(INode)*m_DumplicateFactor) then
-                    write(*,*) "INode",INode
-                    write(*,*) "NBPV(m_BKind,INode) ",NBPV(m_BKind,INode)
-                    write(*,*) "NPOWER1DIV2Ave(INode)",NPOWER1DIV2Ave(INode)
-
 
                     DO IKind = 1,(m_BKind -1)/2 + 1
                         if(2*IKind .LE. m_BKind) then
@@ -375,14 +432,15 @@ module NUCLEATION_SPACEDIST
     end subroutine NucleationSimu_SpaceDist
 
     !----------------------------------------------------------------------
-    subroutine SolveTridag(MatrixA,MatrixB,MatrixC,MatrixD,Solver,MatrixSize,w,h)
+    subroutine SolveTridag(IKind,MatrixA,MatrixB,MatrixC,MatrixD,Solver,MatrixSize,w,h)
         implicit none
         !---Dummy Vars---
+        integer,intent(in)::IKind
         real(kind=KMCDF),dimension(:),allocatable::MatrixA
         real(kind=KMCDF),dimension(:),allocatable::MatrixB
         real(kind=KMCDF),dimension(:),allocatable::MatrixC
         real(kind=KMCDF),dimension(:),allocatable::MatrixD
-        real(kind=KMCDF)::Solver(:)
+        real(kind=KMCDF),dimension(:,:),allocatable::Solver
         integer,intent(in)::MatrixSize
         real(kind=KMCDF),dimension(:),allocatable::w
         real(kind=KMCDF),dimension(:),allocatable::h
@@ -398,10 +456,10 @@ module NUCLEATION_SPACEDIST
             w(I) = MatrixB(I) - MatrixC(I)*MatrixA(I)/w(I-1)
             h(I) = (MatrixD(I) - MatrixA(I)*h(I-1))/w(I)
         END DO
-        Solver(MatrixSize) = h(MatrixSize)
+        Solver(IKind,MatrixSize) = h(MatrixSize)
 
         DO I = MatrixSize-1,1,-1
-            Solver(I) = h(I) - MatrixC(I)*Solver(I+1)/w(I)
+            Solver(IKind,I) = h(I) - MatrixC(I)*Solver(IKind,I+1)/w(I)
         END DO
 
 
