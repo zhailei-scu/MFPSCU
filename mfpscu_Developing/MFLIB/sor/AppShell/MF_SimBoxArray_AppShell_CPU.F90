@@ -1,5 +1,5 @@
 module MF_SimBoxArray_AppShell_CPU
-    use MFLIB_GLOBAL_CPU
+    use MFLIB_GLOBAL
     use MF_MethodClass_Factory_CPU
 
     type(MFSimulationBoxes)::m_SimBoxes
@@ -50,20 +50,7 @@ module MF_SimBoxArray_AppShell_CPU
 
             call GET_COMMAND_ARGUMENT(1,ARG)
             Read(ARG,fmt="(A256)") filePath
-
-            if(arg_NUM .GE. 2) THEN
-                call GET_COMMAND_ARGUMENT(2,ARG)
-                Read(ARG,*) start_Index_Dev
-            end if
-
-            if(arg_NUM .GE. 3) THEN
-                call GET_COMMAND_ARGUMENT(3,ARG)
-                Read(ARG,*) num_use_Device
-            end if
         end if
-
-        !*********Init device setting*********************
-        call Init_Device_Setting(start_Index_Dev,num_use_Device)
 
         !*********Create/Open log file********************
         call OpenLogFile(m_hFILELOG)

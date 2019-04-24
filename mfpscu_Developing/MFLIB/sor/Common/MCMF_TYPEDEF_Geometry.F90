@@ -59,8 +59,6 @@ module MCMF_TYPEDEF_GEOMETRY
         procedure,non_overridable,public,pass::ConstructGrainBoundary_Simple_ByGVolumCtl
         procedure,non_overridable,public,pass::ConstructGrainBoundary_SpecialDistFromFile
         procedure,non_overridable,public,pass::ConstructGrainBoundary_SpecialDistFromExteFunc
-        procedure,non_overridable,public,pass::RescaleGrainBoundary
-        procedure,non_overridable,public,pass::GrainBelongsTo
         procedure,non_overridable,public,pass::Clean_Grainboundary
         procedure,non_overridable,public,pass::CopyGrainBoundaryFromOther
         Generic::ASSIGNMENT(=)=>CopyGrainBoundaryFromOther
@@ -80,8 +78,6 @@ module MCMF_TYPEDEF_GEOMETRY
     private::ConstructGrainBoundary_Simple_ByGVolumCtl
     private::ConstructGrainBoundary_SpecialDistFromFile
     private::ConstructGrainBoundary_SpecialDistFromExteFunc
-    private::RescaleGrainBoundary
-    private::GrainBelongsTo
     private::CopyGrainBoundaryFromOther
     private::Clean_Grainboundary
     private::CleanGrainboundary
@@ -513,59 +509,6 @@ module MCMF_TYPEDEF_GEOMETRY
         !---Body---
         return
     end subroutine ConstructGrainBoundary_SpecialDistFromExteFunc
-
-    !*******************************************
-    subroutine RescaleGrainBoundary(this,DUPXYZ)
-        implicit none
-        !---Dummy Vars---
-        CLASS(GrainBoundary)::this
-        integer,intent(in)::DUPXYZ(3)
-        !---Local Vars---
-        integer::GrainSeedsNum
-        type(GrainBoundary)::temp
-        integer::dumpNum
-        integer::IG
-        integer::I,J,K
-        integer::IP
-        !---Body---
-        GrainSeedsNum = this%GrainNum
-
-        if(GrainSeedsNum .GT. 0) then
-
-          dumpNum = product(DUPXYZ+1)
-
-          allocate(temp%GrainSeeds(dumpNum*GrainSeedsNum))
-
-          IP = 1
-          DO IG = 1,GrainSeedsNum
-
-            DO I = 0,DUPXYZ(1)
-                DO J = 0,DUPXYZ(2)
-                    DO K = 0,DUPXYZ(3)
-                        ! the assignment(=) has been overrided
-                        temp%GrainSeeds(IP) = this%GrainSeeds(IG)
-                        IP = IP + 1
-                    END DO
-                END DO
-
-            END DO
-
-          END DO
-
-          this%GrainNum = dumpNum*GrainSeedsNum
-
-          deallocate(this%GrainSeeds)
-
-          allocate(this%GrainSeeds(dumpNum*GrainSeedsNum))
-
-          this%GrainSeeds = temp%GrainSeeds
-
-          call temp%Clean_Grainboundary()
-
-        end if
-
-        return
-    end subroutine
 
     !**********************************
     subroutine CopyGrainBoundaryFromOther(this,other)

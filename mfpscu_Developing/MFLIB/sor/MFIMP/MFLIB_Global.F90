@@ -528,7 +528,12 @@ module MFLIB_GLOBAL
                     end if
                     OutFilePath = STRNUMB(1)
                     OutFilePath = adjustl(OutFilePath)
-                    OutFilePath = CreateDataFolder(OutFilePath,InputFilePath)
+
+                    if(LENTRIM(adjustl(InputFilePath)) .GT. 0) then
+                        OutFilePath = CreateDataFolder(adjustl(trim(InputFilePath))//FolderSpe//adjustl(trim(OutFilePath)))
+                    else
+                        OutFilePath = CreateDataFolder(adjustl(trim(OutFilePath)))
+                    end if
 
                 case default
                     write(*,*) "MFPSCU ERROR: Unknown flag: ",KEYWORD

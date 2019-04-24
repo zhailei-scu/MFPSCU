@@ -14,16 +14,19 @@
 				<Option parameters="~/meanFieldworkspace/MeanFiledTestDataDesign/MFSampleStep.dat" />
 				<Compiler>
 					<Add option="-g" />
+					<Add option="-pgc++libs -ldl" />
 					<Add directory="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug" />
 				</Compiler>
 				<Linker>
-					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libAppShell.a" />
+					<Add option="-pgc++libs -ldl" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libMFIMP.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libCommon.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libTCCLIB.a" />
+					<Add library="/home/zhailei/Development/MeanField/tcc-0.9.27/libtcc.a" />
+					<Add library="/home/zhailei/Development/MeanField/tcc-0.9.27/libtcc1.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libMiniUtilities.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libMSMLIB.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libRandGenerators.a" />
-					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libTCCLIB.a" />
 					<Add directory="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug" />
 				</Linker>
 			</Target>
@@ -38,13 +41,14 @@
 					<Add directory="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release" />
 				</Compiler>
 				<Linker>
-					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libAppShell.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libCommon.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libMFIMP.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libMiniUtilities.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libMSMLIB.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libRandGenerators.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libTCCLIB.a" />
+					<Add library="/home/zhailei/Development/MeanField/tcc-0.9.27/libtcc.a" />
+					<Add library="/home/zhailei/Development/MeanField/tcc-0.9.27/libtcc1.a" />
 					<Add directory="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release" />
 				</Linker>
 			</Target>

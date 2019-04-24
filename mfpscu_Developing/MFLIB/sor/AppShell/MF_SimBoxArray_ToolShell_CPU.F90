@@ -1,6 +1,8 @@
 module MF_SimBoxArray_ToolShell
-    use MCLIB_GLOBAL
+    use MFLIB_TYPEDEF_SIMULATIONBOXARRAY
+    use MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
+    implicit none
     type(SimulationBoxes)::m_SimBoxes
     type(SimulationCtrlParam)::m_CtrlParam
 
