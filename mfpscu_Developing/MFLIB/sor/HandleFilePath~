@@ -1,0 +1,21 @@
+#!/bin/bash
+#set -v on
+
+
+if [ $# -lt 1 ]; then
+echo "You must special the path"
+exit
+fi
+
+THEPATH=$1
+
+echo "The path is ", $THEPATH
+
+cd $THEPATH
+
+for file in `ls $THEPATH`
+do
+  echo $file 
+  var=$file
+  mv $file "MCMF"${var#*MCMFCOMMON}
+done
