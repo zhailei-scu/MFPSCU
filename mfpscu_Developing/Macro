@@ -1,0 +1,42 @@
+!--------The following are the global macro that used for mcpscu--------------
+!----------------Zhai Lei, 2019/01/14-----------------
+
+
+! We define the PreAssign macro for the reason of the potiential problem in pgice cygwin 17.10 and 18.4.
+! The details is below, assume we define derived fortran type A and B like following:
+!         TYPE,PUBLIC::A
+!            integer::member = 0
+!	  END TYPE
+!
+!         TYPE,PUBLIC::B
+!            integer::member
+!	  END TYPE
+!
+! Obviously, the only different between type A and B is that type A assign a init value for the member, but B not.
+! When these derived are used in pgi linux version, everything is OK. However, when we use these derived type in
+! pgice windows version(just cygwin environment), the error would occur in kernel while compiling.
+! The position of the error happed like follow :
+! attributes(global) subroutine Testkernel()
+!   !---Local Vars---
+!   type(A)::a
+!   type(B)::b
+!   integer::int_a
+!   integer::int_b
+!   !---Body---
+!   int_a = a%member    ! wrong while compiling
+!   int_b = b%member    ! OK while compiling
+!
+!   return
+! end subroutine
+!
+! If we add -w -v compiling option, we would see that compiler print "xxxxx_A is undifined."
+! So, in windows cygwin, we should not assign any member of derived fortran type an init value.
+
+#ifdef CYGWIN
+  #define PREASSIGN ! =
+#else
+  #define PREASSIGN =
+#endif
+
+
+

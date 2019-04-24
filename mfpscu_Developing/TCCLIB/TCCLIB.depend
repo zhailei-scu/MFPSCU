@@ -1,0 +1,85 @@
+# depslib dependency file v1.0
+1540886898 source:/home/zhail/Development/Developing/mcpscu_Developing/TCCLIB/sor/DiffusorList.cpp
+	"DiffusorList.h"
+	<iostream>
+	<cstring>
+	<string.h>
+	<stdlib.h>
+
+1540886898 /home/zhail/Development/Developing/mcpscu_Developing/TCCLIB/sor/DiffusorList.h
+
+1540886898 source:/home/zhail/Development/Developing/mcpscu_Developing/TCCLIB/sor/TccInterp.cpp
+	"../tcc-0.9.27/libtcc.h"
+	<string>
+	<iostream>
+	<sstream>
+	<string.h>
+	"TccInterp.h"
+
+1540886898 /home/zhail/Development/Developing/mcpscu_Developing/TCCLIB/tcc-0.9.27/libtcc.h
+
+1540886898 /home/zhail/Development/Developing/mcpscu_Developing/TCCLIB/sor/TccInterp.h
+	"DiffusorList.h"
+
+1555832600 source:/home/zhail/Development/Developing_New/mcpscu_Developing_New/TCCLIB/sor/DiffusorList.cpp
+	"DiffusorList.h"
+	<iostream>
+	<cstring>
+	<string.h>
+	<stdlib.h>
+
+1555832499 /home/zhail/Development/Developing_New/mcpscu_Developing_New/TCCLIB/sor/DiffusorList.h
+
+1555568969 source:/home/zhail/Development/Developing_New/mcpscu_Developing_New/TCCLIB/sor/TccInterp.cpp
+	<string>
+	<iostream>
+	<sstream>
+	<string.h>
+	"TccInterp.h"
+
+1543563327 /home/zhail/Development/Developing_New/mcpscu_Developing_New/TCCLIB/tcc-0.9.27/libtcc.h
+
+1555568200 /home/zhail/Development/Developing_New/mcpscu_Developing_New/TCCLIB/sor/TccInterp.h
+	"DiffusorList.h"
+	"ReactionsList.h"
+
+1543563327 /home/zhail/Development/Developing_New/tcc-0.9.27/libtcc.h
+
+1555567158 source:/home/zhail/Development/Developing_New/mcpscu_Developing_New/TCCLIB/sor/ReactionsList.cpp
+	"ReactionsList.h"
+	<iostream>
+	<cstring>
+	<string.h>
+	<stdlib.h>
+
+1555567138 /home/zhail/Development/Developing_New/mcpscu_Developing_New/TCCLIB/sor/ReactionsList.h
+
+1556071418 source:/home/zhailei/Development/MeanField/mfpscu_Developing/TCCLIB/sor/DiffusorList.cpp
+	"DiffusorList.h"
+	<iostream>
+	<cstring>
+	<string.h>
+	<stdlib.h>
+
+1556071418 /home/zhailei/Development/MeanField/mfpscu_Developing/TCCLIB/sor/DiffusorList.h
+
+1556071418 source:/home/zhailei/Development/MeanField/mfpscu_Developing/TCCLIB/sor/ReactionsList.cpp
+	"ReactionsList.h"
+	<iostream>
+	<cstring>
+	<string.h>
+	<stdlib.h>
+
+1556071418 /home/zhailei/Development/MeanField/mfpscu_Developing/TCCLIB/sor/ReactionsList.h
+
+1556073092 source:/home/zhailei/Development/MeanField/mfpscu_Developing/TCCLIB/sor/TccInterp.cpp
+	<string>
+	<iostream>
+	<sstream>
+	<string.h>
+	"TccInterp.h"
+
+1556071418 /home/zhailei/Development/MeanField/mfpscu_Developing/TCCLIB/sor/TccInterp.h
+	"DiffusorList.h"
+	"ReactionsList.h"
+

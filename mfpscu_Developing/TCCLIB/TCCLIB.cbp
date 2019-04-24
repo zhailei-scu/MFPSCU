@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="TCCLIB" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="~/meanFieldworkspace/mfpscu_Developing/LIB/Debug/TCCLIB" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="" />
+				<Option object_output="~/meanFieldworkspace/mfpscu_Developing/LIB/Debug/" />
+				<Option type="2" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-g" />
+					<Add option="-O0" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="~/meanFieldworkspace/mfpscu_Developing/LIB/Release/TCCLIB" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="" />
+				<Option object_output="~/meanFieldworkspace/mfpscu_Developing/LIB/Release/" />
+				<Option type="2" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-Wall" />
+				</Compiler>
+			</Target>
+		</Build>
+		<Unit filename="sor/DiffusorList.cpp" />
+		<Unit filename="sor/DiffusorList.h" />
+		<Unit filename="sor/ReactionsList.cpp" />
+		<Unit filename="sor/ReactionsList.h" />
+		<Unit filename="sor/TccInterp.cpp" />
+		<Unit filename="sor/TccInterp.h" />
+		<Extensions>
+			<envvars />
+			<code_completion />
+			<lib_finder disable_auto="1" />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
