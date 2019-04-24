@@ -1,9 +1,9 @@
-module MCLIB_UTILITIES_FORMER
+module MCMF_UTILITIES_FORMER
 
-  USE MCLIB_CONSTANTS
+  USE MCMF_CONSTANTS
   use MiniUtilities,only:LENTRIM
   #ifdef MC_PROFILING
-  USE MCLIB_TimeProfile
+  USE MCMF_TimeProfile
   #endif
 
   implicit none
@@ -1822,4 +1822,4 @@ module MCLIB_UTILITIES_FORMER
       RETURN
   end subroutine DRAFT_GRAPH
 
-end module MCLIB_UTILITIES_FORMER
+end module MCMF_UTILITIES_FORMER

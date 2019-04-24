@@ -5,16 +5,13 @@
 			<Depends filename="MFLIB/AppShell/AppShell.cbp" />
 			<Depends filename="MFLIB/Common/Common.cbp" />
 		</Project>
-		<Project filename="MFLIB/APPLICATIONS/MeanField_Implant_Old/MeanField_Implant_Old.cbp">
-			<Depends filename="MFLIB/AppShell/AppShell.cbp" />
-			<Depends filename="MFLIB/Common/Common.cbp" />
-		</Project>
-		<Project filename="MFLIB/APPLICATIONS/MeanField_Grub/MeanField_Grub.cbp">
-			<Depends filename="MFLIB/AppShell/AppShell.cbp" />
-			<Depends filename="MFLIB/Common/Common.cbp" />
-		</Project>
 		<Project filename="MFLIB/AppShell/AppShell.cbp">
+			<Depends filename="MFLIB/MFIMP/MFIMP.cbp" />
 			<Depends filename="MFLIB/Common/Common.cbp" />
+			<Depends filename="LIB/MiniUtilities/MiniUtilities.cbp" />
+			<Depends filename="LIB/RandGenerators/RandGenerators.cbp" />
+			<Depends filename="TCCLIB/TCCLIB.cbp" />
+			<Depends filename="MSMLIB/MSMLIB.cbp" />
 		</Project>
 		<Project filename="MFLIB/MFIMP/MFIMP.cbp">
 			<Depends filename="MFLIB/Common/Common.cbp" />

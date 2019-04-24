@@ -1,6 +1,6 @@
-module MCLIB_TYPEDEF_ATOMSLIST
-    use MCLIB_CONSTANTS
-    use MCLIB_UTILITIES_FORMER
+module MCMF_TYPEDEF_ATOMSLIST
+    use MCMF_CONSTANTS
+    use MCMF_UTILITIES_FORMER
     implicit none
 
     type,public::ATOM
@@ -381,5 +381,5 @@ module MCLIB_TYPEDEF_ATOMSLIST
         return
     end subroutine Clean_AtomsList
 
-end module MCLIB_TYPEDEF_ATOMSLIST
+end module MCMF_TYPEDEF_ATOMSLIST
 

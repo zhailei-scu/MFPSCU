@@ -1,9 +1,9 @@
 #include "../../../Macro"
 
-module MCLIB_TYPEDEF_DiffusorsValue
-    USE MCLIB_CONSTANTS
-    USE MCLIB_TYPEDEF_ACLUSTER
-    use MCLIB_UTILITIES
+module MCMF_TYPEDEF_DiffusorsValue
+    USE MCMF_CONSTANTS
+    USE MCMF_TYPEDEF_ACLUSTER
+    use MCMF_UTILITIES
     USE iso_c_binding
     implicit none
 
@@ -611,4 +611,4 @@ module MCLIB_TYPEDEF_DiffusorsValue
 
 
 
-end module MCLIB_TYPEDEF_DiffusorsValue
+end module MCMF_TYPEDEF_DiffusorsValue

@@ -1,10 +1,10 @@
 #include "../../../Macro"
 
-module MCLIB_TYPEDEF_REACTIONSVALUE
-    use MCLIB_CONSTANTS
+module MCMF_TYPEDEF_REACTIONSVALUE
+    use MCMF_CONSTANTS
     use iso_c_binding
-    use MCLIB_TYPEDEF_ACLUSTER
-    use MCLIB_UTILITIES
+    use MCMF_TYPEDEF_ACLUSTER
+    use MCMF_UTILITIES
     implicit none
 
     type,public::ReadReactionPair
@@ -528,4 +528,4 @@ module MCLIB_TYPEDEF_REACTIONSVALUE
 
 
 
-end module MCLIB_TYPEDEF_REACTIONSVALUE
+end module MCMF_TYPEDEF_REACTIONSVALUE

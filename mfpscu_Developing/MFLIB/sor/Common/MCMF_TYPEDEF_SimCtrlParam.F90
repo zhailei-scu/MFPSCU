@@ -1,11 +1,11 @@
-module MCLIB_TYPEDEF_SIMULATIONCTRLPARAM
+module MCMF_TYPEDEF_SIMULATIONCTRLPARAM
   !*** Description: This module is created for the control parameters in simulation
   !
   !    HISTORY: Created by Zhai Lei in May, 2018
   !
   !    Reference: MDPSCU module MD_TYPEDEF_SIMULATIONCTRLPARAM
-  use MCLIB_CONSTANTS
-  use MCLIB_UTILITIES
+  use MCMF_CONSTANTS
+  use MCMF_UTILITIES
   use MSM_TYPEDEF_InputPaser
   use MiniUtilities, only:EXTRACT_NUMB,GETINPUTSTRLINE,GETKEYWORD,UPCASE,DRSTR,ISTR
 
@@ -1208,4 +1208,4 @@ module MCLIB_TYPEDEF_SIMULATIONCTRLPARAM
     return
   end subroutine
 
-end module MCLIB_TYPEDEF_SIMULATIONCTRLPARAM
+end module MCMF_TYPEDEF_SIMULATIONCTRLPARAM

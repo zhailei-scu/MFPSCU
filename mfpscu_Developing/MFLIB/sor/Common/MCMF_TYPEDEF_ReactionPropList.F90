@@ -1,8 +1,8 @@
-module MCLIB_TYPEDEF_ReactionPropList
-    use MCLIB_TYPEDEF_REACTIONSVALUE
-    use MCLIB_TYPEDEF_ATOMSLIST
-    use MCLIB_TYPEDEF_ACLUSTER
-    use MCLIB_UTILITIES
+module MCMF_TYPEDEF_ReactionPropList
+    use MCMF_TYPEDEF_REACTIONSVALUE
+    use MCMF_TYPEDEF_ATOMSLIST
+    use MCMF_TYPEDEF_ACLUSTER
+    use MCMF_UTILITIES
 
     implicit none
 
@@ -40,7 +40,7 @@ module MCLIB_TYPEDEF_ReactionPropList
     interface GetInterpedReactionsArray
         subroutine GetInterpedReactionsArray(FReactionsDefArray) bind(c,name="GetInterpedReactionsArray")
             use iso_c_binding
-            use MCLIB_TYPEDEF_REACTIONSVALUE
+            use MCMF_TYPEDEF_REACTIONSVALUE
             implicit none
             !---Dummy Vars---
             type(ReadReactionPair)::FReactionsDefArray(*)
@@ -920,4 +920,4 @@ module MCLIB_TYPEDEF_ReactionPropList
 
 
 
-end module MCLIB_TYPEDEF_ReactionPropList
+end module MCMF_TYPEDEF_ReactionPropList

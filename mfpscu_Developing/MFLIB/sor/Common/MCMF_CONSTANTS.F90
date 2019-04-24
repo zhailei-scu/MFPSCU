@@ -1,4 +1,4 @@
-module MCLIB_CONSTANTS
+module MCMF_CONSTANTS
 
     implicit none
 
@@ -144,4 +144,4 @@ module MCLIB_CONSTANTS
     character(len=1), parameter::RelativeHead = achar(46) ! "."
 
 
-end module MCLIB_CONSTANTS
+end module MCMF_CONSTANTS

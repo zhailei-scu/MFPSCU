@@ -1,7 +1,7 @@
-module MCLIB_TYPEDEF_USUAL
+module MCMF_TYPEDEF_USUAL
 
-    USE MCLIB_CONSTANTS
-    USE MCLIB_UTILITIES
+    USE MCMF_CONSTANTS
+    USE MCMF_UTILITIES
 
     implicit none
 
@@ -426,4 +426,4 @@ module MCLIB_TYPEDEF_USUAL
             CLASS(SimulationRecord)::this
     end subroutine
 
-end module MCLIB_TYPEDEF_USUAL
+end module MCMF_TYPEDEF_USUAL

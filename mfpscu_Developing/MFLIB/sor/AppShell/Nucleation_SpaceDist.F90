@@ -41,7 +41,6 @@ module NUCLEATION_SPACEDIST
 
         NBPV = 0.D0
 
-        !NBPV(1,1:m_NNodes) = m_ConCentrat0
         NBPV(1,1) = m_ConCentrat0
 
         if(allocated(NATOMS)) then

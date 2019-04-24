@@ -1,10 +1,10 @@
 #include "../../../Macro"
 
-module MCLIB_TYPEDEF_DiffusorPropList
-    use MCLIB_CONSTANTS
-    use MCLIB_TYPEDEF_ATOMSLIST
-    use MCLIB_TYPEDEF_DiffusorsValue
-    use MCLIB_UTILITIES
+module MCMF_TYPEDEF_DiffusorPropList
+    use MCMF_CONSTANTS
+    use MCMF_TYPEDEF_ATOMSLIST
+    use MCMF_TYPEDEF_DiffusorsValue
+    use MCMF_UTILITIES
     use MiniUtilities, only:ISTR
     implicit none
 
@@ -44,7 +44,7 @@ module MCLIB_TYPEDEF_DiffusorPropList
     interface GetInterpedDiffusorsArray
       subroutine GetInterpedDiffusorsArray(FDiffusorDefArray) bind(c,name="GetInterpedDiffusorsArray")
         use iso_c_binding
-        use MCLIB_TYPEDEF_DiffusorsValue
+        use MCMF_TYPEDEF_DiffusorsValue
         implicit none
         type(ReadedDiffusorValue)::FDiffusorDefArray(*)
       end subroutine GetInterpedDiffusorsArray
@@ -815,4 +815,4 @@ module MCLIB_TYPEDEF_DiffusorPropList
     end subroutine ResloveDiffusorsValueFromCScript
 
 
-end module MCLIB_TYPEDEF_DiffusorPropList
+end module MCMF_TYPEDEF_DiffusorPropList

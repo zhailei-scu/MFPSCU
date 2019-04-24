@@ -1,14 +1,14 @@
-module MCLIB_GLOBAL
+module MCMF_GLOBAL
 !  *****************************************************************
 !
 !  THIS MODULE DEFINE THE CONSTANTS AND FUNCTIONS USED IN KMC SIMUATION
 !
 !  ********************************************************************
 
-   USE MCLIB_CONSTANTS
-   USE MCLIB_UTILITIES
-   USE MCLIB_TYPEDEF_SIMULATIONCTRLPARAM
-   USE MCLIB_TYPEDEF_SIMULATIONBOXARRAY
+   USE MCMF_CONSTANTS
+   USE MCMF_UTILITIES
+   USE MCMF_TYPEDEF_SIMULATIONCTRLPARAM
+   USE MCMF_TYPEDEF_SIMULATIONBOXARRAY
    implicit none
 
    character*32::m_AppType = "MIGCOALE_CLUSTER_GPU"     ! the type of application
@@ -273,4 +273,4 @@ module MCLIB_GLOBAL
     return
   end subroutine CheckSimulationParamters
 
-end module MCLIB_GLOBAL
+end module MCMF_GLOBAL

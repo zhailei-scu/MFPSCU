@@ -1,8 +1,8 @@
-module MCLIB_TYPEDEF_ACLUSTER
+module MCMF_TYPEDEF_ACLUSTER
     #ifdef MC_PROFILING
-    USE MCLIB_TimeProfile
+    USE MCMF_TimeProfile
     #endif
-    USE MCLIB_CONSTANTS
+    USE MCMF_CONSTANTS
     implicit none
 
     TYPE,PUBLIC::Single_AtomsSet
@@ -455,4 +455,4 @@ module MCLIB_TYPEDEF_ACLUSTER
         return
     end subroutine CleanClusterList
 
-end module MCLIB_TYPEDEF_ACLUSTER
+end module MCMF_TYPEDEF_ACLUSTER
