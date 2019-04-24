@@ -34,9 +34,6 @@
 		<Unit filename="../sor/Common/MCMF_CONSTANTS.F90">
 			<Option weight="0" />
 		</Unit>
-		<Unit filename="../sor/Common/MCMF_GLOBAL.F90">
-			<Option weight="7" />
-		</Unit>
 		<Unit filename="../sor/Common/MCMF_TYPEDEF_ACLUSTER.F90">
 			<Option weight="1" />
 		</Unit>
