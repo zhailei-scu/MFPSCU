@@ -193,17 +193,22 @@ module NUCLEATION_IMPLANT
                 call Put_Out_IMPLANT(ITIME,TTIME,TSTEP,ImplantedNum,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
             end if
 
-            !if(NBPV(m_BKind) .GT. 1.D10) then
+            !if(NBPV(m_BKind) .GT. 1.D-10) then
             if(DSQRT(NATOMS(m_BKind))*NBPV(m_BKind) .GT. NPOWER1DIV2Ave*m_DumplicateFactor) then
+
                 DO I = 1,(m_BKind -1)/2 + 1
                     if(2*I .LE. m_BKind) then
-                        if(NBPV(2*I - 1) .eq. 0) then
-                            NATOMS(I) = NATOMS(2*I)
-                        else if(NBPV(2*I) .eq. 0) then
-                            NATOMS(I) = NATOMS(2*I - 1)
-                        else
-                            NATOMS(I) = (NATOMS(2*I - 1)*NBPV(2*I - 1) + NATOMS(2*I)*NBPV(2*I))/(NBPV(2*I - 1) + NBPV(2*I))
-                        end if
+                        NBPV(I) = (NBPV(2*I - 1)*NATOMS(2*I - 1) + NBPV(2*I)*NATOMS(2*I))/(2.D0*NATOMS(2*I))
+                    else
+                        NBPV(I) = NBPV(2*I - 1)
+                    end if
+                END DO
+
+                NBPV((m_BKind -1)/2+2:m_BKind) = 0.D0
+
+                DO I = 1,(m_BKind -1)/2 + 1
+                    if(2*I .LE. m_BKind) then
+                        NATOMS(I) = NATOMS(2*I)
                     else
                         NATOMS(I) = NATOMS(2*I - 1)
                     end if
@@ -212,16 +217,6 @@ module NUCLEATION_IMPLANT
                 DO I = (m_BKind -1)/2 + 2,m_BKind
                     NATOMS(I) = 2*NATOMS(I)
                 END DO
-
-                DO I = 1,(m_BKind -1)/2 + 1
-                    if(2*I .LE. m_BKind) then
-                        NBPV(I) = (NBPV(2*I - 1) + NBPV(2*I))/2.D0
-                    else
-                        NBPV(I) = NBPV(2*I - 1)
-                    end if
-                END DO
-
-                NBPV((m_BKind -1)/2+2:m_BKind) = 0.D0
 
                 Dumplicate = Dumplicate*2
                 write(*,*) "Dumplicate",Dumplicate

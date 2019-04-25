@@ -471,6 +471,7 @@ module NUCLEATION_SPACEDIST
         real(kind=KMCDF)::DiffGradient1
         real(kind=KMCDF)::DiffGradient2
         integer::IImplantLayer
+        integer::I
         !---Body---
         allocate(tempNBPV(m_BKind,m_NNodes))
 
@@ -710,42 +711,38 @@ module NUCLEATION_SPACEDIST
                 call Put_Out_IMPLANT(ITIME,TTIME,TSTEP,sum(ImplantedNum),NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
             end if
 
-            DO INode = 1,m_NNodes
-                !if(NBPV(m_BKind) .GT. 1.D10) then
-                if(DSQRT(NATOMS(m_BKind))*NBPV(m_BKind,INode) .GT. NPOWER1DIV2Ave(INode)*m_DumplicateFactor) then
+            !if(NBPV(m_BKind) .GT. 1.D-10) then
+            if(DSQRT(NATOMS(m_BKind))*sum(NBPV(m_BKind,1:m_NNodes)) .GT. sum(NPOWER1DIV2Ave)*m_DumplicateFactor) then
 
-                    DO IKind = 1,(m_BKind -1)/2 + 1
-                        if(2*IKind .LE. m_BKind) then
-                            if(NBPV(2*IKind - 1,INode) .eq. 0) then
-                                NATOMS(IKind) = NATOMS(2*IKind)
-                            else if(NBPV(2*IKind,INode) .eq. 0) then
-                                NATOMS(IKind) = NATOMS(2*IKind - 1)
-                            else
-                                NATOMS(IKind) = (NATOMS(2*IKind - 1)*NBPV(2*IKind - 1,INode) + NATOMS(2*IKind)*NBPV(2*IKind,INode))/(NBPV(2*IKind - 1,INode) + NBPV(2*IKind,INode))
-                            end if
+                DO INode = 1,m_NNodes
+
+                    DO I = 1,(m_BKind -1)/2 + 1
+                        if(2*I .LE. m_BKind) then
+                            NBPV(I,INode) = (NBPV(2*I - 1,INode)*NATOMS(2*I - 1) + NBPV(2*I,INode)*NATOMS(2*I))/(2.D0*NATOMS(2*I))
                         else
-                            NATOMS(IKind) = NATOMS(2*IKind - 1)
-                        end if
-                    END DO
-
-                    DO IKind = (m_BKind -1)/2 + 2,m_BKind
-                        NATOMS(IKind) = 2*NATOMS(IKind)
-                    END DO
-
-                    DO IKind = 1,(m_BKind -1)/2 + 1
-                        if(2*IKind .LE. m_BKind) then
-                            NBPV(IKind,INode) = (NBPV(2*IKind - 1,INode) + NBPV(2*IKind,INode))/2.D0
-                        else
-                            NBPV(IKind,INode) = NBPV(2*IKind - 1,INode)
+                            NBPV(I,INode) = NBPV(2*I - 1,INode)
                         end if
                     END DO
 
                     NBPV((m_BKind -1)/2+2:m_BKind,INode) = 0.D0
 
-                    Dumplicate = Dumplicate*2
-                    write(*,*) "Dumplicate",Dumplicate
-                end if
-            END DO
+                    DO I = 1,(m_BKind -1)/2 + 1
+                        if(2*I .LE. m_BKind) then
+                            NATOMS(I) = NATOMS(2*I)
+                        else
+                            NATOMS(I) = NATOMS(2*I - 1)
+                        end if
+                    END DO
+
+                    DO I = (m_BKind -1)/2 + 2,m_BKind
+                        NATOMS(I) = 2*NATOMS(I)
+                    END DO
+
+                END DO
+
+                Dumplicate = Dumplicate*2
+                write(*,*) "Dumplicate",Dumplicate
+            end if
 
 
             if(TTIME .GT. m_TermTime) then

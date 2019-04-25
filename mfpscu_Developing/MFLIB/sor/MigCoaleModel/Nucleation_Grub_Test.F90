@@ -67,7 +67,7 @@ module NUCLEATION_GRUB_Test
             end if
         END DO
 
-        open(Unit=m_StatisticFile,file="/home/zhail/MeanFiledResult/Statistic.dat")
+        open(Unit=m_StatisticFile,file="/home/zhailei/MeanFiledResult/Statistic.dat")
 
         write(m_StatisticFile,FMT="(15(A15,1x))") "Step","Time","ReduceTime","NPOWER0Ave","NPOWER1DIV2Ave","NPOWER1Ave","NPOWER3DIV2Ave","N1","N2","N3"
 
@@ -130,9 +130,7 @@ module NUCLEATION_GRUB_Test
 
                         deta = Dumplicate*NBPAPV(IKind)*NBPAPV(JKind)*(DSQRT(NATOMS(IKind)) + DSQRT(NATOMS(JKind)))*(NATOMS(IKind)**(-2) + NATOMS(JKind)**(-2))
 
-                        !Test2 deta = NBPAPV(IKind)*NBPAPV(JKind)*(DSQRT(NATOMS(IKind)) + DSQRT(NATOMS(JKind)))*(NATOMS(IKind)**(-2) + NATOMS(JKind)**(-2))
-
-                        !deta = Dumplicate*Dumplicate*NBPAPV(IKind)*NBPAPV(JKind)*(DSQRT(NATOMS(IKind)) + DSQRT(NATOMS(JKind)))*(NATOMS(IKind)**(-2) + NATOMS(JKind)**(-2)) !Test3
+                        !deta = NBPAPV(IKind)*NBPAPV(JKind)*(DSQRT(NATOMS(IKind)) + DSQRT(NATOMS(JKind)))*(NATOMS(IKind)**(-2) + NATOMS(JKind)**(-2))
 
                         if(IKind .eq. JKind) then
 
@@ -199,42 +197,30 @@ module NUCLEATION_GRUB_Test
             !if(NBPAPV(p_BKind) .GT. 1.D-10) then
             if(DSQRT(NATOMS(p_BKind))*NBPAPV(p_BKind)*Concentration .GT. NPOWER1DIV2Ave*m_DumplicateFactor) then
 
-                            DO I = 1,(p_BKind -1)/2 + 1
-                                if(2*I .LE. p_BKind) then
-                                    if(NBPAPV(2*I - 1) .eq. 0) then
-                                        NATOMS(I) = NATOMS(2*I)
-                                    else if(NBPAPV(2*I) .eq. 0) then
-                                        NATOMS(I) = NATOMS(2*I - 1)
-                                    else
-                                        NATOMS(I) = (NATOMS(2*I - 1)*NBPAPV(2*I - 1) + NATOMS(2*I)*NBPAPV(2*I))/(NBPAPV(2*I - 1) + NBPAPV(2*I))
-                                    end if
-                                else
-                                    NATOMS(I) = NATOMS(2*I - 1)
-                                end if
-                            END DO
+                DO I = 1,(p_BKind -1)/2 + 1
+                    if(2*I .LE. p_BKind) then
+                        NBPAPV(I) = (NBPAPV(2*I - 1)*NATOMS(2*I - 1) + NBPAPV(2*I)*NATOMS(2*I))/(2.D0*NATOMS(2*I))
+                    else
+                        NBPAPV(I) = NBPAPV(2*I - 1)
+                    end if
+                END DO
 
-                            DO I = (p_BKind -1)/2 + 2,p_BKind
-                                NATOMS(I) = 2*NATOMS(I)
-                            END DO
+                NBPAPV((p_BKind -1)/2+2:p_BKind) = 0.D0
 
-                            DO I = 1,(p_BKind -1)/2 + 1
-                                if(2*I .LE. p_BKind) then
-                                    NBPAPV(I) = (NBPAPV(2*I - 1) + NBPAPV(2*I))/2.D0
-                                else
-                                    NBPAPV(I) = NBPAPV(2*I - 1)
-                                end if
-                            END DO
+                DO I = 1,(p_BKind -1)/2 + 1
+                    if(2*I .LE. p_BKind) then
+                        NATOMS(I) = NATOMS(2*I)
+                    else
+                        NATOMS(I) = NATOMS(2*I - 1)
+                    end if
+                END DO
 
-                            NBPAPV((p_BKind -1)/2+2:p_BKind) = 0.D0
+                DO I = (p_BKind -1)/2 + 2,p_BKind
+                    NATOMS(I) = 2*NATOMS(I)
+                END DO
 
-                            Dumplicate = Dumplicate*2
-                            write(*,*) "Dumplicate",Dumplicate
-
-                            !call Cal_Statistic(NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
-
-                            !call Put_Out(0,TTIME,ReduceTime,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
-
-                            !pause
+                Dumplicate = Dumplicate*2
+                write(*,*) "Dumplicate",Dumplicate
 
             end if
 
@@ -335,7 +321,7 @@ module NUCLEATION_GRUB_Test
 
             C_Index = adjustl(C_Index)
 
-            fileName = "/home/zhail/MeanFiledResult/Config"//C_Index(1:len_trim(C_Index))//".dat"
+            fileName = "/home/zhailei/MeanFiledResult/Config"//C_Index(1:len_trim(C_Index))//".dat"
 
             open(Unit=hFile,file=trim(fileName))
 

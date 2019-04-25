@@ -191,49 +191,35 @@ module NUCLEATION_GRUB
                 call Put_Out(ITIME,TTIME,ReduceTime,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
             end if
 
-
             !if(NBPAPV(p_BKind) .GT. 1.D-10) then
             if(DSQRT(NATOMS(p_BKind))*NBPAPV(p_BKind)*Concentration .GT. NPOWER1DIV2Ave*m_DumplicateFactor) then
 
-                            DO I = 1,(p_BKind -1)/2 + 1
-                                if(2*I .LE. p_BKind) then
-                                    if(NBPAPV(2*I - 1) .eq. 0) then
-                                        NATOMS(I) = NATOMS(2*I)
-                                    else if(NBPAPV(2*I) .eq. 0) then
-                                        NATOMS(I) = NATOMS(2*I - 1)
-                                    else
-                                        NATOMS(I) = (NATOMS(2*I - 1)*NBPAPV(2*I - 1) + NATOMS(2*I)*NBPAPV(2*I))/(NBPAPV(2*I - 1) + NBPAPV(2*I))
-                                    end if
-                                else
-                                    NATOMS(I) = NATOMS(2*I - 1)
-                                end if
-                            END DO
+                DO I = 1,(p_BKind -1)/2 + 1
+                    if(2*I .LE. p_BKind) then
+                        NBPAPV(I) = (NBPAPV(2*I - 1)*NATOMS(2*I - 1) + NBPAPV(2*I)*NATOMS(2*I))/(2.D0*NATOMS(2*I))
+                    else
+                        NBPAPV(I) = NBPAPV(2*I - 1)
+                    end if
+                END DO
 
-                            DO I = (p_BKind -1)/2 + 2,p_BKind
-                                NATOMS(I) = 2*NATOMS(I)
-                            END DO
+                NBPAPV((p_BKind -1)/2+2:p_BKind) = 0.D0
 
-                            DO I = 1,(p_BKind -1)/2 + 1
-                                if(2*I .LE. p_BKind) then
-                                    NBPAPV(I) = (NBPAPV(2*I - 1) + NBPAPV(2*I))/2.D0
-                                else
-                                    NBPAPV(I) = NBPAPV(2*I - 1)
-                                end if
-                            END DO
+                DO I = 1,(p_BKind -1)/2 + 1
+                    if(2*I .LE. p_BKind) then
+                        NATOMS(I) = NATOMS(2*I)
+                    else
+                        NATOMS(I) = NATOMS(2*I - 1)
+                    end if
+                END DO
 
-                            NBPAPV((p_BKind -1)/2+2:p_BKind) = 0.D0
+                DO I = (p_BKind -1)/2 + 2,p_BKind
+                    NATOMS(I) = 2*NATOMS(I)
+                END DO
 
-                            Dumplicate = Dumplicate*2
-                            write(*,*) "Dumplicate",Dumplicate
-
-                            !call Cal_Statistic(NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
-
-                            !call Put_Out(0,TTIME,ReduceTime,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
-
-                            !pause
+                Dumplicate = Dumplicate*2
+                write(*,*) "Dumplicate",Dumplicate
 
             end if
-
 
             if(ReduceTime .GT. 1.D6) then
                 exit
