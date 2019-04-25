@@ -34,9 +34,6 @@ module MIGCOALE_TYPEDEF_SIMRECORD
         procedure,NON_OVERRIDABLE,public,pass::SetImplantedEntitiesNum=>Set_ImplantedEntitiesNum
         procedure,NON_OVERRIDABLE,public,pass::SetLastRecordImplantNum=>Set_LastRecordImplantNum
         procedure,NON_OVERRIDABLE,public,pass::GetLastRecordImplantNum=>Get_LastRecordImplantNum
-        procedure,NON_OVERRIDABLE,public,pass::SetNCUT=>Set_NCUT
-        procedure,NON_OVERRIDABLE,public,pass::GetNCUT=>Get_NCUT
-        procedure,NON_OVERRIDABLE,public,pass::RecordNC_ForSweepOut
         procedure,NON_OVERRIDABLE,public,pass::SetLastOutSizeDistTime_IntegralBox
         procedure,NON_OVERRIDABLE,public,pass::GetLastOutSizeDistTime_IntegralBox
         procedure,NON_OVERRIDABLE,public,pass::SetLastOutSizeDistTime_EachBox
@@ -59,9 +56,6 @@ module MIGCOALE_TYPEDEF_SIMRECORD
     private::Set_ImplantedEntitiesNum
     private::Set_LastRecordImplantNum
     private::Get_LastRecordImplantNum
-    private::Set_NCUT
-    private::Get_NCUT
-    private::RecordNC_ForSweepOut
     private::SetLastOutSizeDistTime_IntegralBox
     private::GetLastOutSizeDistTime_IntegralBox
     private::SetLastOutSizeDistTime_EachBox
@@ -230,27 +224,6 @@ module MIGCOALE_TYPEDEF_SIMRECORD
         return
     end subroutine Set_NCUT
 
-    subroutine RecordNC_ForSweepOut(this,MultiBox,TheBoxesBasicStatistic)
-        implicit none
-        !---Dummy Vars---
-        CLASS(MigCoalClusterRecord)::this
-        integer,intent(in)::MultiBox
-        type(BoxesBasicStatistic),intent(in)::TheBoxesBasicStatistic
-        !---Local Vars---
-        integer::IBox
-        !---Body---
-        DO IBox = 1,MultiBox
-            this%RecordNCBeforeSweepOut_SingleBox(IBox,:) = TheBoxesBasicStatistic%BoxesStatis_Single(IBox)%NC + this%RecordNCBeforeSweepOut_SingleBox(IBox,:)
-            this%RecordNCBeforeSweepOut_SingleBox(IBox,p_ACTIVEFREE_STATU) = TheBoxesBasicStatistic%BoxesStatis_Single(IBox)%NC(p_ACTIVEFREE_STATU)
-            this%RecordNCBeforeSweepOut_SingleBox(IBox,p_ACTIVEINGB_STATU) = TheBoxesBasicStatistic%BoxesStatis_Single(IBox)%NC(p_ACTIVEINGB_STATU)
-        END DO
-
-        this%RecordNCBeforeSweepOut_Integal= TheBoxesBasicStatistic%BoxesStatis_Integral%NC + this%RecordNCBeforeSweepOut_Integal
-        this%RecordNCBeforeSweepOut_Integal(p_ACTIVEFREE_STATU) = TheBoxesBasicStatistic%BoxesStatis_Integral%NC(p_ACTIVEFREE_STATU)
-        this%RecordNCBeforeSweepOut_Integal(p_ACTIVEINGB_STATU) = TheBoxesBasicStatistic%BoxesStatis_Integral%NC(p_ACTIVEINGB_STATU)
-
-        return
-    end subroutine
 
     subroutine SetLastOutSizeDistTime_IntegralBox(this,TheTime)
         implicit none
