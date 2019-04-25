@@ -1,7 +1,7 @@
 module MCMF_UTILITIES_FORMER
 
   USE MCMF_CONSTANTS
-  use MiniUtilities,only:LENTRIM
+  use MiniUtilities,only:LENTRIM,AvailableIOUnit
   #ifdef MC_PROFILING
   USE MCMF_TimeProfile
   #endif
@@ -43,24 +43,6 @@ module MCMF_UTILITIES_FORMER
 
     return
   end function INQUIREFILE
-
-  !************************************************************
-  function AvailableIOUnit() result(FileUnit)
-    implicit none
-    !---Dummy Vars---
-    integer,intent(out)::FileUnit
-    !---Local Vars---
-    logical::opened
-    !---Body---
-    opened = .true.
-
-    DO FileUnit = 10,99
-       INQUIRE(UNIT=FileUnit,OPENED=opened)
-       if(.not. opened) exit
-    END DO
-
-    return
-  end function AvailableIOUnit
 
   !*********************************************************
   function IsStrEqual(SubjectStr,ObjectStr) result(theResult)
@@ -386,7 +368,7 @@ module MCMF_UTILITIES_FORMER
     integer::ISTAT
     character*256::openInfo
     !---Body---
-    fileUnit = AvailableIOUnit()
+    call AvailableIOUnit(fileUnit)
 
     if(present(thePosition)) then
         open(Unit=fileUnit,File=fileName,STATUS="old",POSITION=thePosition(1:LENTRIM(thePosition)),iostat=ISTAT,IOMSG=openInfo)
@@ -416,7 +398,7 @@ module MCMF_UTILITIES_FORMER
     integer::ISTAT
     character*256::openInfo
     !---Body---
-    fileUnit = AvailableIOUnit()
+    call AvailableIOUnit(fileUnit)
 
     if(present(thePosition)) then
         open(Unit=fileUnit,File=fileName,STATUS="replace",POSITION=thePosition(1:LENTRIM(thePosition)),iostat=ISTAT,IOMSG=openInfo)
@@ -451,7 +433,7 @@ module MCMF_UTILITIES_FORMER
 
     INQUIRE(FILE=fileName(1:LENTRIM(adjustl(fileName))),EXIST=exits)
 
-    fileUnit = AvailableIOUnit()
+    call AvailableIOUnit(fileUnit)
 
     if(exits) then
 

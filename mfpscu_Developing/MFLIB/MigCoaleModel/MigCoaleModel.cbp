@@ -44,7 +44,7 @@
 			<Option weight="0" />
 		</Unit>
 		<Unit filename="../sor/MigCoaleModel/MigCoale_Implantation_GPU.F90">
-			<Option weight="2" />
+			<Option weight="0" />
 		</Unit>
 		<Unit filename="../sor/MigCoaleModel/MigCoale_Statistic_CPU.F90">
 			<Option weight="1" />
@@ -57,6 +57,15 @@
 		</Unit>
 		<Unit filename="../sor/MigCoaleModel/MigCoale_TimeCtl.F90">
 			<Option weight="1" />
+		</Unit>
+		<Unit filename="../sor/MigCoaleModel/Nucleation_Grub.F90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="../sor/MigCoaleModel/Nucleation_Grub_Test.F90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="../sor/MigCoaleModel/Nucleation_Implant.F90">
+			<Option weight="0" />
 		</Unit>
 		<Unit filename="../sor/MigCoaleModel/Nucleation_SpaceDist.F90">
 			<Option weight="0" />
