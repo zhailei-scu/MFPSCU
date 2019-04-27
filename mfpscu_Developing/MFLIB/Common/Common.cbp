@@ -46,19 +46,10 @@
 		<Unit filename="../sor/Common/MCMF_TYPEDEF_DiffusorsValue.F90">
 			<Option weight="4" />
 		</Unit>
-		<Unit filename="../sor/Common/MCMF_TYPEDEF_Geometry.F90">
-			<Option weight="5" />
-		</Unit>
 		<Unit filename="../sor/Common/MCMF_TYPEDEF_ReactionPropList.F90">
 			<Option weight="5" />
 		</Unit>
 		<Unit filename="../sor/Common/MCMF_TYPEDEF_ReactionsValue.F90">
-			<Option weight="4" />
-		</Unit>
-		<Unit filename="../sor/Common/MCMF_TYPEDEF_SimBoxArray.F90">
-			<Option weight="6" />
-		</Unit>
-		<Unit filename="../sor/Common/MCMF_TYPEDEF_SimCtrlParam.F90">
 			<Option weight="4" />
 		</Unit>
 		<Unit filename="../sor/Common/MCMF_TYPEDEF_USUAL.F90">

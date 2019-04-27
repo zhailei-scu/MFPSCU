@@ -32,8 +32,9 @@
 			</Target>
 		</Build>
 		<Unit filename="../sor/MFIMP/MFLIB_Global.F90">
-			<Option weight="1" />
+			<Option weight="0" />
 		</Unit>
+		<Unit filename="../sor/MFIMP/MFLIB_TYPEDEF_Geometry.F90" />
 		<Unit filename="../sor/MFIMP/MFLIB_TYPEDEF_SimBoxArray.F90">
 			<Option weight="0" />
 		</Unit>

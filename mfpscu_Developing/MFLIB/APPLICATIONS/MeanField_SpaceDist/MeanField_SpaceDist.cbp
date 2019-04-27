@@ -19,6 +19,7 @@
 				</Compiler>
 				<Linker>
 					<Add option="-pgc++libs -ldl" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libAppShell.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libMigCoaleModel.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libMFIMP.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libCommon.a" />
@@ -44,6 +45,7 @@
 				</Compiler>
 				<Linker>
 					<Add option="-pgc++libs -ldl" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libAppShell.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libMigCoaleModel.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libCommon.a" />
 					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libMFIMP.a" />

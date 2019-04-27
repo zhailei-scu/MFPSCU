@@ -1,17 +1,18 @@
 program MEANFIELDNUCLEATION_SPACEDIST
-    use NUCLEATION_GRUB_Test
+    use MF_SimBoxArray_AppShell_CPU
 
     implicit none
 
-    !call InitSimu_SpaceDist()
+    integer::nmpi
+    integer::procid
+    !---Body----
+    nmpi = 1
+    procid = 1
 
-    !call NucleationSimu_SpaceDist()
+    !---Exclute the main process---
+    call AppShell_Main_CPU(nmpi,procid)
 
-    call InitSimu()
-
-    call NucleationSimu()
-
-
+    write(*,*) "---End MEANFIELDNUCLEATION_SPACEDIST---"
 
     pause
     stop

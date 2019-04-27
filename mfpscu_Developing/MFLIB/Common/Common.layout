@@ -2,6 +2,16 @@
 <CodeBlocks_layout_file>
 	<FileVersion major="1" minor="0" />
 	<ActiveTarget name="Debug" />
+	<File name="../sor/Common/MCMF_Utilities_Former.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="101" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="../sor/Common/MCMF_TYPEDEF_SimBoxArray.F90" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="435" />
+		</Cursor>
+	</File>
 	<File name="../sor/Common/MCMF_TYPEDEF_Geometry.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="16138" topLine="508" />
@@ -10,6 +20,21 @@
 	<File name="../sor/Common/MCMF_CONSTANTS.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="21" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="../sor/Common/MCMF_TYPEDEF_SimCtrlParam.F90" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="54" />
+		</Cursor>
+	</File>
+	<File name="../sor/Common/MCMF_TYPEDEF_ACLUSTER.F90" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1089" topLine="21" />
+		</Cursor>
+	</File>
+	<File name="../sor/Common/MCMF_TYPEDEF_ATOMSLIST.F90" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

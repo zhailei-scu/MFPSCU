@@ -1,6 +1,6 @@
-module MCMF_TYPEDEF_GEOMETRY
+module MFLIB_TYPEDEF_GEOMETRY
     use MCMF_CONSTANTS
-    use MCMF_TYPEDEF_SIMULATIONCTRLPARAM
+    use MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
     implicit none
 
     integer, parameter::p_GBIniConfig_Simple = 0
@@ -576,4 +576,4 @@ module MCMF_TYPEDEF_GEOMETRY
     end subroutine
 
 
-end module MCMF_TYPEDEF_GEOMETRY
+end module MFLIB_TYPEDEF_GEOMETRY

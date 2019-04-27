@@ -61,9 +61,6 @@
 		<Unit filename="../sor/MigCoaleModel/Nucleation_Grub.F90">
 			<Option weight="0" />
 		</Unit>
-		<Unit filename="../sor/MigCoaleModel/Nucleation_Grub_Test.F90">
-			<Option weight="0" />
-		</Unit>
 		<Unit filename="../sor/MigCoaleModel/Nucleation_Implant.F90">
 			<Option weight="0" />
 		</Unit>
