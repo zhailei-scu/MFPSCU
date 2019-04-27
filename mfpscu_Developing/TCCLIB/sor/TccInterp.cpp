@@ -10,7 +10,7 @@
 #endif
 
 #ifndef DIFFUSORDEFPATH
-#define DIFFUSORDEFPATH "/home/zhailei/Development/MeanField/mcpscu_Developing_New/TCCLIB/sor/"
+#define DIFFUSORDEFPATH "/home/zhailei/Development/MeanField/mfpscu_Developing/TCCLIB/sor/"
 #endif
 
 #include LIBTCCHEADERF

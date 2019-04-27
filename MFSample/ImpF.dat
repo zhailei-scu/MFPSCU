@@ -1,0 +1,98 @@
+&IMPFINPUTF
+
+  &GROUPSUBCTL     ! #1
+         &TYPE The implantation cluster distribution type = 0 ! 0 by simple inner way, 1 by from external file, 2 by function
+
+	 &FLUX THE implantation flux = 1.D18  , RelectRatio = 0.682074         !  (1/s*cm^2) the He flux in PFM are 1.D18~1.D20(1/s*cm^2)
+
+         &FEXPAND The expand size factor = 100
+
+         &FMEMOCCUP The memory occupied factor = 100
+
+         &SIZESUBCTL
+            &NATOMDIST The atoms number in each cluster distribution as Gauss that central = 1 , distribution half width = 0.0 , left cut = 0.9 , right cut = 1.1
+            &ELEMENTCOMPOSIT The included element = "He" , "H" ,The includeed element = (1 , 0)
+         &ENDSUBCTL
+
+         &DEPTHSUBCTL ! only used the first distribution in below
+            &DEPTH_LAYER THE NUMBER OF DEPTH DISTRIBUTION LAYER = 2, THE THINCKNESS DISTRIBUTION = (0.5,0.5) , THE ENTRIES DISTRIBUTION = (0.5,0.5)
+            !&DEPTH_SUBBOX THE SUBOX SHAPE IS THAT: X = 50, Y = 50, Z = 50
+            !&DEPTH_GAUSS THE GAUSS DISTRIBUTION CENTRAL = 50, THE HALF WIDTH = 0
+         &ENDSUBCTL
+  &ENDSUBCTL
+
+  &GROUPSUBCTL   ! #2
+         &TYPE The implantation cluster distribution type = 0 ! 0 by simple inner way, 1 by from external file, 2 by function
+
+	 &FLUX THE implantation flux = 1.D18  , RelectRatio = 0.682074         !  (1/s*cm^2) the He flux in PFM are 1.D18~1.D20(1/s*cm^2)
+
+         &FEXPAND The expand size factor = 100
+
+         &FMEMOCCUP The memory occupied factor = 100
+
+         &SIZESUBCTL
+            &NATOMDIST The atoms number in each cluster distribution as Gauss that central = 1 , distribution half width = 0.0 , left cut = 0.9 , right cut = 1.1
+            &ELEMENTCOMPOSIT The includeed element = "He", "H" ,The includeed element = (1, 0)
+         &ENDSUBCTL
+
+         &DEPTHSUBCTL ! only used the first distribution in below
+            &DEPTH_LAYER THE NUMBER OF DEPTH DISTRIBUTION LAYER = 2,THE THINCKNESS DISTRIBUTION = (0.01,0.99) , THE ENTRIES DISTRIBUTION = (1,0)
+            !&DEPTH_SUBBOX THE SUBOX SHAPE IS THAT: X = 50, Y = 50, Z = 50
+            !&DEPTH_GAUSS THE GAUSS DISTRIBUTION CENTRAL = 50, THE HALF WIDTH = 0
+         &ENDSUBCTL
+  &ENDSUBCTL
+
+  &GROUPSUBCTL ! #3
+         &TYPE The implantation cluster distribution type = 1 ! 0 by simple inner way, 1 by from external file, 2 by function
+
+	 &FLUX THE implantation flux = 1.D18  , RelectRatio = 0.682074      !  (1/s*cm^2) the He flux in PFM are 1.D18~1.D20(1/s*cm^2)
+
+         &FEXPAND The expand size factor = 100
+
+         &FMEMOCCUP The memory occupied factor = 100
+        
+         &EXTFSUBCTL
+	    &DISTFILETYPE The distribution file type = "DISTPANDA" , Implant ion = "He"                       ! or "DISTOKMC18","BOXMF18", "BOXSPMF18", "DISTSRIM","DISTPANDA"
+								                         		      ! if the DISTPANDA or DISTSRIM is formatted, you should special the ion type
+													      ! if the DISTSRIM or DISTOKMC18 is speicaled, you should also give layers number you want
+
+	    !&DISTFILETYPE The distribution file type = "DISTSRIM" , Implant ion = "He" , Layer number = 100 
+
+	    !&DISTFILETYPE The distribution file type = "DISTOKMC18" , Layer number = 100
+
+	    !&DISTFILETYPE The distribution file type = "BOXMF18"
+
+	    !&DISTFILETYPE The distribution file type = "BOXSPMF18"	
+	
+            &DISTFILE The distribution file path = "PANDA/HeW100ev100nm.dat"
+         &ENDSUBCTL
+  &ENDSUBCTL
+
+  &GROUPSUBCTL ! #4
+         &TYPE The implantation cluster distribution type = 1 ! 0 by simple inner way, 1 by from external file, 2 by function
+
+	 &FLUX THE implantation flux = 1.D18  , RelectRatio = 0.682074         !  (1/s*cm^2) the He flux in PFM are 1.D18~1.D20(1/s*cm^2)
+
+         &FEXPAND The expand size factor = 100
+
+         &FMEMOCCUP The memory occupied factor = 100
+        
+         &EXTFSUBCTL
+            &DISTFILETYPE The distribution file type = "DISTSRIM" , Implant ion = "He" , Layer number = 100   ! or "DISTOKMC18","BOXMF18", "BOXSPMF18", "DISTSRIM","DISTPANDA"
+								                         		      ! if the DISTPANDA or DISTSRIM is formatted, you should special the ion type
+													      ! if the DISTSRIM or DISTOKMC18 is speicaled, you should also give layers number you want
+
+	     
+
+	    !&DISTFILETYPE The distribution file type = "DISTOKMC18" , Layer number = 100
+
+	    !&DISTFILETYPE The distribution file type = "BOXMF18"
+
+	    !&DISTFILETYPE The distribution file type = "BOXSPMF18"	
+	
+            &DISTFILE The distribution file path = "SRIM2003/HeCu100ev100nmRANGE_3D.txt"
+         &ENDSUBCTL
+  &ENDSUBCTL
+
+
+&ENDIMPFINPUTF

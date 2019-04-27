@@ -1,0 +1,310 @@
+!&BOXF
+!  &BOXSUBCTL
+!    &SIZE   bx(LU)= 1263.74  by(LU) = 1263.74 , bz(LU) = 1263.74
+!    &LATT   latiice constant(nm) = 0.31652
+!  &ENDSUBCTL
+!
+!
+!  &ATOMSUBCTL --- start subsection for composition of box      
+!       &GROUPSUBCTL #1 
+!          &NATOM    the number of atoms in the group = 2000
+!          &ATOMP    atomic symbol = "H", element index = 1, atomic mass= 1
+!          &STAT     active
+!       &ENDSUBCTL  
+!       
+!       &GROUPSUBCTL #2
+!          &NATOM    the number of atoms in the group = 1
+!          &ATOMP    atomic symbol = "He", element index = 2,  atomic mass= 4
+!          &STAT     active
+!       &ENDSUBCTL 
+!
+!       &GROUPSUBCTL #3
+!          &NATOM    the number of atoms in the group = 10000
+!          &ATOMP    atomic symbol = "Cu", element index = 29,  atomic mass= 63.55
+!          &STAT     active
+!	  &MATRIX   Radius of matrix atom (in nm) = 0.128      ! the symbol MATRIX denote this elements would be use as a matrix and the radius need to be special
+!       &ENDSUBCTL 
+!      
+!  &ENDSUBCTL --- end subsection for composition of box
+!
+!
+!  &GBSUBCTL
+!	 &TYPE The grain boundary initial type = 0                  ! 0 by simple inner way, 1 by from external file, 2 by function
+!
+!	 &DISTRIBUTIONSUBCTL ! only used the first way in below             
+!
+!	     &GRAINSNUMBER   The grains number = 0   ! if not specialed, the program would adjustl it by itself
+!
+!	     &BYSEEDSUBCTL
+!		&MINCUTOFF   The minial distance between seeds = 50  ! (LU)
+!		&MAXCUTOFF   The max distance between seeds = 100    ! (LU)
+!		&DISTANCE_GAUSS THE GAUSS DISTRIBUTION CENTRAL = 50, THE HALF WIDTH = 0  ! (LU)
+!	     &ENDSUBCTL
+!
+!	     !&BYGVOLUMSUBCTL
+!	     !	&MINCUTOFF The minial volum for grain = 50   ! (LU*LU*LU)
+!	     !	&MAXCUTOFF The max volum for grain = 100    ! (LU*LU*LU)
+!	     !	&VOLUM_GAUSS THE GAUSS DISTRIBUTION CENTRAL = 50, THE HALF WIDTH = 0  ! (LU*LU*LU)
+!	     !&ENDSUBCTL
+!	 &ENDSUBCTL
+!  &ENDSUBCTL
+!
+!  &DIFFUSORSUBCTL
+!
+!	&DIFFUSORDEFSUBCTL
+!          
+!           &DIFFUSOR  #1
+!		&SYMBOL The diffusor symbol="He#1@H#5-9@Cu#0"
+!		&DIFFCOEFFVALUE The type for diffusion value = 2 , The prefactor is = 5.35E-4 ,  The active energy =  0.13  ! 1 by fix value , 2 by  Arrhenius(Prefactor,ActEng) ,3 by bubble model 
+!		&ECR The effecitive capture radius type = 1 , the value = 1.049 (LU)                     ! 1 by fix value , 2 by  bubble model             
+!          &ENDSUBCTL
+!
+!          &DIFFUSOR  #1
+!		&SYMBOL The diffusor symbol="He#1@H#0@Cu#0"
+!		&DIFFCOEFFVALUE The type for diffusion value = 2 , The prefactor is = 5.424E-4 ,  The active energy =  0.1167  ! 1 by fix value , 2 by  Arrhenius(Prefactor,ActEng) ,3 by bubble model 
+!		&ECR The effecitive capture radius type = 2                                                                    ! 1 by fix value , 2 by  bubble model             
+!          &ENDSUBCTL
+!
+!          &DIFFUSOR  #2
+!		&SYMBOL The diffusor symbol="He#2@H#0"
+!		&DIFFCOEFFVALUE The type for diffusion value = 2 , The prefactor is = 1.222E-4 ,  The active energy =  0.0414 ! 1 by fix value , 2 by  Arrhenius(Prefactor,ActEng) ,3 by bubble model 
+!		&ECR The effecitive capture radius type = 2                                                                   ! 1 by fix value , 2 by  bubble model             
+!          &ENDSUBCTL
+!
+!
+!          &FUNCSUBCTL
+!             #include <stdio.h>
+!	      #include <stdlib.h>
+!	      #include "DiffusorList.h"
+!	      void SetDiffusor(CDiffusorList *list){
+!	        int nHe,nH;
+!		char symbol[20];
+!                CDiffusorDef Diffusor;
+! 	        init(&list);
+!		//3-Inf
+!               for(nHe=3;nHe<=200;nHe++){
+!		  sprintf(symbol,"%s%d","He#",nHe);
+!		  strcpy(Diffusor.symbol,symbol);
+!		  Diffusor.DiffusorValueType = 3;
+!                  Diffusor.PreFactor = 3.58E-5;
+!                  Diffusor.ActEnergy = 0.067;
+!                  Diffusor.ECRValueType = 2;
+!	          append(list,&Diffusor);
+!                }               
+!
+!		strcpy(Diffusor.symbol,"He#200-Inf");
+!                Diffusor.DiffusorValueType = 3;
+!                Diffusor.ECRValueType = 2;
+!                append(list,&Diffusor);
+!              }
+!          &ENDSUBCTL
+!   
+!		 
+!	&ENDSUBCTL
+!	
+!  &ENDSUBCTL  
+!
+!&ENDBOXF
+
+&MFBOXF
+  &BOXSUBCTL
+    &SIZE   bx(LU)= 631.87 by(LU) = 631.87 , bz(LU) = 631.87
+    &LATT   latiice constant(nm) = 0.31652
+  &ENDSUBCTL
+
+  &SPACEDISTSUBCTL    ! (current for depth distribution only)
+    &NNODES The spatical nodes number = 1
+    &NODESPACE The space for each node = 631.87 (LU)
+  &ENDSUBCTL
+
+  &NUCLEATIONSUBCTL
+    &CLUSTERSGROUP The max clusters group = 200
+  &ENDSUBCTL
+
+  &ATOMSUBCTL --- start subsection for composition of box      
+       &GROUPSUBCTL #1 
+          &NATOM    the number of atoms in the group = 2000
+          &ATOMP    atomic symbol = "H", element index = 1, atomic mass= 1
+          &STAT     active
+       &ENDSUBCTL  
+       
+       &GROUPSUBCTL #2
+          &NATOM    the number of atoms in the group = 1
+          &ATOMP    atomic symbol = "He", element index = 2,  atomic mass= 4
+          &STAT     active
+       &ENDSUBCTL 
+
+       &GROUPSUBCTL #3
+          &NATOM    the number of atoms in the group = 10000
+          &ATOMP    atomic symbol = "W", element index = 74,  atomic mass= 183.84
+          &STAT     active
+	  &ATOMVOLUM   Voulm of matrix atom (in nm^3) = 1.5855D-2      ! the symbol ATOMVOLUM denote this elements would be use as a matrix and the atom volum need to be special
+       &ENDSUBCTL 
+      
+  &ENDSUBCTL --- end subsection for composition of box
+
+
+
+  &GBSUBCTL
+
+       &SIMPLEDISTSUBCTL ! by simple inner way          
+       
+           &GRAINSNUMBER   The grains number = 0   ! if not specialed, the program would adjustl it by itself
+       
+           &BYSEEDSUBCTL
+       	     &MINCUTOFF   The minial distance between seeds = 50  ! (LU)
+       	     &MAXCUTOFF   The max distance between seeds = 100    ! (LU)
+       	     &DISTANCE_GAUSS THE GAUSS DISTRIBUTION CENTRAL = 50, THE HALF WIDTH = 0  ! (LU)
+           &ENDSUBCTL
+       
+           !&BYGVOLUMSUBCTL
+           !	&MINCUTOFF The minial volum for grain = 50   ! (LU*LU*LU)
+           !	&MAXCUTOFF The max volum for grain = 100    ! (LU*LU*LU)
+           !	&VOLUM_GAUSS THE GAUSS DISTRIBUTION CENTRAL = 50, THE HALF WIDTH = 0  ! (LU*LU*LU)
+           !&ENDSUBCTL
+       &ENDSUBCTL
+
+       !&FILEDISTSUBCTL ! by from external file           
+       !     &FGBDIST The grain boundary distribution file = "GBDIST.dat"
+       !&ENDSUBCTL
+
+       !&EXTFUNCDISTSUBCTL ! only used the external function            
+       !	    
+       !&ENDSUBCTL
+
+  &ENDSUBCTL
+
+  &DIFFUSORSUBCTL
+
+	&DIFFUSORDEFSUBCTL
+
+          &DIFFUSOR  #1
+		&SYMBOL The diffusor symbol="He#1@H#0@W#0"
+		&DIFFCOEFFVALUE_FREE The type for diffusion value = 2 , The prefactor is = 5.35D-4 ,  The active energy =  0.130    ! 1 by fix value , 2 by  Arrhenius(Prefactor,ActEng) ,3 by bubble model 
+		&ECR_FREE The effecitive capture radius type = 2                                                                    ! 1 by fix value , 2 by  bubble model
+		&DIFFCOEFFVALUE_INGB The type for diffusion value = 1 , The corresponded value = 0.D0    			    ! 1 by fix value , 2 by  Arrhenius(Prefactor,ActEng) ,3 by bubble model 
+		&ECR_INGB The effecitive capture radius type = 1 , The corresponded value = 0.D0                                    ! 1 by fix value , 2 by  bubble model           	  
+          &ENDSUBCTL
+
+          &DIFFUSOR  #2
+	  	&SYMBOL The diffusor symbol="He#2@H#0"
+	  	&DIFFCOEFFVALUE_FREE The type for diffusion value = 2 , The prefactor is = 6.47D-5 ,  The active energy =  0.058   ! 1 by fix value , 2 by  Arrhenius(Prefactor,ActEng) ,3 by bubble model 
+	  	&ECR_FREE The effecitive capture radius type = 2                                                                   ! 1 by fix value , 2 by  bubble model
+		&DIFFCOEFFVALUE_INGB The type for diffusion value = 1 , The corresponded value = 0.D0    			   ! 1 by fix value , 2 by  Arrhenius(Prefactor,ActEng) ,3 by bubble model 
+		&ECR_INGB The effecitive capture radius type = 1 , The corresponded value = 0.D0                                   ! 1 by fix value , 2 by  bubble model             
+          &ENDSUBCTL
+
+	  &DIFFUSOR  #3
+	  	&SYMBOL The diffusor symbol="He#3@H#0"
+	  	&DIFFCOEFFVALUE_FREE The type for diffusion value = 2 , The prefactor is = 1.32D-3 ,  The active energy =  0.23     ! 1 by fix value , 2 by  Arrhenius(Prefactor,ActEng) ,3 by bubble model 
+	  	&ECR_FREE The effecitive capture radius type = 2                                                                    ! 1 by fix value , 2 by  bubble model
+		&DIFFCOEFFVALUE_INGB The type for diffusion value = 1 , The corresponded value = 0.D0    			    ! 1 by fix value , 2 by  Arrhenius(Prefactor,ActEng) ,3 by bubble model 
+		&ECR_INGB The effecitive capture radius type = 1 , The corresponded value = 0.D0                                    ! 1 by fix value , 2 by  bubble model              
+          &ENDSUBCTL
+
+          &DIFFUSOR  #4
+	  	&SYMBOL The diffusor symbol="He#4@H#0"
+	  	&DIFFCOEFFVALUE_FREE The type for diffusion value = 2 , The prefactor is = 2.26D-3 ,  The active energy =  0.30     ! 1 by fix value , 2 by  Arrhenius(Prefactor,ActEng) ,3 by bubble model 
+	  	&ECR_FREE The effecitive capture radius type = 2                                                                    ! 1 by fix value , 2 by  bubble model
+		&DIFFCOEFFVALUE_INGB The type for diffusion value = 1 , The corresponded value = 0.D0    			    ! 1 by fix value , 2 by  Arrhenius(Prefactor,ActEng) ,3 by bubble model 
+		&ECR_INGB The effecitive capture radius type = 1 , The corresponded value = 0.D0                                    ! 1 by fix value , 2 by  bubble model              
+          &ENDSUBCTL
+
+          &DIFFUSOR  #5
+	  	&SYMBOL The diffusor symbol="He#5@H#0"
+	  	&DIFFCOEFFVALUE_FREE The type for diffusion value = 2 , The prefactor is = 3.58D-5 ,  The active energy =  0.067    ! 1 by fix value , 2 by  Arrhenius(Prefactor,ActEng) ,3 by bubble model 
+	  	&ECR_FREE The effecitive capture radius type = 2                                                                    ! 1 by fix value , 2 by  bubble model
+		&DIFFCOEFFVALUE_INGB The type for diffusion value = 1 , The corresponded value = 0.D0    			    ! 1 by fix value , 2 by  Arrhenius(Prefactor,ActEng) ,3 by bubble model 
+		&ECR_INGB The effecitive capture radius type = 1 , The corresponded value = 0.D0                                    ! 1 by fix value , 2 by  bubble model              
+          &ENDSUBCTL
+
+
+          &FUNCSUBCTL
+              #include <stdio.h>
+	      #include <stdlib.h>
+	      #include "DiffusorList.h"
+	      void SetDiffusor(CDiffusorList *list){
+	        int nHe,nH;
+		char symbol[20];
+                CDiffusorDef Diffusor;
+ 	        InitDiffusorList(&list);
+
+		//6-Inf
+		strcpy(Diffusor.symbol,"He#6-Inf");
+                Diffusor.DiffusorValueType_Free = 3;
+                Diffusor.ECRValueType_Free = 2;
+		Diffusor.DiffusorValueType_InGB = 1;
+		Diffusor.DiffuseCoefficient_InGB_Value = 0;
+                Diffusor.ECRValueType_InGB = 2;
+                AppendDiffusor(list,&Diffusor);
+
+                //10-Inf
+                //strcpy(Diffusor.symbol,"He#10-Inf");
+                //Diffusor.DiffusorValueType_Free = 1;
+		//Diffusor.DiffuseCoefficient_Free_Value = 0;
+                //Diffusor.ECRValueType_Free = 2;
+		//Diffusor.DiffusorValueType_InGB = 1;
+		//Diffusor.DiffuseCoefficient_InGB_Value = 0;
+                //Diffusor.ECRValueType_InGB = 2;
+                //AppendDiffusor(list,&Diffusor);
+              }
+          &ENDSUBCTL
+    
+	&ENDSUBCTL
+
+
+	&REACTDEFSUBCTL   ! Diffusors reactions define
+
+          &REACTION  #1
+	  	&REACTPAIRS The reaction pairs "He#1-Inf@W#0" , "He#1-Inf@W#0"
+	  	&REACTCOEFF The type for reaction coefficient = 1 , The corresponded value = 1.1    ! 1 by fix value (<0 means would not happen, >=1 means must happen), 2 by  Arrhenius(Prefactor,ActEng) 
+	  	&ECR The effecitive capture radius type = 2                                                                 ! 1 by fix value (LU), 2 by  bubble model             
+          &ENDSUBCTL
+	  !
+          !&REACTION  #2
+	  !	&REACTPAIRS The reaction pairs "He#1@H#0@W#0" , "He#3@H#0@W#0"
+	  !	&REACTCOEFF The type for reaction coefficient = 2 , The prefactor is = 0.D0 ,  The active energy =  0.D0    ! 1 by fix value (<0 means would not happen, >=1 means must happen), 2 by  Arrhenius(Prefactor,ActEng) 
+	  !	&ECR The effecitive capture radius type = 2                                                                 ! 1 by fix value (LU), 2 by  bubble model           
+          !&ENDSUBCTL
+          !
+          !&REACTION  #3
+	  !	&REACTPAIRS The reaction pairs "He#1@H#0@W#0" , "He#4@H#0@W#0"
+	  !	&REACTCOEFF The type for reaction coefficient = 1 , The value = 0.D0    ! 1 by fix value (<0 means would not happen, >=1 means must happen), 2 by  Arrhenius(Prefactor,ActEng) 
+	  !	&ECR The effecitive capture radius type = 2                             ! 1 by fix value (LU), 2 by  bubble model             
+          !&ENDSUBCTL
+          !
+          !&FUNCSUBCTL
+          !    #include <stdio.h>
+	  !    #include <stdlib.h>
+	  !    #include "ReactionsList.h"
+	  !    void SetReaction(CReactionsList *list){
+	  !      int nHe,nH;
+	  !   	char symbol[20];
+          !      CReactionDef Reaction;
+ 	  !      InitReactionsList(&list);
+          !        
+	  !	//subject: 1, Object 5-Inf
+	  !	strcpy(Reaction.SubjectSymbol,"He#1");
+          !      strcpy(Reaction.ObjectSymbol,"He#5-Inf");
+          !      Reaction.ReactionCoefficientType = 1;
+	  !      Reaction.ReactionCoefficient_Value = 0;
+          !      Reaction.ECRValueType = 2;
+          !      AppendReaction(list,&Reaction);
+          !
+          !     //subject: 2-Inf, Object 2-Inf
+	  !	strcpy(Reaction.SubjectSymbol,"He#2-Inf");
+          !      strcpy(Reaction.ObjectSymbol,"He#2-Inf");
+          !      Reaction.ReactionCoefficientType = 1;
+	  !      Reaction.ReactionCoefficient_Value = 0;
+          !      Reaction.ECRValueType = 2;
+          !      AppendReaction(list,&Reaction);
+          !    }
+          !&ENDSUBCTL
+
+	&ENDSUBCTL
+
+	
+  &ENDSUBCTL  
+
+  
+&ENDMFBOXF

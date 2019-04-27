@@ -1,30 +1,8 @@
-&MFCTRL
-   &TEMPERATURE The simulation temperature = 1000 (K)
-
-   &MATRIXVOLUM The matrix atoms volumn = 1.5855D-2  ! (nm^3) ! the symbol ATOMVOLUM denote this elements would be use as a matrix and the atom volum need to be special
-
-   &MAXCHANGERATE The max change rate in each step is 0.05
-
-   &STARTCONCENTRATE The start atoms concentrate is 1.D20      ! 1/(cm^3)
-
-   &TARGETCONCENTRATE The target atoms concentrate is 1.D20      ! 1/(cm^3)
-
-   &IMPLANTRATE The implant atoms number per seconds unit volum =  0.D0                 ! (1/(cm^3*s))
-
-   &MAXNUCLEATION The max atoms number for one bubble = 200
-
-   &DUMPLICATEFACTOR The factor for dumplicate the size is = 1.D-12
-
-   &TERMTIME The termated time = 3000  ! (s)
-
-   &NNODES The spatical nodes number = 20
-
-   &NODESPACE The space for each node = 100 (nm)
-
-   &SURENG THE SURFACE ENERGY OF A BUBBLE = 3890 ! (ERG/CM^2))
-
-   &SURDIF THE Surface Diffusion coefficiens, prefactor (cm^2/s) and ES(ev): 3.7D-4 , 0.92 , 3.7D-4 , 0.92 , 3.7D-4 , 0.92
-
-   &OUTDIR The output directorary is "1000K/"
-
-&ENDMFCTRL
+!"START" mean start a new session from initial file, restart mean start from previous configure file 
+&START_MF_MIGCOALE_CLUSTER_CPU
+  &MFBOXF "BoxFile.dat"
+  &MFCTLF "CtrlFile.dat"
+  &MFINIF "IniF.dat"
+  &MFIMPF "ImpF.dat"
+  &MFCOUT "1000K/"
+&END

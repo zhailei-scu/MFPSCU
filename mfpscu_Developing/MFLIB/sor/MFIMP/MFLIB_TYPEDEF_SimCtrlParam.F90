@@ -11,7 +11,7 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
   implicit none
 
-  character(len=5), parameter, private::m_CTLSTARTFLAG = "&CTLF"
+  character(len=7), parameter, private::m_CTLSTARTFLAG = "&MFCTLF"
 
   type,public::SimulationCtrlParam
 
