@@ -32,11 +32,14 @@
 			</Target>
 		</Build>
 		<Unit filename="../sor/MFIMP/MFLIB_Global.F90">
-			<Option weight="0" />
+			<Option weight="3" />
 		</Unit>
-		<Unit filename="../sor/MFIMP/MFLIB_TYPEDEF_Geometry.F90" />
+		<Unit filename="../sor/MFIMP/MFLIB_TYPEDEF_ClustersInfo_CPU.F90" />
+		<Unit filename="../sor/MFIMP/MFLIB_TYPEDEF_Geometry.F90">
+			<Option weight="1" />
+		</Unit>
 		<Unit filename="../sor/MFIMP/MFLIB_TYPEDEF_SimBoxArray.F90">
-			<Option weight="0" />
+			<Option weight="2" />
 		</Unit>
 		<Unit filename="../sor/MFIMP/MFLIB_TYPEDEF_SimCtrlParam.F90">
 			<Option weight="0" />

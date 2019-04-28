@@ -27,6 +27,9 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
      !***Information for random number
      integer(kind=KMCDF)::RANDSEED(2) = (/43434, 54454532/)             ! the inputed random seed
 
+     !***PERIOD boundary************
+     integer::PERIOD(3) = (/1,1,1/)                                     ! determine if PERIOD condition used
+
 
      !***Informaiton about temperature
      real(kind=KMCDF)::TEMP = 300.D0                                    ! temperature
@@ -104,6 +107,7 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
      procedure,non_overridable,pass,private::Load_Ctrl_AnalyParameter
      procedure,non_overridable,pass,private::Load_Ctrl_SectionParameter
      procedure,non_overridable,pass,private::Load_Ctrl_Temperature
+     procedure,non_overridable,pass,private::Load_Ctrl_Boundary
      procedure,non_overridable,pass,private::Load_Ctrl_Implant
      procedure,non_overridable,pass,private::Load_Ctrl_TimeStep
      procedure,non_overridable,pass,private::Load_Ctrl_MeanFiledRate
@@ -124,6 +128,7 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
   private::Load_Ctrl_AnalyParameter
   private::Load_Ctrl_SectionParameter
   private::Load_Ctrl_Temperature
+  private::Load_Ctrl_Boundary
   private::Load_Ctrl_Implant
   private::Load_Ctrl_TimeStep
   private::Load_Ctrl_MeanFiledRate
@@ -173,6 +178,9 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
     !***Information for random number
     this%RANDSEED = otherOne%RANDSEED
+
+     !***PERIOD boundary************
+     this%PERIOD = otherOne%PERIOD
 
     !***Informaiton about temperature
     this%TEMP = otherOne%TEMP
@@ -253,6 +261,9 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
      !***Information for random number
      this%RANDSEED = (/43434, 54454532/)
+
+     !***PERIOD boundary************
+     this%PERIOD = (/1,1,1/)
 
      !***Informaiton about temperature
      this%TEMP = 300.D0
@@ -392,6 +403,9 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
      !***Information for random number
      this%RANDSEED = (/43434, 54454532/)
+
+     !***PERIOD boundary************
+     this%PERIOD = (/1,1,1/)
 
      !***Informaiton about temperature
      this%TEMP = 300.D0
@@ -766,6 +780,8 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
                 exit
             case("&TEMPSUBCTL")
                 call this%Load_Ctrl_Temperature(hFile,*100)
+            case("&BOUNDSUBCTL")
+                call this%Load_Ctrl_Boundary(hFile,*100)
             case("&RATIOSUBCTL")
                 call this%Load_Ctrl_MeanFiledRate(hFile,*100)
             case("&IMPLANTSUBCTL")
@@ -835,6 +851,55 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
     100 return 1
   end subroutine Load_Ctrl_Temperature
+
+
+  !*****************************************
+  subroutine Load_Ctrl_Boundary(this,hFile,*)
+    implicit none
+    !---Dummy Vars---
+    CLASS(SimulationCtrlParam)::this
+    integer, intent(in)::hFile
+    !---Local Vars---
+    integer::LINE
+    integer::N
+    character*256::STR
+    character*32::KEYWORD
+    character*32::STRNUMB(10)
+    !---Body---
+    DO while(.true.)
+        call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+        call RemoveComments(STR,"!")
+        STR = adjustl(STR)
+        call GETKEYWORD("&",STR,KEYWORD)
+        call UPCASE(KEYWORD)
+
+        select case(KEYWORD(1:LENTRIM(KEYWORD)))
+            case default
+                write(*,*) "MCPSCUERROR: Illegl flag: ",KEYWORD,LINE
+                pause
+                stop
+            case("&ENDSUBCTL")
+                exit
+            case("&PERIDIC")
+                call EXTRACT_NUMB(STR,3,N,STRNUMB)
+
+                if(N .LT. 3) then
+                    write(*,*) "MCPSCUERROR: please special the boundary condition in three direction."
+                    write(*,*) "At control file line: ",LINE
+                    write(*,*) "Should be '&PERIDIC If use periodic boundary condition: X = , Y = , Z = '."
+                    pause
+                    stop
+                end if
+                this%PERIOD(1) = ISTR(STRNUMB(1))
+                this%PERIOD(2) = ISTR(STRNUMB(2))
+                this%PERIOD(3) = ISTR(STRNUMB(3))
+        end select
+    END DO
+
+    return
+
+    100 return 1
+  end subroutine
 
 
   subroutine Load_Ctrl_MeanFiledRate(this,hFile,*)
@@ -1248,6 +1313,8 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
         write(hFile,fmt="('*******************SubSection #: ',I10)") ISect
 
         write(hFile,fmt="('!',A70,'!',2x,1PE10.4)") "SYSTEM SIMULATION TEMPERATURE =",cursor%TEMP
+
+        write(hFile,fmt="('!',A70,'!',2x,3I10)") "PERIDIC condition =",cursor%PERIOD
 
         !***Information about Implantation******************
         write(hFile,fmt="('!',A70,'!',2x,I10)") "The implantation section index is :", cursor%ImplantSectID

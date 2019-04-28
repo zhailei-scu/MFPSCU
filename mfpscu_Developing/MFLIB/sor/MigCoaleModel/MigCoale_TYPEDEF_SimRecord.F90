@@ -7,12 +7,6 @@ module MIGCOALE_TYPEDEF_SIMRECORD
         real(kind=KMCDF),private::StartImplantTime = 0.D0
         integer,private::ImplantedEntities = 0
         integer,private::LastRecordImplantNum = 0
-        integer,private::NCUT = 0
-
-        integer::RecordNCBeforeSweepOut_Integal(p_NUMBER_OF_STATU)  = 0
-        integer,dimension(:,:),allocatable::RecordNCBeforeSweepOut_SingleBox
-
-        real(kind=KMCDF),private::LastUpdateAveSepTime = 0.D0
 
         integer,private::rescaleCount = 0
 
@@ -25,8 +19,6 @@ module MIGCOALE_TYPEDEF_SIMRECORD
         procedure,NON_OVERRIDABLE,public,pass::InitMigCoalClusterRecord
         procedure,non_overridable,public,pass::SetStartImplantTime=>Set_StartImplantTime
         procedure,non_overridable,public,pass::GetStartImplantTime=>Get_StartImplantTime
-        procedure,non_overridable,public,pass::GetLastUpdateAveSepTime=>Get_LastUpdateAveSepTime
-        procedure,non_overridable,public,pass::SetLastUpdateAveSepTime=>Set_LastUpdateAveSepTime
         procedure,non_overridable,public,pass::IncreaseOneRescaleCount=>Increase_OneRescaleCount
         procedure,non_overridable,public,pass::GetRescaleCount=>Get_RescaleCount
         procedure,NON_OVERRIDABLE,public,pass::AddImplantedEntitiesNum=>Add_ImplantedEntitiesNum
@@ -47,8 +39,6 @@ module MIGCOALE_TYPEDEF_SIMRECORD
     private::InitMigCoalClusterRecord
     private::Set_StartImplantTime
     private::Get_StartImplantTime
-    private::Set_LastUpdateAveSepTime
-    private::Get_LastUpdateAveSepTime
     private::Increase_OneRescaleCount
     private::Get_RescaleCount
     private::Add_ImplantedEntitiesNum
@@ -103,11 +93,6 @@ module MIGCOALE_TYPEDEF_SIMRECORD
             TheTimeSection = TimeSection
         end if
 
-        call AllocateArray_Host(this%RecordNCBeforeSweepOut_SingleBox,MultiBox,p_NUMBER_OF_STATU,"RecordNCBeforeSweepOut_SingleBox")
-        this%RecordNCBeforeSweepOut_SingleBox = 0
-        this%RecordNCBeforeSweepOut_Integal = 0
-
-        this%LastUpdateAveSepTime = 0.D0
 
         this%rescaleCount = 0
 
@@ -121,8 +106,6 @@ module MIGCOALE_TYPEDEF_SIMRECORD
         this%ImplantedEntities = 0
 
         this%LastRecordImplantNum = 0
-
-        this%NCUT = 0
 
         return
     end subroutine InitMigCoalClusterRecord
@@ -203,27 +186,6 @@ module MIGCOALE_TYPEDEF_SIMRECORD
 
         return
     end subroutine Set_LastRecordImplantNum
-
-    integer function Get_NCUT(this)
-        implicit none
-        !---Dummy Vars---
-        CLASS(MigCoalClusterRecord)::this
-
-        Get_NCUT = this%NCUT
-        return
-    end function Get_NCUT
-
-    subroutine Set_NCUT(this,TheNCUT)
-        implicit none
-        !---Dummy Vars---
-        CLASS(MigCoalClusterRecord)::this
-        integer,intent(in)::TheNCUT
-        !---Body---
-        this%NCUT = TheNCUT
-
-        return
-    end subroutine Set_NCUT
-
 
     subroutine SetLastOutSizeDistTime_IntegralBox(this,TheTime)
         implicit none
@@ -355,26 +317,5 @@ module MIGCOALE_TYPEDEF_SIMRECORD
         rescaleCount = this%rescaleCount
         return
     end function Get_RescaleCount
-
-    !*******************************************************
-    subroutine Set_LastUpdateAveSepTime(this,TheTime)
-        implicit none
-        !---Dummy Vars---
-        CLass(MigCoalClusterRecord)::this
-        real(kind=KMCDF),intent(in)::TheTime
-        !---Body---
-        this%LastUpdateAveSepTime = TheTime
-        return
-    end subroutine Set_LastUpdateAveSepTime
-
-    function Get_LastUpdateAveSepTime(this) result(TheTime)
-        implicit none
-        !---Dummy Vars---
-        CLass(MigCoalClusterRecord)::this
-        real(kind=KMCDF),intent(out)::TheTime
-        !---Body---
-        TheTime = this%LastUpdateAveSepTime
-        return
-    end function Get_LastUpdateAveSepTime
 
 end module

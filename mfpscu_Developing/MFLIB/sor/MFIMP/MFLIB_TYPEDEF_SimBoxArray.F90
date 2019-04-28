@@ -6,6 +6,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
   use MCMF_TYPEDEF_ReactionPropList
   use MCMF_UTILITIES
   use MFLIB_TYPEDEF_GEOMETRY
+  use MFLIB_TYPEDEF_ClustersInfo_CPU
   use MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
   use MiniUtilities, only:EXTRACT_NUMB,EXTRACT_SUBSTR,GETINPUTSTRLINE, GETKEYWORD, UPCASE, ISTR, DRSTR
   implicit none
@@ -35,11 +36,8 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     integer::NNodes = 0
     real(kind=KMCDF),dimension(:),allocatable::NodeSpace               ! = 1.D-5   ! (cm)
 
-    !---The concentrates distribution---
-    real(kind=KMCDF),dimension(:,:),allocatable::Concentrate
-
-    !---The clusters kinds define---
-    type(ACluster),dimension(:),allocatable::ClustersKindArray
+    !---The clusters distribution---
+    type(ClustersInfo_CPU)::m_ClustersInfo_CPU
 
     !************Info for matrix*************
     type(ATOM)::MatrixAtom
@@ -84,6 +82,14 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     procedure,non_overridable,private,pass::Load_GB_SpecialDistFromFile
     procedure,non_overridable,private,pass::Load_GB_SpecialDistFromExteFunc
     procedure,non_overridable,public,pass::InitSimulationBox=>Init_SimulationBox
+    procedure,non_overridable,public,pass::PutoutCfg=>Puout_Instance_Config_SimBoxArray
+    procedure,non_overridable,public,pass::PutinCfg=>Putin_Instance_Config_SimBoxArray
+    procedure,non_overridable,private,pass::Putin_OKMC_OUTCFG_FORMAT18
+    procedure,non_overridable,private,pass::Putin_MF_OUTCFG_FORMAT18
+    procedure,non_overridable,public,pass::Putin_MF_OUTCFG_FORMAT18_Distribution
+    procedure,non_overridable,private,pass::Putin_SPMF_OUTCFG_FORMAT18
+    procedure,non_overridable,public,pass::Putin_SPMF_OUTCFG_FORMAT18_Distribution
+    procedure,non_overridable,private,pass::DoPutin_FromDistribution
     procedure,non_overridable,private,pass::CopySimulationBoxesFromOther
     Generic::Assignment(=)=>CopySimulationBoxesFromOther
     procedure,non_overridable,public,pass::Clean=>CleanSimulationBoxes
@@ -113,6 +119,14 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
   private::Load_GB_SpecialDistFromFile
   private::Load_GB_SpecialDistFromExteFunc
   private::Init_SimulationBox
+  private::Puout_Instance_Config_SimBoxArray
+  private::Putin_Instance_Config_SimBoxArray
+  private::Putin_OKMC_OUTCFG_FORMAT18
+  private::Putin_MF_OUTCFG_FORMAT18
+  private::Putin_MF_OUTCFG_FORMAT18_Distribution
+  private::Putin_SPMF_OUTCFG_FORMAT18
+  private::Putin_SPMF_OUTCFG_FORMAT18_Distribution
+  private::DoPutin_FromDistribution
   private::CleanSimulationBoxes
   private::DestorySimulationBoxes
   private::CopySimulationBoxesFromOther
@@ -127,10 +141,6 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     type(SimulationCtrlParam)::Host_SimuCtrlParam
     !---Local Vars---
     !---Body---
-
-    call AllocateArray_Host(this%ClustersKindArray,this%CKind,"ClustersKindArray")
-
-    call AllocateArray_Host(this%Concentrate,this%CKind,this%NNodes,"Concentrate")
 
     call this%m_GrainBoundary%ConstructGrainBoundary(this%BOXBOUNDARY,Host_SimuCtrlParam)
 
@@ -190,11 +200,8 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     this%NNodes = Other%NNodes
     this%NodeSpace = Other%NodeSpace
 
-    !---The concentrates distribution---
-    this%Concentrate = Other%Concentrate
-
-    !---The clusters kinds define---
-    this%ClustersKindArray = Other%ClustersKindArray
+    ! The Assignment(=) had been override
+    this%m_ClustersInfo_CPU = Other%m_ClustersInfo_CPU
 
     ! The Assignment(=) had been override
     this%MatrixAtom = Other%MatrixAtom
@@ -1566,6 +1573,1575 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     100 return 1
   end subroutine Load_GB_SpecialDistFromExteFunc
 
+
+    !**********************OutPut***************************
+  subroutine Puout_Instance_Config_SimBoxArray(this,Host_SimuCtrlParam,SimuRecord,RescaleCount)
+    !***    Purpose: to output Intermediate Status
+    !           this: the boxes info in host
+    !           SimuRecord: the simulation records
+    !        RescaleCount : (optional)the ith rescale
+    implicit none
+    !---Dummy Vars---
+    CLASS(SimulationBoxes)::this
+    type(SimulationCtrlParam)::Host_SimuCtrlParam
+    Class(SimulationRecord)::SimuRecord
+    integer, optional::RescaleCount
+    !---Local Vars---
+!    type(AtomsList),pointer::cursor=>null()
+!    character*256::c_ITIME
+!    character*256::C_TIMESECTION
+!    character*256::C_JOB
+!    integer::MultiBox
+!    integer::IBox
+!    integer::IAKind
+!    character*256::path
+!    integer::hFile
+!    integer::IC, ICFROM, ICTO
+!    integer::ISeed
+!    integer::ILayer
+!    integer::LayerNum
+!    character*32::KEYWORD
+!    character*256::CFormat
+!    character*256::CNUM
+!    character*15::AtomsStr(p_ATOMS_GROUPS_NUMBER)
+!    integer::tempLen
+!    integer::ElementsKind
+!    !---Body---
+!
+!    if(present(RescaleCount)) then
+!        write(c_ITIME,*) RescaleCount
+!        c_ITIME = adjustl(c_ITIME)
+!        c_ITIME = "BeforeRescale"//c_ITIME
+!    else
+!        write(c_ITIME,*) SimuRecord%GetOutPutIndex()
+!
+!        call SimuRecord%IncreaseOneOutPutIndex()
+!
+!        c_ITIME = adjustl(c_ITIME)
+!    end if
+!
+!    write(C_TIMESECTION,*) SimuRecord%GetTimeSections()
+!    C_TIMESECTION = adjustl(C_TIMESECTION)
+!    C_TIMESECTION = "Section"//C_TIMESECTION
+!
+!    write(C_JOB,*) SimuRecord%GetSimuPatch()
+!    C_JOB = adjustl(C_JOB)
+!    C_JOB = "Job"//C_JOB
+!
+!
+!    ! output the configuration(can also be for the restart)
+!    MultiBox = Host_SimuCtrlParam%MultiBox
+!
+!    path = Host_SimuCtrlParam%OutFilePath(1:LENTRIM(Host_SimuCtrlParam%OutFilePath))//FolderSpe//"Config_"//trim(C_JOB)//"_"//trim(C_TIMESECTION)//"_"//trim(c_ITIME)//".dat"
+!
+!    hFile = CreateNewFile(path)
+!
+!    open(hFile,file=path, form="formatted")
+!
+!    !---Start to write---
+!    write(hFile,FMT="(A)") OKMC_OUTCFG_FORMAT18
+!
+!    KEYWORD = "&TIME"
+!    write(hFile, FMT="(A20,1x,A15,1x,1PE18.7)") KEYWORD(1:LENTRIM(KEYWORD)),"(in s)",SimuRecord%GetSimuTimes()
+!
+!    KEYWORD = "&BOXLOW"
+!    write(hFile, FMT="(A20,1x,A15,1x,3(1PE14.4, 1x))") KEYWORD(1:LENTRIM(KEYWORD)),   &
+!                                                       "(in nm)",                     &
+!                                                       this%BoxBoundary(1,1)*C_CM2NM, &
+!                                                       this%BoxBoundary(2,1)*C_CM2NM, &
+!                                                       this%BoxBoundary(3,1)*C_CM2NM
+!
+!    KEYWORD = "&BOXSIZE"
+!    write(hFile, FMT="(A20,1x,A15,1x,3(1PE14.4, 1x))") KEYWORD(1:LENTRIM(KEYWORD)),  &
+!                                                       "(in nm)",                    &
+!                                                       this%BOXSIZE(1)*C_CM2NM,      &
+!                                                       this%BOXSIZE(2)*C_CM2NM,      &
+!                                                       this%BOXSIZE(3)*C_CM2NM
+!
+!    KEYWORD = "&NGRAIN"
+!    write(hFile,FMT="(A20,1x,I8)") KEYWORD(1:LENTRIM(KEYWORD)),this%m_GrainBoundary%GrainNum
+!    write(hFile,FMT="(A20,1x,4(A14,1x))")  "!","Seed ID", "x(nm)", "y(nm)", "z(nm)"
+!    KEYWORD = "&SEEDDATA"
+!    Do ISeed = 1,this%m_GrainBoundary%GrainNum
+!        write(hFile,fmt="(A20,1x,I14, 1x, 3(1PE14.4, 1x))") KEYWORD(1:LENTRIM(KEYWORD)),ISeed,this%m_GrainBoundary%GrainSeeds(ISeed)%m_POS(1:3)*C_CM2NM
+!    End Do
+!
+!!    CNUM = ""
+!!    write(CNUM,*) p_NUMBER_OF_STATU
+!!
+!!    KEYWORD = "&NCLUSTERS"
+!!    CFormat = ""
+!!    CFormat = "(2(A20,1x),"//CNUM(1:LENTRIM(CNUM))//"(A20,1x))"
+!!    write(hFile, FMT=CFormat(1:LENTRIM(CFormat))) KEYWORD(1:LENTRIM(KEYWORD)),"IBox",p_CStatu
+!!    KEYWORD = "&NCDATA"
+!!    CFormat = ""
+!!    CFormat = "(A20,1x,I20,1x,"//CNUM(1:LENTRIM(CNUM))//"(I20,1x))"
+!!    DO IBox = 1,MultiBox
+!!        write(hFile, FMT=CFormat(1:LENTRIM(CFormat))) KEYWORD(1:LENTRIM(KEYWORD)),IBox,this%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC
+!!    END DO
+!
+!    CNUM = ""
+!    write(CNUM,*) p_NUMBER_OF_STATU
+!    KEYWORD = "&BOXSEINDEX"
+!    CFormat = ""
+!    CFormat = "(8(A20,1x))"
+!    write(hFile, FMT=CFormat(1:LENTRIM(CFormat))) KEYWORD(1:LENTRIM(KEYWORD)),  &
+!                                                  "IBox",                       &
+!                                                  "SEUsedIndexFrom",            &
+!                                                  "SEUsedIndexTo",              &
+!                                                  "SEExpdIndexFrom",            &
+!                                                  "SEExpdIndexTo",              &
+!                                                  "SEVirtualIndexFrom",         &
+!                                                  "SEVirtualIndexTo"
+!
+!    KEYWORD = "&BOXSEDATA"
+!    CFormat = ""
+!    CFormat = "(A20,1x,I20,1x,"//CNUM(1:LENTRIM(CNUM))//"(I20,1x))"
+!    DO IBox = 1,MultiBox
+!        write(hFile, FMT=CFormat(1:LENTRIM(CFormat))) KEYWORD(1:LENTRIM(KEYWORD)),                  &
+!                                                      IBox,                                         &
+!                                                      this%m_BoxesInfo%SEUsedIndexBox(IBox,1:2),    &
+!                                                      this%m_BoxesInfo%SEExpdIndexBox(IBox,1:2),    &
+!                                                      this%m_BoxesInfo%SEVirtualIndexBox(IBox,1:2)
+!    END DO
+!
+!    CNUM = ""
+!    ElementsKind = this%Atoms_list%Get_ListCount()
+!    write(CNUM,*) ElementsKind
+!
+!    IAKind = 1
+!    tempLen = len(AtomsStr(1))
+!    cursor=>this%Atoms_list
+!    AtomsStr = " "
+!    DO While(associated(cursor))
+!        AtomsStr(IAKind)(tempLen-LENTRIM(cursor%m_Atom%m_Symbol)+1:tempLen) = cursor%m_Atom%m_Symbol
+!        IAKind = IAKind + 1
+!        cursor=>cursor%next
+!    END DO
+!
+!    KEYWORD = "&ELEMENT"
+!    CFormat = ""
+!    CFormat = "(A20,1x,"//CNUM(1:LENTRIM(CNUM))//"(A15,1x))"
+!    write(hFile, FMT=CFormat(1:LENTRIM(CFormat))) KEYWORD(1:LENTRIM(KEYWORD)),AtomsStr(1:ElementsKind)
+!
+!    KEYWORD = "&TYPE"
+!    CFormat = ""
+!    CFormat = "(9(A15,1x),"//CNUM(1:LENTRIM(CNUM))//"(A15,1x))"
+!    write(hFile,FMT=CFormat(1:LENTRIM(CFormat))) KEYWORD(1:LENTRIM(KEYWORD)),"IBox", "Layer","GBSeed1","GBSeed2","Statu","x(nm)","y(nm)","z(nm)",AtomsStr(1:ElementsKind)
+!
+!    CFormat = ""
+!    CFormat = "(A15,1x,5(I15, 1x),3(1PE15.4, 1x),"//CNUM(1:LENTRIM(CNUM))//"(I15,1x))"
+!    DO IBox = 1,MultiBox
+!        ICFROM = this%m_BoxesInfo%SEUsedIndexBox(IBox,1)
+!        ICTO   = this%m_BoxesInfo%SEUsedIndexBox(IBox,2)
+!
+!        if(ICTO .LE. 0) then
+!            cycle
+!        end if
+!
+!        DO IC = ICFROM, ICTO
+!
+!            if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu .eq. p_ACTIVEFREE_STATU .or. this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu .eq. p_ACTIVEINGB_STATU) then
+!
+!                write(hFile,fmt=CFormat(1:LENTRIM(CFormat))) "",                                                                &
+!                                                            IBox,                                                               &
+!                                                            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Layer,                     &
+!                                                            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID,                   &
+!                                                            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu,                     &
+!                                                            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_POS(1:3)*C_CM2NM,          &
+!                                                            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(1:ElementsKind)%m_NA
+!            end if
+!        END DO
+!    END DO
+!
+!    close(hFile)
+!
+!    Nullify(cursor)
+
+    return
+  end subroutine Puout_Instance_Config_SimBoxArray
+
+  !*****************************************************************
+  subroutine Putin_Instance_Config_SimBoxArray(this,Host_SimuCtrlParam,SimuRecord,cfgFile,RNFACTOR,SURDIFPRE_FREE,SURDIFPRE_INGB)
+    implicit none
+    !---Dummy Vars---
+    CLASS(SimulationBoxes)::this
+    type(SimulationCtrlParam)::Host_SimuCtrlParam
+    Class(SimulationRecord)::SimuRecord
+    character*256,intent(in)::cfgFile
+    real(kind=KMCDF),intent(in)::RNFACTOR
+    real(kind=KMCDF),intent(in)::SURDIFPRE_FREE
+    real(kind=KMCDF),intent(in)::SURDIFPRE_INGB
+    !---Local Vars--
+    integer::hFile
+    character*256::STR
+    character*32::KEYWORD
+    integer::LINE
+    !---Body---
+
+!    LINE = 0
+!
+!    hFile = OpenExistedFile(cfgFile)
+!
+!    call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+!    call RemoveComments(STR,"!")
+!
+!    STR = adjustl(STR)
+!
+!    call GETKEYWORD("&",STR,KEYWORD)
+!
+!    call UPCASE(KEYWORD)
+!
+!    close(hFile)
+!
+!    select case(KEYWORD(1:LENTRIM(KEYWORD)))
+!        case(OKMC_OUTCFG_FORMAT18)
+!            call this%Putin_OKMC_OUTCFG_FORMAT18(cfgFile,Host_SimuCtrlParam,SimuRecord,RNFACTOR,SURDIFPRE_FREE,SURDIFPRE_INGB)
+!        case(MF_OUTCFG_FORMAT18)
+!            call this%Putin_MF_OUTCFG_FORMAT18(cfgFile,Host_SimuCtrlParam,SimuRecord,RNFACTOR,SURDIFPRE_FREE,SURDIFPRE_INGB)
+!        case(SPMF_OUTCFG_FORMAT18)
+!            call this%Putin_SPMF_OUTCFG_FORMAT18(cfgFile,Host_SimuCtrlParam,SimuRecord,RNFACTOR,SURDIFPRE_FREE,SURDIFPRE_INGB)
+!        case default
+!            write(*,*) "MCPSCUERROR: You must special the box file format at the beginning of the file."
+!            pause
+!            stop
+!    end select
+
+
+    return
+    100 write(*,*) "MCPSCUERROR: Fail to load the configuration at file: ",cfgFile
+        write(*,*) "At line: ",LINE
+        write(*,*) STR
+        pause
+        stop
+  end subroutine Putin_Instance_Config_SimBoxArray
+
+  !*************************************************************
+  subroutine Putin_OKMC_OUTCFG_FORMAT18(this,cfgFile,Host_SimuCtrlParam,SimuRecord,RNFACTOR,SURDIFPRE_FREE,SURDIFPRE_INGB)
+    implicit none
+    !---Dummy Vars---
+    CLASS(SimulationBoxes)::this
+    character*256,intent(in)::cfgFile
+    type(SimulationCtrlParam)::Host_SimuCtrlParam
+    CLASS(SimulationRecord)::SimuRecord
+    real(kind=KMCDF),intent(in)::RNFACTOR
+    real(kind=KMCDF),intent(in)::SURDIFPRE_FREE
+    real(kind=KMCDF),intent(in)::SURDIFPRE_INGB
+!    !---Local Vars---
+!    integer::hFile
+!    integer::LINE
+!    character*256::STR
+!    character*32::KEYWORD
+!    integer::K
+!    integer::IBox
+!    integer::IBoxTemp
+!    character*256::CFormat
+!    character*256::CNUM
+!    integer,dimension(:),allocatable::atomsInfo
+!    integer,dimension(:),allocatable::ExpandSizeArray
+!    integer,dimension(:),allocatable::NCEachBox
+!    character*256::CEmpty
+!    integer::state
+!    integer::ISeed
+!    integer::ISeedTemp
+!    integer::N
+!    integer::MultiBox
+!    character*32::STRTMP(20)
+!    integer::NTotalCluster
+!    integer::II
+!    integer::IC
+!    integer::IElement
+!    integer::IStatu
+!    integer::AtomsIndex(p_ATOMS_GROUPS_NUMBER)
+!    integer::NATomsUsed
+!    integer::LayerNum
+!    integer::ILayer
+!    type(DiffusorValue)::TheDiffusorValue
+!    character*15::CElement(p_ATOMS_GROUPS_NUMBER)
+!    integer::I
+!    integer::STA
+!    !---Body---
+!
+!    MultiBox = Host_SimuCtrlParam%MultiBox
+!
+!    NATomsUsed = 0
+!
+!    AtomsIndex = 0
+!
+!    LINE = 0
+!
+!    hFile = OpenExistedFile(cfgFile)
+!
+!    call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+!    call RemoveComments(STR,"!")
+!
+!    STR = adjustl(STR)
+!
+!    call GETKEYWORD("&",STR,KEYWORD)
+!
+!    call UPCASE(KEYWORD)
+!
+!    if(.not. IsStrEqual(adjustl(trim(KEYWORD)),OKMC_OUTCFG_FORMAT18)) then
+!        write(*,*) "MCPSCUERROR: the format of OKMC configuration file is not right at LINE: ",LINE
+!        write(*,*) STR
+!        pause
+!        stop
+!    end if
+!
+!    DO While(.true.)
+!        call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+!        call RemoveComments(STR,"!")
+!
+!        call GETKEYWORD("&",STR,KEYWORD)
+!
+!        STR = adjustl(STR)
+!
+!        call UPCASE(KEYWORD)
+!
+!        select case(KEYWORD(1:LENTRIM(KEYWORD)))
+!            case("&TYPE")
+!                exit
+!
+!            case("&TIME")
+!                call EXTRACT_NUMB(STR,1,N,STRTMP)
+!                call SimuRecord%SetSimuTimes(DRSTR(STRTMP(1)))
+!
+!            case("&BOXLOW")
+!                call EXTRACT_NUMB(STR,3,N,STRTMP)
+!                DO K = 1,3
+!                    this%BOXBOUNDARY(K,1) = DRSTR(STRTMP(K))
+!                END DO
+!
+!            case("&BOXSIZE")
+!                call EXTRACT_NUMB(STR,3,N,STRTMP)
+!                DO K = 1,3
+!                    this%BOXSIZE(K) = DRSTR(STRTMP(K))
+!                END DO
+!
+!            case("&NGRAIN")
+!                call this%m_GrainBoundary%Clean_Grainboundary()
+!                call EXTRACT_NUMB(STR,1,N,STRTMP)
+!                this%m_GrainBoundary%GrainNum = ISTR(STRTMP(1))
+!                if(this%m_GrainBoundary%GrainNum .GT. 0) then
+!                    allocate(this%m_GrainBoundary%GrainSeeds(this%m_GrainBoundary%GrainNum))
+!                end if
+!                DO ISeed = 1,this%m_GrainBoundary%GrainNum
+!                    call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+!                    call RemoveComments(STR,"!")
+!                    read(STR,fmt="(A20,1x,I14, 1x, 3(1PE14.4, 1x))",ERR=100) CEmpty,ISeedTemp,this%m_GrainBoundary%GrainSeeds(ISeed)%m_POS(1:3)
+!                    if(.not. IsStrEqual(CEmpty,"&SEEDDATA")) then
+!                        write(*,*) "MCPSCUERROR: The grain seeds number is less than the recorded one."
+!                        pause
+!                        stop
+!                    end if
+!
+!                    if(ISeedTemp .ne. ISeed) then
+!                        write(*,*) "MCPSCUERROR: The grain seeds index is not correct: ",ISeed
+!                        pause
+!                        stop
+!                    end if
+!
+!                    this%m_GrainBoundary%GrainSeeds(ISeed)%m_POS(1:3) = this%m_GrainBoundary%GrainSeeds(ISeed)%m_POS(1:3)*C_NM2CM
+!                END DO
+!
+!            case("&NCLUSTERS")
+!                write(*,*) "MCPSCUInfo: the key word &NCLUSTERS is not used anymore."
+!                CNUM = ""
+!                write(CNUM,*) p_NUMBER_OF_STATU
+!                CFormat = ""
+!                CFormat = "(A20,1x,I20,1x,"//CNUM(1:LENTRIM(CNUM))//"(I20,1x))"
+!                DO IBox = 1,MultiBox
+!                    call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+!                    call RemoveComments(STR,"!")
+!                    ! Do nothing
+!                END DO
+!
+!            case("&BOXSEINDEX")
+!                call tempBoxesInfo%Init(MultiBox)
+!
+!                CFormat = ""
+!                write(CNUM,*) p_NUMBER_OF_STATU
+!                CFormat = "(A20,1x,I20,1x,"//CNUM(1:LENTRIM(CNUM))//"(I20,1x))"
+!                DO IBox = 1,MultiBox
+!                    call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+!                    call RemoveComments(STR,"!")
+!                    read(STR,fmt=CFormat(1:LENTRIM(CFormat)),ERR=100)   CEmpty,                                  &
+!                                                                        IBoxTemp,                                &
+!                                                                        tempBoxesInfo%SEUsedIndexBox(IBox,1:2),  &
+!                                                                        tempBoxesInfo%SEExpdIndexBox(IBox,1:2),  &
+!                                                                        tempBoxesInfo%SEVirtualIndexBox(IBox,1:2)
+!                    if(.not. IsStrEqual(CEmpty,"&BOXSEDATA")) then
+!                        write(*,*) "MCPSCUERROR: The box clusters start and end index record is less than the control file recorded."
+!                        pause
+!                        stop
+!                    end if
+!
+!                    if(IBoxTemp .ne. IBox) then
+!                        write(*,*) STR
+!                        write(*,*) "MCPSCUERROR: The box index is not correct: ",IBox,IBoxTemp
+!                        write(*,*) "At Line: ",LINE
+!                        pause
+!                        stop
+!                    end if
+!
+!                    if((tempBoxesInfo%SEExpdIndexBox(IBox,2) - tempBoxesInfo%SEExpdIndexBox(IBox,1)) .LT. &
+!                       (tempBoxesInfo%SEUsedIndexBox(IBox,2) - tempBoxesInfo%SEUsedIndexBox(IBox,1))) then
+!                        write(*,*) "MCPSCUERROR: The recorded used clusters number is less than the expand clusters number !"
+!                        write(*,*) "In box: ",IBox
+!                        write(*,*) "The recorded start and end clusters index for used clusters is: ",tempBoxesInfo%SEUsedIndexBox(IBox,1),tempBoxesInfo%SEUsedIndexBox(IBox,2)
+!                        write(*,*) "The recorded start and end clusters index for expand clusters is: ",tempBoxesInfo%SEExpdIndexBox(IBox,1),tempBoxesInfo%SEExpdIndexBox(IBox,2)
+!                        pause
+!                        stop
+!                    end if
+!
+!                    if((tempBoxesInfo%SEVirtualIndexBox(IBox,2) - tempBoxesInfo%SEVirtualIndexBox(IBox,1)) .LT. &
+!                       (tempBoxesInfo%SEExpdIndexBox(IBox,2) - tempBoxesInfo%SEExpdIndexBox(IBox,1))) then
+!                        write(*,*) "MCPSCUERROR: The recorded virtual clusters number is less than the expand clusters number !"
+!                        write(*,*) "In box: ",IBox
+!                        write(*,*) "The recorded start and end clusters index for virtual clusters is: ",tempBoxesInfo%SEVirtualIndexBox(IBox,1),tempBoxesInfo%SEVirtualIndexBox(IBox,2)
+!                        write(*,*) "The recorded start and end clusters index for expand clusters is: ",tempBoxesInfo%SEExpdIndexBox(IBox,1),tempBoxesInfo%SEExpdIndexBox(IBox,2)
+!                        pause
+!                        stop
+!                    end if
+!
+!                END DO
+!
+!
+!            case("&ELEMENT")
+!                CNUM = ""
+!                write(CNUM,*) p_ATOMS_GROUPS_NUMBER
+!                CFormat = "(A20,1x,"//CNUM(1:LENTRIM(CNUM))//"(A15,1x))"
+!                read(STR,fmt=CFormat(1:LENTRIM(CFormat)),ERR=100) CEmpty,CElement
+!
+!                NATomsUsed = 0
+!                DO IElement = 1,p_ATOMS_GROUPS_NUMBER
+!                    if(LENTRIM(adjustl(CElement(IElement))) .GT. 0) then
+!                        NATomsUsed = NATomsUsed + 1
+!                        AtomsIndex(NATomsUsed) = this%Atoms_list%FindIndexBySymbol(adjustl(trim(CElement(IElement))))
+!                    end if
+!                END DO
+!
+!            case default
+!                write(*,*) "MCPSCUERROR: Illegal flag: ",KEYWORD
+!                write(*,*) STR
+!                pause
+!                stop
+!        end select
+!
+!    END DO
+!
+!    DO K = 1,3
+!        this%BOXBOUNDARY(K,2) = this%BOXBOUNDARY(K,1) + this%BOXSIZE(K)
+!    END DO
+!
+!    call AllocateArray_Host(ExpandSizeArray,MultiBox,"ExpandSizeArray")
+!
+!    ExpandSizeArray = 0
+!
+!    DO IBox = 1,MultiBox
+!        if(tempBoxesInfo%SEVirtualIndexBox(IBox,2) .LE. 0) then
+!            ExpandSizeArray(IBox) = 0
+!        else
+!            ExpandSizeArray(IBox) = tempBoxesInfo%SEVirtualIndexBox(IBox,2) - tempBoxesInfo%SEVirtualIndexBox(IBox,1) + 1
+!        end if
+!    END DO
+!
+!    call this%ExpandClustersInfor_CPU(Host_SimuCtrlParam,ExpandSizeArray)
+!
+!    call AllocateArray_Host(atomsInfo,NATomsUsed,"atomsInfo")
+!
+!    call AllocateArray_Host(NCEachBox,MultiBox,"NCEachBox")
+!    NCEachBox = 0
+!
+!    DO While(.true.)
+!
+!        read(hFile,fmt="(A)",ERR=100,IOSTAT=STA) STR
+!
+!        if(STA .LT. 0) then
+!            exit
+!        end if
+!
+!        call EXTRACT_NUMB(STR,8+p_ATOMS_GROUPS_NUMBER,N,STRTMP)
+!        atomsInfo = 0
+!
+!        IBox = ISTR(STRTMP(1))
+!
+!        NCEachBox(IBox) = NCEachBox(IBox) + 1
+!
+!        IC = this%m_BoxesInfo%SEUsedIndexBox(IBox,2) + NCEachBox(IBox)
+!
+!        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Layer = ISTR(STRTMP(2))
+!
+!        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = ISTR(STRTMP(3))
+!
+!        if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) .GT. this%m_GrainBoundary%GrainNum) then
+!            write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+!            write(*,*) this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1)
+!            pause
+!            stop
+!        end if
+!
+!        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) = ISTR(STRTMP(4))
+!
+!        if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) .GT. this%m_GrainBoundary%GrainNum) then
+!            write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+!            write(*,*) this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2)
+!            pause
+!            stop
+!        end if
+!
+!        IStatu = ISTR(STRTMP(5))
+!        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu = IStatu
+!
+!        DO I = 1,3
+!            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_POS(I) = DRSTR(STRTMP(5+I))
+!        END DO
+!
+!        DO I = 1,NATomsUsed
+!            atomsInfo(I) = DRSTR(STRTMP(5+3+I))
+!        END DO
+!
+!        Do IElement = 1,NATomsUsed
+!            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(AtomsIndex(IElement))%m_ID = AtomsIndex(IElement)
+!            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(AtomsIndex(IElement))%m_NA = atomsInfo(IElement)
+!        End Do
+!
+!        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_POS(1:3) = this%m_ClustersInfo_CPU%m_Clusters(IC)%m_POS(1:3)*C_NM2CM
+!
+!        TheDiffusorValue = this%m_DiffusorTypesMap%Get(this%m_ClustersInfo_CPU%m_Clusters(IC))
+!
+!        if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu .eq. p_ACTIVEFREE_STATU) then
+!            select case(TheDiffusorValue%ECRValueType_Free)
+!                case(p_ECR_ByValue)
+!                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = TheDiffusorValue%ECR_Free
+!                case(p_ECR_ByBCluster)
+!                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = DSQRT(sum(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA)/RNFACTOR)
+!            end select
+!
+!            select case(TheDiffusorValue%DiffusorValueType_Free)
+!                case(p_DiffuseCoefficient_ByValue)
+!                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
+!                case(p_DiffuseCoefficient_ByArrhenius)
+!                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
+!                case(p_DiffuseCoefficient_ByBCluster)
+!                    ! Here we adopt a model that D=D0*(1/R)**Gama
+!                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = SURDIFPRE_FREE*(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD**(-p_GAMMA))
+!            end select
+!        else if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu .eq. p_ACTIVEINGB_STATU) then
+!            select case(TheDiffusorValue%ECRValueType_InGB)
+!                case(p_ECR_ByValue)
+!                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = TheDiffusorValue%ECR_InGB
+!                case(p_ECR_ByBCluster)
+!                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = DSQRT(sum(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA)/RNFACTOR)
+!            end select
+!
+!            select case(TheDiffusorValue%DiffusorValueType_InGB)
+!                case(p_DiffuseCoefficient_ByValue)
+!                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_InGB_Value
+!                case(p_DiffuseCoefficient_ByArrhenius)
+!                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%PreFactor_InGB*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_InGB/Host_SimuCtrlParam%TKB)
+!                case(p_DiffuseCoefficient_ByBCluster)
+!                    ! Here we adopt a model that D=D0*(1/R)**Gama
+!                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = SURDIFPRE_INGB*(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD**(-p_GAMMA))
+!            end select
+!        end if
+!
+!
+!        this%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC(IStatu) = this%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC(IStatu) + 1
+!        this%m_BoxesBasicStatistic%BoxesStatis_Integral%NC(IStatu) = this%m_BoxesBasicStatistic%BoxesStatis_Integral%NC(IStatu) + 1
+!
+!        this%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC0(IStatu) = this%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC0(IStatu) + 1
+!        this%m_BoxesBasicStatistic%BoxesStatis_Integral%NC0(IStatu) = this%m_BoxesBasicStatistic%BoxesStatis_Integral%NC0(IStatu) + 1
+!
+!    END DO
+!
+!    DO IBox = 1,MultiBox
+!        this%m_BoxesInfo%SEUsedIndexBox(IBox,2) = this%m_BoxesInfo%SEUsedIndexBox(IBox,2) + NCEachBox(IBox)
+!        this%m_BoxesInfo%SEExpdIndexBox(IBox,2) = this%m_BoxesInfo%SEExpdIndexBox(IBox,2) + NCEachBox(IBox)
+!    END DO
+!
+!    call DeAllocateArray_Host(atomsInfo,"atomsInfo")
+!
+!    call DeAllocateArray_Host(ExpandSizeArray,"ExpandSizeArray")
+!
+!    call tempBoxesInfo%Clean()
+!
+!    close(hFile)
+!
+!    return
+!    100 write(*,*) "MCPSCUERROR: Fail to load the configuration file"
+!        write(*,*) "At line: ",LINE
+!        write(*,*) "STR",STR
+!        write(*,*) "STR(1:1)",STR(1:1)
+!        pause
+!        stop
+  end subroutine Putin_OKMC_OUTCFG_FORMAT18
+
+
+
+
+
+  !*************************************************************
+  subroutine Putin_MF_OUTCFG_FORMAT18(this,cfgFile,Host_SimuCtrlParam,SimuRecord,RNFACTOR,SURDIFPRE_FREE,SURDIFPRE_INGB)
+    use RAND32_MODULE
+    implicit none
+    !---Dummy Vars---
+    CLASS(SimulationBoxes)::this
+    character*256,intent(in)::cfgFile
+    type(SimulationCtrlParam)::Host_SimuCtrlParam
+    CLASS(SimulationRecord)::SimuRecord
+    real(kind=KMCDF),intent(in)::RNFACTOR
+    real(kind=KMCDF),intent(in)::SURDIFPRE_FREE
+    real(kind=KMCDF),intent(in)::SURDIFPRE_INGB
+    !---Local Vars---
+    real(kind=KMCDF),dimension(:),allocatable::LayerThick
+    real(kind=KMCDF),dimension(:,:),allocatable::ClustersSampleConcentrate
+    type(ACluster),dimension(:,:),allocatable::ClustersSample
+    !---Body---
+
+    call this%Putin_MF_OUTCFG_FORMAT18_Distribution(Host_SimuCtrlParam,cfgFile,LayerThick,ClustersSampleConcentrate,ClustersSample,SimuRecord,RNFACTOR,SURDIFPRE_FREE)
+
+    call this%DoPutin_FromDistribution(Host_SimuCtrlParam,LayerThick,ClustersSampleConcentrate,ClustersSample,RNFACTOR,SURDIFPRE_FREE,SURDIFPRE_INGB)
+
+    call DeAllocateArray_Host(LayerThick,"LayerThick")
+    call DeAllocateArray_Host(ClustersSampleConcentrate,"ClustersSampleConcentrate")
+    call DeAllocateArray_Host(ClustersSample,"ClustersSample")
+
+    return
+  end subroutine Putin_MF_OUTCFG_FORMAT18
+
+  !*************************************************************
+  subroutine Putin_MF_OUTCFG_FORMAT18_Distribution(this,Host_SimuCtrlParam,cfgFile,LayersThick,ClustersSampleConcentrate,ClustersSample,SimuRecord,RNFACTOR,SURDIFPRE_FREE)
+    use RAND32_MODULE
+    implicit none
+    !---Dummy Vars---
+    CLASS(SimulationBoxes)::this
+    type(SimulationCtrlParam)::Host_SimuCtrlParam
+    character*256,intent(in)::cfgFile
+    real(kind=KMCDF),dimension(:),allocatable::LayersThick
+    real(kind=KMCDF),dimension(:,:),allocatable::ClustersSampleConcentrate
+    type(ACluster),dimension(:,:),allocatable::ClustersSample
+    CLASS(SimulationRecord)::SimuRecord
+    real(kind=KMCDF),intent(in)::RNFACTOR
+    real(kind=KMCDF),intent(in)::SURDIFPRE_FREE
+    !---Local Vars---
+    integer::hFile
+    integer::LINE
+    integer::N
+    character*256::STR
+    character*32::KEYWORD
+    character*32::STRTMP(20)
+    integer::IElement
+    integer::NCEachBox
+    integer::AtomsIndex(p_ATOMS_GROUPS_NUMBER)
+    integer::NATomsUsed
+    integer::NClustersGroup
+    type(DiffusorValue)::TheDiffusorValue
+    !---Body---
+
+    AtomsIndex = 0
+
+    NATomsUsed = 0
+
+    LINE = 0
+
+    hFile = OpenExistedFile(cfgFile)
+
+    call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+    call RemoveComments(STR,"!")
+
+    STR = adjustl(STR)
+
+    call GETKEYWORD("&",STR,KEYWORD)
+
+    call UPCASE(KEYWORD)
+
+    if(.not. IsStrEqual(adjustl(trim(KEYWORD)),MF_OUTCFG_FORMAT18)) then
+        write(*,*) "MCPSCUERROR: the format of mean field configuration file is not right at LINE: ",LINE
+        write(*,*) STR
+        pause
+        stop
+    end if
+
+    DO While(.true.)
+        call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+        call RemoveComments(STR,"!")
+
+        STR = adjustl(STR)
+
+        call GETKEYWORD("&",STR,KEYWORD)
+
+        call UPCASE(KEYWORD)
+
+        select case(KEYWORD(1:LENTRIM(KEYWORD)))
+            case("&TYPE")
+                exit
+
+            case("&TIME")
+                call EXTRACT_NUMB(STR,1,N,STRTMP)
+                call SimuRecord%SetSimuTimes(DRSTR(STRTMP(1)))
+
+            case("&ELEMENT")
+                call EXTRACT_SUBSTR(STR,p_ATOMS_GROUPS_NUMBER,N,STRTMP)
+                if(N .LT. 1) then
+                    write(*,*) "Too few elements are special!"
+                    write(*,*) "At line: ",LINE
+                    write(*,*) STR
+                    pause
+                    stop
+                end if
+
+                if(N .GT. p_ATOMS_GROUPS_NUMBER) then
+                    write(*,*) "Too many elements are special!"
+                    write(*,*) "At line: ",LINE
+                    write(*,*) STR
+                    write(*,*) "The system max atoms number is: ",p_ATOMS_GROUPS_NUMBER
+                    pause
+                    stop
+                end if
+
+                NATomsUsed = 0
+
+                DO IElement = 1,N
+                    AtomsIndex(IElement) = this%Atoms_list%FindIndexBySymbol(adjustl(trim(STRTMP(IElement))))
+                    NATomsUsed = NATomsUsed + 1
+                END DO
+
+            case default
+                write(*,*) "MCPSCUERROR: Illegal flag: ",KEYWORD
+                write(*,*) STR
+                pause
+                stop
+        end select
+
+    END DO
+
+    if(NATomsUsed .LE. 0) then
+        write(*,*) "MCPSCUERROR: None of elements are special."
+        pause
+        stop
+    end if
+
+    NClustersGroup = 0
+
+    DO While(.true.)
+
+        call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+        call RemoveComments(STR,"!")
+
+        STR = adjustl(STR)
+
+        call GETKEYWORD("&",STR,KEYWORD)
+
+        call UPCASE(KEYWORD)
+
+        select case(KEYWORD(1:LENTRIM(KEYWORD)))
+            case("&ENDBOXMF18")
+                exit
+        end select
+
+        call EXTRACT_NUMB(STR,NATomsUsed + 1,N,STRTMP)
+
+        if(N .LT. (NATomsUsed+1)) then
+            write(*,*) "MCPSCUERROR: The data not include atoms composition, concentration."
+            write(*,*) "At LINE: ",LINE
+            write(*,*) STR
+            pause
+            stop
+        end if
+
+        NClustersGroup = NClustersGroup + 1
+
+    END DO
+
+    if(NClustersGroup .LE. 0) then
+        write(*,*) "MCPSCUERROR: There are not any clusters group are defined in meanfield configuration file."
+        pause
+        stop
+    end if
+
+    !---For non-space special rate-theory, the layer number is 1.
+    call AllocateArray_Host(LayersThick,1,"LayersThick")
+
+    LayersThick(1) = this%BOXSIZE(3)
+
+    call AllocateArray_Host(ClustersSampleConcentrate,1,NClustersGroup,"ClustersSampleConcentrate")
+
+    call AllocateArray_Host(ClustersSample,1,NClustersGroup,"ClustersSample")
+
+    ReWind(hFile)
+
+    NClustersGroup = 0
+
+    LINE = 0
+
+    DO While(.true.)
+        call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+        call RemoveComments(STR,"!")
+
+        STR = adjustl(STR)
+
+        call GETKEYWORD("&",STR,KEYWORD)
+
+        call UPCASE(KEYWORD)
+
+        select case(KEYWORD(1:LENTRIM(KEYWORD)))
+            case("&TYPE")
+                exit
+        end select
+
+    END DO
+
+    DO While(.true.)
+
+        call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+        call RemoveComments(STR,"!")
+
+        STR = adjustl(STR)
+
+        call GETKEYWORD("&",STR,KEYWORD)
+
+        call UPCASE(KEYWORD)
+
+        select case(KEYWORD(1:LENTRIM(KEYWORD)))
+            case("&ENDBOXMF18")
+                exit
+        end select
+
+        call EXTRACT_NUMB(STR,NATomsUsed+1,N,STRTMP)
+
+        if(N .LT. (NATomsUsed+1)) then
+            write(*,*) "MCPSCUERROR: The data not include atoms composition, concentration."
+            write(*,*) "At LINE: ",LINE
+            write(*,*) STR
+            pause
+            stop
+        end if
+
+        NClustersGroup = NClustersGroup + 1
+
+        ClustersSampleConcentrate(1,NClustersGroup) = DRSTR(STRTMP(NATomsUsed + 1))
+
+        Do IElement = 1,NATomsUsed
+            ClustersSample(1,NClustersGroup)%m_Atoms(AtomsIndex(IElement))%m_ID = AtomsIndex(IElement)
+            ClustersSample(1,NClustersGroup)%m_Atoms(AtomsIndex(IElement))%m_NA = floor(DRSTR(STRTMP(IElement)) + 0.5D0)
+        End Do
+
+        TheDiffusorValue = this%m_DiffusorTypesMap%Get(ClustersSample(1,NClustersGroup))
+
+        select case(TheDiffusorValue%ECRValueType_Free)
+            case(p_ECR_ByValue)
+                ClustersSample(1,NClustersGroup)%m_RAD = TheDiffusorValue%ECR_Free
+            case(p_ECR_ByBCluster)
+                ClustersSample(1,NClustersGroup)%m_RAD = DSQRT(sum(ClustersSample(1,NClustersGroup)%m_Atoms(:)%m_NA)/RNFACTOR)
+        end select
+
+        select case(TheDiffusorValue%DiffusorValueType_Free)
+            case(p_DiffuseCoefficient_ByValue)
+                ClustersSample(1,NClustersGroup)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
+            case(p_DiffuseCoefficient_ByArrhenius)
+                ClustersSample(1,NClustersGroup)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
+            case(p_DiffuseCoefficient_ByBCluster)
+                ! Here we adopt a model that D=D0*(1/R)**Gama
+                ClustersSample(1,NClustersGroup)%m_DiffCoeff = SURDIFPRE_FREE*(ClustersSample(1,NClustersGroup)%m_RAD**(-p_GAMMA))
+        end select
+
+        ClustersSample(1,NClustersGroup)%m_Statu = p_ACTIVEFREE_STATU  ! the GB and interface would not be considered in MF , they would be considered SPMF
+
+        ClustersSample(1,NClustersGroup)%m_Layer = 1
+
+    END DO
+
+    close(hFile)
+
+    return
+    100 write(*,*) "MCPSCUERROR: Fail to load the configuration file"
+        write(*,*) "At line: ",LINE
+        write(*,*) STR
+        pause
+        stop
+  end subroutine Putin_MF_OUTCFG_FORMAT18_Distribution
+
+  !*************************************************************
+  subroutine Putin_SPMF_OUTCFG_FORMAT18(this,cfgFileName,Host_SimuCtrlParam,SimuRecord,RNFACTOR,SURDIFPRE_FREE,SURDIFPRE_INGB)
+    use RAND32_MODULE
+    implicit none
+    !---Dummy Vars---
+    CLASS(SimulationBoxes)::this
+    character*256,intent(in)::cfgFileName
+    type(SimulationCtrlParam)::Host_SimuCtrlParam
+    CLASS(SimulationRecord)::SimuRecord
+    real(kind=KMCDF),intent(in)::RNFACTOR
+    real(kind=KMCDF),intent(in)::SURDIFPRE_FREE
+    real(kind=KMCDF),intent(in)::SURDIFPRE_INGB
+    !---Local Vars---
+    real(kind=KMCDF),dimension(:),allocatable::LayerThick
+    real(kind=KMCDF),dimension(:,:),allocatable::ClustersSampleConcentrate
+    type(ACluster),dimension(:,:),allocatable::ClustersSample
+    !---Body---
+
+    call this%Putin_SPMF_OUTCFG_FORMAT18_Distribution(Host_SimuCtrlParam,cfgFileName,LayerThick,ClustersSampleConcentrate,ClustersSample,SimuRecord,RNFACTOR,SURDIFPRE_FREE,SURDIFPRE_INGB)
+
+    call this%DoPutin_FromDistribution(Host_SimuCtrlParam,LayerThick,ClustersSampleConcentrate,ClustersSample,RNFACTOR,SURDIFPRE_FREE,SURDIFPRE_INGB)
+
+    call DeAllocateArray_Host(LayerThick,"LayerThick")
+    call DeAllocateArray_Host(ClustersSampleConcentrate,"ClustersSampleConcentrate")
+    call DeAllocateArray_Host(ClustersSample,"ClustersSample")
+
+    return
+  end subroutine Putin_SPMF_OUTCFG_FORMAT18
+
+  !*************************************************************
+  subroutine Putin_SPMF_OUTCFG_FORMAT18_Distribution(this,Host_SimuCtrlParam,cfgFile,LayersThick,ClustersSampleConcentrate,ClustersSample,SimuRecord,RNFACTOR,SURDIFPRE_FREE,SURDIFPRE_INGB)
+    use RAND32_MODULE
+    implicit none
+    !---Dummy Vars---
+    CLASS(SimulationBoxes)::this
+    type(SimulationCtrlParam)::Host_SimuCtrlParam
+    character*256,intent(in)::cfgFile
+    real(kind=KMCDF),dimension(:),allocatable::LayersThick
+    real(kind=KMCDF),dimension(:,:),allocatable::ClustersSampleConcentrate
+    type(ACluster),dimension(:,:),allocatable::ClustersSample
+    CLASS(SimulationRecord)::SimuRecord
+    real(kind=KMCDF),intent(in)::RNFACTOR
+    real(kind=KMCDF),intent(in)::SURDIFPRE_FREE
+    real(kind=KMCDF),intent(in)::SURDIFPRE_INGB
+    !---Local Vars---
+    integer::hFile
+    integer::LINE
+    integer::N
+    character*256::STR
+    character*32::KEYWORD
+    character*32::STRTMP(20)
+    integer::IElement
+    integer::NCEachBox
+    integer::AtomsIndex(p_ATOMS_GROUPS_NUMBER)
+    integer::NATomsUsed
+    integer::LayerNum
+    integer::tempClustersGroup
+    integer::MaxGroups
+    integer::ILayer
+    integer::IGroup
+    integer::tempLayer
+    type(DiffusorValue)::TheDiffusorValue
+    !---Body---
+
+    AtomsIndex = 0
+
+    NATomsUsed = 0
+
+    LayerNum = 0
+
+    LINE = 0
+
+    hFile = OpenExistedFile(cfgFile)
+
+    call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+    call RemoveComments(STR,"!")
+
+    STR = adjustl(STR)
+
+    call GETKEYWORD("&",STR,KEYWORD)
+
+    call UPCASE(KEYWORD)
+
+    if(.not. IsStrEqual(adjustl(trim(KEYWORD)),SPMF_OUTCFG_FORMAT18)) then
+        write(*,*) "MCPSCUERROR: the format of space special mean field configuration file is not right at LINE: ",LINE
+        write(*,*) STR
+        pause
+        stop
+    end if
+
+    DO While(.true.)
+        call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+        call RemoveComments(STR,"!")
+
+        STR = adjustl(STR)
+
+        call GETKEYWORD("&",STR,KEYWORD)
+
+        call UPCASE(KEYWORD)
+
+        select case(KEYWORD(1:LENTRIM(KEYWORD)))
+            case("&TYPE")
+                exit
+
+            case("&TIME")
+                call EXTRACT_NUMB(STR,1,N,STRTMP)
+                call SimuRecord%SetSimuTimes(DRSTR(STRTMP(1)))
+
+            case("&ELEMENT")
+                call EXTRACT_SUBSTR(STR,p_ATOMS_GROUPS_NUMBER,N,STRTMP)
+                if(N .LT. 1) then
+                    write(*,*) "Too few elements are special!"
+                    write(*,*) "At line: ",LINE
+                    write(*,*) STR
+                    pause
+                    stop
+                end if
+
+                if(N .GT. p_ATOMS_GROUPS_NUMBER) then
+                    write(*,*) "Too many elements are special!"
+                    write(*,*) "At line: ",LINE
+                    write(*,*) STR
+                    write(*,*) "The system max atoms number is: ",p_ATOMS_GROUPS_NUMBER
+                    pause
+                    stop
+                end if
+
+                NATomsUsed = 0
+
+                DO IElement = 1,N
+                    AtomsIndex(IElement) = this%Atoms_list%FindIndexBySymbol(adjustl(trim(STRTMP(IElement))))
+                    NATomsUsed = NATomsUsed + 1
+                END DO
+
+            case("&NLAYER")
+                call EXTRACT_NUMB(STR,1,N,STRTMP)
+                if(N .LT. 1) then
+                    write(*,*) "Too few parameters for number of layers!"
+                    write(*,*) "At line: ",LINE
+                    write(*,*) STR
+                    pause
+                    stop
+                end if
+
+                LayerNum = ISTR(STRTMP(1))
+
+                if(LayerNum .LE. 0) then
+                    write(*,*) "MCPSCUERROR: The layer number is less than 1."
+                    write(*,*) "At line : ",LINE
+                    pause
+                    stop
+                end if
+
+                call AllocateArray_Host(LayersThick,LayerNum,"LayersThick")
+
+                DO ILayer = 1,LayerNum
+                    call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+                    call RemoveComments(STR,"!")
+
+                    STR = adjustl(STR)
+
+                    call GETKEYWORD("&",STR,KEYWORD)
+
+                    call UPCASE(KEYWORD)
+
+                    if(.not. IsStrEqual(KEYWORD(1:LENTRIM(KEYWORD)),"&LAYERTHICK")) then
+                        write(*,*) "MCPSCUERROR: the layers number is less than the recorded layers number ."
+                        pause
+                        stop
+                    end if
+
+                    call EXTRACT_NUMB(STR,1,N,STRTMP)
+
+                    LayersThick(ILayer) = DRSTR(STRTMP(1))
+
+                END DO
+
+                if(sum(LayersThick) .LE. 0) then
+                    call DeAllocateArray_Host(LayersThick,"LayersThick")
+                    call AllocateArray_Host(LayersThick,1,"LayersThick")
+                    LayersThick(1) = this%BOXSIZE(3)
+                end if
+
+            case default
+                write(*,*) "MCPSCUERROR: Illegal flag: ",KEYWORD
+                write(*,*) STR
+                pause
+                stop
+        end select
+
+    END DO
+
+    if(NATomsUsed .LE. 0) then
+        write(*,*) "MCPSCUERROR: None of elements are special."
+        pause
+        stop
+    end if
+
+    tempClustersGroup = 0
+
+    MaxGroups = 0
+
+    ILayer = 1
+
+    DO While(.true.)
+
+        call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+        call RemoveComments(STR,"!")
+
+        STR = adjustl(STR)
+
+        call GETKEYWORD("&",STR,KEYWORD)
+
+        call UPCASE(KEYWORD)
+
+        select case(KEYWORD(1:LENTRIM(KEYWORD)))
+            case("&ENDBOXMF18")
+                exit
+        end select
+
+        call EXTRACT_NUMB(STR,NATomsUsed + 5,N,STRTMP)
+
+        if(N .LT. (NATomsUsed + 5)) then
+            write(*,*) "MCPSCUERROR: The data not include atoms composition, cluster status,GB seed 1,GB seed 2, concentration,layer."
+            write(*,*) "At line: ",LINE
+            write(*,*) STR
+            pause
+            stop
+        end if
+
+        tempLayer =  ISTR(STRTMP(NATomsUsed + 5))
+
+        if(ILayer .eq. tempLayer) then
+            tempClustersGroup = tempClustersGroup + 1
+        else if(ILayer .LT. tempLayer) then
+            if(tempClustersGroup .GT. MaxGroups) then
+                MaxGroups = tempClustersGroup
+            end if
+            tempClustersGroup = 0
+
+            ILayer = tempLayer
+        else
+            write(*,*) "MCPSCUERROR: The layer number should be increase, but here it is decreasing."
+            write(*,*) "At line :",LINE
+            write(*,*) "For Layer number: ",tempLayer
+            pause
+            stop
+        end if
+
+    END DO
+
+    if(MaxGroups .LE. 0) then
+        write(*,*) "MCPSCUERROR: There are not any clusters group are defined in meanfield configuration file."
+        pause
+        stop
+    end if
+
+    if(LayerNum .LE. 0) then
+        call AllocateArray_Host(LayersThick,1,"LayersThick")
+        LayersThick(1) = this%BOXSIZE(3)
+    end if
+
+    if(sum(LayersThick) .GT. this%BOXSIZE(3)) then
+        write(*,*) "MCPSCUERROR: The SPMF depth is greater than box depth"
+        write(*,*) "The SPMF depth is: ",sum(LayersThick)
+        write(*,*) "The box depth is: ",this%BOXSIZE(3)
+        pause
+        stop
+    end if
+
+    call AllocateArray_Host(ClustersSampleConcentrate,LayerNum,MaxGroups,"ClustersSampleConcentrate")
+
+    call AllocateArray_Host(ClustersSample,LayerNum,MaxGroups,"ClustersSample")
+
+    ReWind(hFile)
+
+    LINE = 0
+    DO While(.true.)
+        call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+        call RemoveComments(STR,"!")
+
+        STR = adjustl(STR)
+
+        call GETKEYWORD("&",STR,KEYWORD)
+
+        call UPCASE(KEYWORD)
+
+        select case(KEYWORD(1:LENTRIM(KEYWORD)))
+            case("&TYPE")
+                exit
+        end select
+    END DO
+
+    IGroup = 1
+
+    ILayer = 1
+
+    DO While(.true.)
+
+        call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+        call RemoveComments(STR,"!")
+
+        STR = adjustl(STR)
+
+        call GETKEYWORD("&",STR,KEYWORD)
+
+        call UPCASE(KEYWORD)
+
+        select case(KEYWORD(1:LENTRIM(KEYWORD)))
+            case("&ENDBOXMF18")
+                exit
+        end select
+
+        call EXTRACT_NUMB(STR,NATomsUsed+5,N,STRTMP)
+
+        if(N .LT. (NATomsUsed + 5)) then
+            write(*,*) "MCPSCUERROR: The data not include atoms composition, cluster status,GB seed 1, GB seed 2, concentration,layer."
+            write(*,*) "At line: ",LINE
+            write(*,*) STR
+            pause
+            stop
+        end if
+
+        tempLayer =  ISTR(STRTMP(NATomsUsed + 5))
+
+        if(ILayer .LT. tempLayer) then
+            IGroup = IGroup + 1
+            ILayer = tempLayer
+        else
+            write(*,*) "MCPSCUERROR: The layer number should be increase, but here it is decreasing."
+            write(*,*) "At line :",LINE
+            write(*,*) "For Layer number: ",tempLayer
+            pause
+            stop
+        end if
+
+        ClustersSample(ILayer,IGroup)%m_Statu = ISTR(STRTMP(NATomsUsed + 1))
+
+        ClustersSample(ILayer,IGroup)%m_GrainID(1) = ISTR(STRTMP(NATomsUsed + 2))
+
+        if(ClustersSample(ILayer,IGroup)%m_GrainID(1) .GT. this%m_GrainBoundary%GrainNum) then
+            write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+            write(*,*) ClustersSample(ILayer,IGroup)%m_GrainID(1)
+            pause
+            stop
+        end if
+
+        ClustersSample(ILayer,IGroup)%m_GrainID(2) = ISTR(STRTMP(NATomsUsed + 3))
+
+        if(ClustersSample(ILayer,IGroup)%m_GrainID(2) .GT. this%m_GrainBoundary%GrainNum) then
+            write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+            write(*,*) ClustersSample(ILayer,IGroup)%m_GrainID(2)
+            pause
+            stop
+        end if
+
+        ClustersSampleConcentrate(ILayer,IGroup) = DRSTR(STRTMP(NATomsUsed + 4))
+
+        Do IElement = 1,NATomsUsed
+            ClustersSample(ILayer,IGroup)%m_Atoms(AtomsIndex(IElement))%m_ID = AtomsIndex(IElement)
+            ClustersSample(ILayer,IGroup)%m_Atoms(AtomsIndex(IElement))%m_NA = floor(DRSTR(STRTMP(IElement)) + 0.5D0)
+        End Do
+
+        TheDiffusorValue = this%m_DiffusorTypesMap%Get(ClustersSample(ILayer,IGroup))
+
+        if(ClustersSample(ILayer,IGroup)%m_Statu .eq. p_ACTIVEFREE_STATU) then
+
+            select case(TheDiffusorValue%ECRValueType_Free)
+                case(p_ECR_ByValue)
+                    ClustersSample(ILayer,IGroup)%m_RAD = TheDiffusorValue%ECR_Free
+                case(p_ECR_ByBCluster)
+                    ClustersSample(ILayer,IGroup)%m_RAD = DSQRT(sum(ClustersSample(ILayer,IGroup)%m_Atoms(:)%m_NA)/RNFACTOR)
+            end select
+
+            select case(TheDiffusorValue%DiffusorValueType_Free)
+                case(p_DiffuseCoefficient_ByValue)
+                    ClustersSample(ILayer,IGroup)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
+                case(p_DiffuseCoefficient_ByArrhenius)
+                    ClustersSample(ILayer,IGroup)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
+                case(p_DiffuseCoefficient_ByBCluster)
+                    ! Here we adopt a model that D=D0*(1/R)**Gama
+                    ClustersSample(ILayer,IGroup)%m_DiffCoeff = SURDIFPRE_FREE*(ClustersSample(ILayer,IGroup)%m_RAD**(-p_GAMMA))
+            end select
+        else if(ClustersSample(ILayer,IGroup)%m_Statu .eq. p_ACTIVEINGB_STATU) then
+            select case(TheDiffusorValue%ECRValueType_InGB)
+                case(p_ECR_ByValue)
+                    ClustersSample(ILayer,IGroup)%m_RAD = TheDiffusorValue%ECR_InGB
+                case(p_ECR_ByBCluster)
+                    ClustersSample(ILayer,IGroup)%m_RAD = DSQRT(sum(ClustersSample(ILayer,IGroup)%m_Atoms(:)%m_NA)/RNFACTOR)
+            end select
+
+            select case(TheDiffusorValue%DiffusorValueType_InGB)
+                case(p_DiffuseCoefficient_ByValue)
+                    ClustersSample(ILayer,IGroup)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_InGB_Value
+                case(p_DiffuseCoefficient_ByArrhenius)
+                    ClustersSample(ILayer,IGroup)%m_DiffCoeff = TheDiffusorValue%PreFactor_InGB*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_InGB/Host_SimuCtrlParam%TKB)
+                case(p_DiffuseCoefficient_ByBCluster)
+                    ! Here we adopt a model that D=D0*(1/R)**Gama
+                    ClustersSample(ILayer,IGroup)%m_DiffCoeff = SURDIFPRE_INGB*(ClustersSample(ILayer,IGroup)%m_RAD**(-p_GAMMA))
+            end select
+        end if
+
+        ClustersSample(ILayer,IGroup)%m_Layer = ILayer
+
+    END DO
+
+    close(hFile)
+
+    return
+    100 write(*,*) "MCPSCUERROR: Fail to load the configuration file"
+        write(*,*) "At line: ",LINE
+        write(*,*) STR
+        pause
+        stop
+  end subroutine Putin_SPMF_OUTCFG_FORMAT18_Distribution
+
+  !*************************************************************
+  subroutine DoPutin_FromDistribution(this,Host_SimuCtrlParam,LayerThick,ClustersSampleConcentrate,ClustersSample,RNFACTOR,SURDIFPRE_FREE,SURDIFPRE_INGB)
+    use RAND32_MODULE
+    implicit none
+    !---Dummy Vars---
+    CLASS(SimulationBoxes)::this
+    type(SimulationCtrlParam)::Host_SimuCtrlParam
+    real(kind=KMCDF),dimension(:),intent(in),allocatable::LayerThick
+    real(kind=KMCDF),dimension(:,:),intent(in),allocatable::ClustersSampleConcentrate
+    type(ACluster),dimension(:,:),intent(in),allocatable::ClustersSample
+    real(kind=KMCDF),intent(in)::RNFACTOR
+    real(kind=KMCDF),intent(in)::SURDIFPRE_FREE
+    real(kind=KMCDF),intent(in)::SURDIFPRE_INGB
+    !---Local Vars---
+    integer::MultiBox
+    integer::IBox
+    integer::IC
+    integer::ICFROM
+    integer::ICTO
+    real(kind=KMCDF)::BoxVolum
+    integer::NCEachBox
+    real(kind=KMCDF)::POS(3)
+    integer::LastIndex
+    integer::NClustersGroup
+    integer::IGroup
+    integer::ILayer
+    integer::LayerNum
+    integer::RemindedNum
+    real(kind=KMCDF)::GroupRateTemp
+    real(kind=KMCDF)::TotalConcentrate
+    real(kind=KMCDF)::tempRand
+    logical::exitFlag
+    type(DiffusorValue)::TheDiffusorValue
+    !---Body---
+
+!    LayerNum = size(LayerThick)
+!
+!    NClustersGroup = size(ClustersSampleConcentrate,dim=2)
+!
+!    if(LayerNum .ne. size(ClustersSampleConcentrate,dim=1)) then
+!        write(*,*) "MCPSCUERROR: The layer number is not equal between layerThick and ClustersSampleConcentrate"
+!        write(*,*) "The layer number in layerThick is: ",LayerNum
+!        write(*,*) "However: the Layer number in ClustersSampleConcentrate is ",size(ClustersSampleConcentrate,dim=1)
+!        pause
+!        stop
+!    end if
+!
+!    MultiBox = Host_SimuCtrlParam%MultiBox
+!
+!    BoxVolum = product(this%BOXSIZE)
+!
+!    TotalConcentrate = sum(ClustersSampleConcentrate)
+!
+!    NCEachBox = floor(TotalConcentrate*BoxVolum)
+!
+!    call this%ExpandClustersInfor_CPU(Host_SimuCtrlParam,NCEachBox)
+!
+!    DO IBox = 1,MultiBox
+!
+!        LastIndex = this%m_BoxesInfo%SEUsedIndexBox(IBox,2)
+!
+!        RemindedNum = NCEachBox
+!
+!        DO ILayer = 1,LayerNum
+!            DO IGroup = 1,NClustersGroup
+!
+!                ICFROM = LastIndex + 1
+!                ICTO = ICFROM + floor(ClustersSampleConcentrate(ILayer,IGroup)*BoxVolum) - 1
+!
+!                DO IC = ICFROM,ICTO
+!                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms = ClustersSample(ILayer,IGroup)%m_Atoms
+!
+!                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Layer = ClustersSample(ILayer,IGroup)%m_Layer
+!
+!                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu = ClustersSample(ILayer,IGroup)%m_Statu
+!
+!                    POS(1) = DRAND32()*this%BOXSIZE(1) + this%BOXBOUNDARY(1,1)
+!                    POS(2) = DRAND32()*this%BOXSIZE(2) + this%BOXBOUNDARY(2,1)
+!                    POS(3) = DRAND32()*this%BOXSIZE(3) + this%BOXBOUNDARY(3,1)
+!                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_POS = POS
+!
+!                    TheDiffusorValue = this%m_DiffusorTypesMap%Get(this%m_ClustersInfo_CPU%m_Clusters(IC))
+!
+!                    if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu .eq. p_ACTIVEFREE_STATU) then
+!
+!                        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = this%m_GrainBoundary%GrainBelongsTo(POS,this%HBOXSIZE,this%BOXSIZE,Host_SimuCtrlParam)
+!
+!                        select case(TheDiffusorValue%ECRValueType_Free)
+!                            case(p_ECR_ByValue)
+!                                this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = TheDiffusorValue%ECR_Free
+!                            case(p_ECR_ByBCluster)
+!                                this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = DSQRT(sum(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA)/RNFACTOR)
+!                        end select
+!
+!                        select case(TheDiffusorValue%DiffusorValueType_Free)
+!                            case(p_DiffuseCoefficient_ByValue)
+!                                this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
+!                            case(p_DiffuseCoefficient_ByArrhenius)
+!                                this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
+!                            case(p_DiffuseCoefficient_ByBCluster)
+!                                ! Here we adopt a model that D=D0*(1/R)**Gama
+!                                this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = SURDIFPRE_FREE*(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD**(-p_GAMMA))
+!                        end select
+!                    else if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu .eq. p_ACTIVEINGB_STATU) then
+!
+!                        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = ClustersSample(ILayer,IGroup)%m_GrainID(1)
+!
+!                        if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) .GT. this%m_GrainBoundary%GrainNum) then
+!                            write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+!                            write(*,*) this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1)
+!                            pause
+!                            stop
+!                        end if
+!
+!                        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) = ClustersSample(ILayer,IGroup)%m_GrainID(2)
+!
+!                        if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) .GT. this%m_GrainBoundary%GrainNum) then
+!                            write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+!                            write(*,*) this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2)
+!                            pause
+!                            stop
+!                        end if
+!
+!                        select case(TheDiffusorValue%ECRValueType_InGB)
+!                            case(p_ECR_ByValue)
+!                                this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = TheDiffusorValue%ECR_InGB
+!                            case(p_ECR_ByBCluster)
+!                                this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = DSQRT(sum(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA)/RNFACTOR)
+!                        end select
+!
+!                        select case(TheDiffusorValue%DiffusorValueType_InGB)
+!                            case(p_DiffuseCoefficient_ByValue)
+!                                this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_InGB_Value
+!                            case(p_DiffuseCoefficient_ByArrhenius)
+!                                this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%PreFactor_InGB*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_InGB/Host_SimuCtrlParam%TKB)
+!                            case(p_DiffuseCoefficient_ByBCluster)
+!                                ! Here we adopt a model that D=D0*(1/R)**Gama
+!                                this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = SURDIFPRE_INGB*(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD**(-p_GAMMA))
+!                        end select
+!                    end if
+!
+!                    RemindedNum = RemindedNum - 1
+!
+!                END DO
+!
+!                LastIndex = ICTO
+!            END DO
+!        END DO
+!
+!        ICFROM = LastIndex + 1
+!        ICTO = ICFROM + RemindedNum - 1
+!
+!        DO IC = ICFROM,ICTO
+!            tempRand = DRAND32()
+!
+!            GroupRateTemp = 0.D0
+!
+!            DO ILayer = 1,LayerNum
+!                if(exitFlag .eq. .true.) then
+!                    exit
+!                end if
+!
+!                DO IGroup = 1,NClustersGroup
+!                    GroupRateTemp = ClustersSampleConcentrate(ILayer,IGroup)/TotalConcentrate
+!
+!                    if(GroupRateTemp .GE. tempRand) then
+!
+!                        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms = ClustersSample(ILayer,IGroup)%m_Atoms
+!
+!                        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Layer = ClustersSample(ILayer,IGroup)%m_Layer
+!
+!                        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu = ClustersSample(ILayer,IGroup)%m_Statu
+!
+!                        POS(1) = DRAND32()*this%BOXSIZE(1) + this%BOXBOUNDARY(1,1)
+!                        POS(2) = DRAND32()*this%BOXSIZE(2) + this%BOXBOUNDARY(2,1)
+!                        POS(3) = DRAND32()*LayerThick(ILayer) +  sum(LayerThick(1:ILayer-1)) + this%BOXBOUNDARY(3,1)
+!                        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_POS = POS
+!
+!                        TheDiffusorValue = this%m_DiffusorTypesMap%Get(this%m_ClustersInfo_CPU%m_Clusters(IC))
+!
+!                        if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu .eq. p_ACTIVEFREE_STATU) then
+!
+!                            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = this%m_GrainBoundary%GrainBelongsTo(POS,this%HBOXSIZE,this%BOXSIZE,Host_SimuCtrlParam)
+!
+!                            select case(TheDiffusorValue%ECRValueType_Free)
+!                                case(p_ECR_ByValue)
+!                                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = TheDiffusorValue%ECR_Free
+!                                case(p_ECR_ByBCluster)
+!                                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = DSQRT(sum(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA)/RNFACTOR)
+!                            end select
+!
+!                            select case(TheDiffusorValue%DiffusorValueType_Free)
+!                                case(p_DiffuseCoefficient_ByValue)
+!                                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
+!                                case(p_DiffuseCoefficient_ByArrhenius)
+!                                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
+!                                case(p_DiffuseCoefficient_ByBCluster)
+!                                    ! Here we adopt a model that D=D0*(1/R)**Gama
+!                                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = SURDIFPRE_FREE*(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD**(-p_GAMMA))
+!                            end select
+!                        else if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu .eq. p_ACTIVEINGB_STATU) then
+!
+!                            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = ClustersSample(ILayer,IGroup)%m_GrainID(1)
+!                            if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) .GT. this%m_GrainBoundary%GrainNum) then
+!                                write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+!                                write(*,*) this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1)
+!                                pause
+!                                stop
+!                            end if
+!
+!                            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) = ClustersSample(ILayer,IGroup)%m_GrainID(2)
+!                            if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) .GT. this%m_GrainBoundary%GrainNum) then
+!                                write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+!                                write(*,*) this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2)
+!                                pause
+!                                stop
+!                            end if
+!
+!                            select case(TheDiffusorValue%ECRValueType_InGB)
+!                                case(p_ECR_ByValue)
+!                                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = TheDiffusorValue%ECR_InGB
+!                                case(p_ECR_ByBCluster)
+!                                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = DSQRT(sum(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA)/RNFACTOR)
+!                            end select
+!
+!                            select case(TheDiffusorValue%DiffusorValueType_InGB)
+!                                case(p_DiffuseCoefficient_ByValue)
+!                                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_InGB_Value
+!                                case(p_DiffuseCoefficient_ByArrhenius)
+!                                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%PreFactor_InGB*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_InGB/Host_SimuCtrlParam%TKB)
+!                                case(p_DiffuseCoefficient_ByBCluster)
+!                                    ! Here we adopt a model that D=D0*(1/R)**Gama
+!                                    this%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = SURDIFPRE_INGB*(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD**(-p_GAMMA))
+!                            end select
+!                        end if
+!
+!                        exitFlag = .true.
+!                        exit
+!
+!                    end if
+!
+!                END DO
+!            END DO
+!        END DO
+!
+!    END DO
+!
+!    DO IBox = 1,MultiBox
+!
+!        if(NCEachBox .GT. 0) then
+!            this%m_BoxesInfo%SEExpdIndexBox(IBox,2) = this%m_BoxesInfo%SEExpdIndexBox(IBox,2) + NCEachBox
+!            this%m_BoxesInfo%SEUsedIndexBox(IBox,2) = this%m_BoxesInfo%SEUsedIndexBox(IBox,2) + NCEachBox
+!        end if
+!
+!        this%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC(p_ACTIVEFREE_STATU) = this%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC(p_ACTIVEFREE_STATU) + NCEachBox
+!        this%m_BoxesBasicStatistic%BoxesStatis_Integral%NC(p_ACTIVEFREE_STATU) = this%m_BoxesBasicStatistic%BoxesStatis_Integral%NC(p_ACTIVEFREE_STATU) + NCEachBox
+!
+!        this%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC0(p_ACTIVEFREE_STATU) = this%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC0(p_ACTIVEFREE_STATU) + NCEachBox
+!        this%m_BoxesBasicStatistic%BoxesStatis_Integral%NC0(p_ACTIVEFREE_STATU) = this%m_BoxesBasicStatistic%BoxesStatis_Integral%NC0(p_ACTIVEFREE_STATU) + NCEachBox
+!    END DO
+
+    return
+  end subroutine DoPutin_FromDistribution
+
   !**********************************************
   subroutine CleanSimulationBoxes(this)
     implicit none
@@ -1603,10 +3179,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     call DeAllocateArray_Host(this%NodeSpace,"NodeSpace")
 
     !---The concentrates distribution---
-    call DeAllocateArray_Host(this%Concentrate,"Concentrate")
-
-    !---The clusters kinds define---
-    call DeAllocateArray_Host(this%ClustersKindArray,"ClustersKindArray")
+    call this%m_ClustersInfo_CPU%Clean()
 
     call this%MatrixAtom%CleanAtom()
 

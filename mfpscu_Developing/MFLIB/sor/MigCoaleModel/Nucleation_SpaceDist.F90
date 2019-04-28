@@ -187,7 +187,7 @@ module NUCLEATION_SPACEDIST
 
         call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
 
-        Associate(ClustersKind=>Host_SimBoxes%ClustersKindArray,Concent=>Host_SimBoxes%Concentrate,NodeSpace=>Host_SimBoxes%NodeSpace)
+        Associate(ClustersKind=>Host_SimBoxes%m_ClustersInfo_CPU%ClustersKindArray,Concent=>Host_SimBoxes%m_ClustersInfo_CPU%Concentrate,NodeSpace=>Host_SimBoxes%NodeSpace)
 
           ConCentrat0 = sum(Concent)
 
@@ -325,7 +325,7 @@ module NUCLEATION_SPACEDIST
 
                 END DO
 
-                call SolveTridag(IKind,MatA,MatB,MatC,MatD,Host_SimBoxes%Concentrate,NNodes,MatW,MatH)
+                call SolveTridag(IKind,MatA,MatB,MatC,MatD,Concent,NNodes,MatW,MatH)
 
                 DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(NNodes)
                 FOutEachStep(IKind) = DiffGradient2*Concent(IKind,NNodes)
@@ -542,7 +542,7 @@ module NUCLEATION_SPACEDIST
 
         call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
 
-        Associate(ClustersKind=>Host_SimBoxes%ClustersKindArray,Concent=>Host_SimBoxes%Concentrate,NodeSpace=>Host_SimBoxes%NodeSpace)
+        Associate(ClustersKind=>Host_SimBoxes%m_ClustersInfo_CPU%ClustersKindArray,Concent=>Host_SimBoxes%m_ClustersInfo_CPU%Concentrate,NodeSpace=>Host_SimBoxes%NodeSpace)
 
           ConCentrat0 = sum(Concent)
 
@@ -808,7 +808,7 @@ module NUCLEATION_SPACEDIST
         real(kind=KMCDF),dimension(:),allocatable::MatrixB
         real(kind=KMCDF),dimension(:),allocatable::MatrixC
         real(kind=KMCDF),dimension(:),allocatable::MatrixD
-        real(kind=KMCDF),dimension(:,:),allocatable::Solver
+        real(kind=KMCDF),dimension(:,:)::Solver
         integer,intent(in)::MatrixSize
         real(kind=KMCDF),dimension(:),allocatable::w
         real(kind=KMCDF),dimension(:),allocatable::h
@@ -855,7 +855,7 @@ module NUCLEATION_SPACEDIST
 
         CKind = Host_SimBoxes%CKind
 
-        Associate(ClustersKind=>Host_SimBoxes%ClustersKindArray,Concent=>Host_SimBoxes%Concentrate)
+        Associate(ClustersKind=>Host_SimBoxes%m_ClustersInfo_CPU%ClustersKindArray,Concent=>Host_SimBoxes%m_ClustersInfo_CPU%Concentrate)
 
           DO INode = 1,NNodes
             NPOWER0Ave(INode) = Dumplicate*sum(Concent(1:CKind,INode))
@@ -922,7 +922,7 @@ module NUCLEATION_SPACEDIST
         N3 = 0.D0
         Rave = 0.D0
 
-        Associate(ClustersKind=>Host_SimBoxes%ClustersKindArray,Concent=>Host_SimBoxes%Concentrate)
+        Associate(ClustersKind=>Host_SimBoxes%m_ClustersInfo_CPU%ClustersKindArray,Concent=>Host_SimBoxes%m_ClustersInfo_CPU%Concentrate)
 
           DO INode = 1,NNodes
 
