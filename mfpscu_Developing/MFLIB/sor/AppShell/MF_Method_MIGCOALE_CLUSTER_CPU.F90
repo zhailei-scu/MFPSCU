@@ -650,10 +650,73 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         type(InitBoxSimCfgList),target::InitBoxCfgList
         !---Local Vars---
         type(InitBoxSimCfgList),pointer::PInitBoxCfgList=>null()
+        type(InitBoxSimCfgList),pointer::NPInitBoxCfgList=>null()
+        !---Local Vars---
+        integer::I
+        integer::AIndex
+        integer::BIndex
+        integer::GroupIndex
+        character*10::Symbol1
+        character*10::Symbol2
         !---Body---
         PInitBoxCfgList=>InitBoxCfgList
 
+        GroupIndex = 0
+
         Do While(associated(PInitBoxCfgList))
+            GroupIndex = GroupIndex + 1
+            AIndex = 0
+            BIndex = 0
+
+            DO I = 1,p_ATOMS_GROUPS_NUMBER
+                if(PInitBoxCfgList%TheValue%CompositWeight(I) .GT. 0.D0) then
+                    if(AIndex .ne. 0) then
+                        call SimBoxes%Atoms_list%GetSymbolByIndex(AIndex,Symbol1)
+                        call SimBoxes%Atoms_list%GetSymbolByIndex(I,Symbol2)
+                        write(*,*) "MCPSCUERROR: The current application only support one element ."
+                        write(*,*) "By you seems specialed element",Symbol1
+                        write(*,*) "And ",Symbol2, " simultaneously."
+                        write(*,*) "At group : ",GroupIndex
+                        pause
+                        stop
+                    end if
+                    AIndex = I
+                end if
+            END DO
+
+            NPInitBoxCfgList=>PInitBoxCfgList%next
+            if(associated(NPInitBoxCfgList)) then
+                DO I = 1,p_ATOMS_GROUPS_NUMBER
+                    if(NPInitBoxCfgList%TheValue%CompositWeight(I) .GT. 0.D0) then
+                        if(BIndex .ne. 0) then
+                            call SimBoxes%Atoms_list%GetSymbolByIndex(BIndex,Symbol1)
+                            call SimBoxes%Atoms_list%GetSymbolByIndex(I,Symbol2)
+
+                            write(*,*) "MCPSCUERROR: The current application only support one element ."
+                            write(*,*) "By you seems specialed element", Symbol1
+                            write(*,*) "And ",Symbol2, " simultaneously."
+                            write(*,*) "At group : ",GroupIndex + 1
+                            pause
+                            stop
+                        end if
+                        BIndex = I
+                    end if
+                END DO
+
+                if(AIndex .ne. BIndex) then
+                    call SimBoxes%Atoms_list%GetSymbolByIndex(AIndex,Symbol1)
+                    call SimBoxes%Atoms_list%GetSymbolByIndex(BIndex,Symbol2)
+
+                    write(*,*) "MCPSCUERROR: The current application only support one element ."
+                    write(*,*) "By you seems specialed element", Symbol1 ," in group ",GroupIndex
+                    write(*,*) "And ",Symbol2," in group ",GroupIndex+1, " simultaneously."
+                    pause
+                    stop
+                end if
+
+            end if
+
+            PInitBoxCfgList=>PInitBoxCfgList%next
 
         End Do
 
@@ -1096,32 +1159,37 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                             call UPCASE(InitBoxCfg%Elemets(I))
                         END DO
                     end if
+                    ! Current, we only support one element
+                    InitBoxCfg%CompositWeight = 0
+                    TheIndex = SimBoxes%Atoms_list%FindIndexBySymbol(InitBoxCfg%Elemets(1))
+                    InitBoxCfg%CompositWeight(TheIndex) = 1.D0
+                    InitBoxCfg%CompositWeight = InitBoxCfg%CompositWeight/sum(InitBoxCfg%CompositWeight)
 
-                    call EXTRACT_NUMB(STR,p_ATOMS_GROUPS_NUMBER,N,STRTMP)
-                    if(N .ne. NElements) then
-                        write(*,*) "MFPSCUERROR: The elements weights number is not equal with the elements kinds which given."
-                        write(*,*) "The elements kinds number is :",NElements
-                        write(*,*) "But the weights number is :",N
-                        pause
-                        stop
-                    else
-                        InitBoxCfg%CompositWeight = 0.D0
-
-                        DO I = 1,N
-                            TheIndex = SimBoxes%Atoms_list%FindIndexBySymbol(InitBoxCfg%Elemets(I))
-                            InitBoxCfg%CompositWeight(TheIndex) = DRSTR(STRTMP(I))
-                        END DO
-
-                        if(sum(InitBoxCfg%CompositWeight) .LE. 0.D0) then
-                            write(*,*) "MFPSCUERROR: The sum of elements weights must great than 0 ."
-                            write(*,*) STR
-                            write(*,*) "At Line :",LINE
-                            pause
-                            stop
-                        end if
-
-                        InitBoxCfg%CompositWeight = InitBoxCfg%CompositWeight/sum(InitBoxCfg%CompositWeight)
-                    end if
+!                    call EXTRACT_NUMB(STR,p_ATOMS_GROUPS_NUMBER,N,STRTMP)
+!                    if(N .ne. NElements) then
+!                        write(*,*) "MFPSCUERROR: The elements weights number is not equal with the elements kinds which given."
+!                        write(*,*) "The elements kinds number is :",NElements
+!                        write(*,*) "But the weights number is :",N
+!                        pause
+!                        stop
+!                    else
+!                        InitBoxCfg%CompositWeight = 0.D0
+!
+!                        DO I = 1,N
+!                            TheIndex = SimBoxes%Atoms_list%FindIndexBySymbol(InitBoxCfg%Elemets(I))
+!                            InitBoxCfg%CompositWeight(TheIndex) = DRSTR(STRTMP(I))
+!                        END DO
+!
+!                        if(sum(InitBoxCfg%CompositWeight) .LE. 0.D0) then
+!                            write(*,*) "MFPSCUERROR: The sum of elements weights must great than 0 ."
+!                            write(*,*) STR
+!                            write(*,*) "At Line :",LINE
+!                            pause
+!                            stop
+!                        end if
+!
+!                        InitBoxCfg%CompositWeight = InitBoxCfg%CompositWeight/sum(InitBoxCfg%CompositWeight)
+!                    end if
                 CASE default
                     write(*,*) "MFPSCUERROR: Illegal Symbol: ", KEYWORD
                     pause
@@ -1193,6 +1261,25 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                     LayerEnd = ISTR(STRTMP(2))
 
                     LayerNum =  LayerEnd - LayerStart + 1
+
+                    if(LayerStart .LT. 0) then
+                        write(*,*) "MFPSCUERROR: The layer start layer should greater than 1"
+                        write(*,*) LayerStart
+                        write(*,*) "At line :",LINE
+                        write(*,*) STR
+                        pause
+                        stop
+                    end if
+
+                    if(LayerEnd .GT. InitBoxCfg%InitNNodes) then
+                        write(*,*) "MFPSCUERROR: The initial layer had exceed the max layer number"
+                        write(*,*) LayerEnd
+                        write(*,*) "At line :",LINE
+                        write(*,*) STR
+                        pause
+                        stop
+                    end if
+
                     if(LayerNum .LT. 1) then
                         write(*,*) "MFPSCUERROR: The layer number should greater than 1"
                         write(*,*) "At line :",LINE
@@ -1201,7 +1288,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                         stop
                     end if
 
-                    call AllocateArray_Host(InitBoxCfg%PNCLayers,LayerNum,"PNCLayers")
+                    call AllocateArray_Host(InitBoxCfg%PNCLayers,InitBoxCfg%InitNNodes,"PNCLayers")
                     InitBoxCfg%PNCLayers = 0.D0
 
                     if(N .eq. 3) then
@@ -1214,8 +1301,8 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                             stop
                         end if
 
-                        DO I = 1,LayerNum
-                            InitBoxCfg%PNCLayers(I) = DRSTR(STRTMP(I+2))
+                        DO I = LayerStart,LayerEnd
+                            InitBoxCfg%PNCLayers(I) = DRSTR(STRTMP(I - LayerStart + 1 + 2))
                         END DO
                     end if
 
