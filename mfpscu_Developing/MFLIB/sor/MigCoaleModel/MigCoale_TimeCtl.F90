@@ -1,5 +1,4 @@
 module MIGCOALE_TIMECTL
-    use cudafor
     use MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     use MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
     use MIGCOALE_TYPEDEF_STATISTICINFO
@@ -104,7 +103,7 @@ module MIGCOALE_TIMECTL
 !                TSTEP = Host_SimuCtrlParam%FixedTimeStepValue
 !
 !            case default
-!                write(*,*) "MCPSCUERROR: Unknown strategy to update time step :",Host_SimuCtrlParam%UPDATETSTEPSTRATEGY
+!                write(*,*) "MFPSCUERROR: Unknown strategy to update time step :",Host_SimuCtrlParam%UPDATETSTEPSTRATEGY
 !                pause
 !                stop
 !        end select
@@ -208,7 +207,7 @@ module MIGCOALE_TIMECTL
 !                TheVerifyTime = Host_SimuCtrlParam%FixedTimeStepValue
 !
 !            case default
-!                write(*,*) "MCPSCUERROR: Unknown strategy to update time step :",Host_SimuCtrlParam%UPDATETSTEPSTRATEGY
+!                write(*,*) "MFPSCUERROR: Unknown strategy to update time step :",Host_SimuCtrlParam%UPDATETSTEPSTRATEGY
 !                pause
 !                stop
 !            end select

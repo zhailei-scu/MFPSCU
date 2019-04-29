@@ -77,7 +77,7 @@ int InterpCScript_DiffusorsDef(char* scriptStr){
   tcc_add_include_path(s,pathStream.str().c_str());
 
   if(!s){
-    cout<<"MCPSCUERROR: The TCC interperation init failed!"<<endl;
+    cout<<"MFPSCUERROR: The TCC interperation init failed!"<<endl;
     return -1;
   }
 
@@ -88,7 +88,7 @@ int InterpCScript_DiffusorsDef(char* scriptStr){
 
   if(tcc_compile_string(s, scriptStr) == -1){
     cout<<scriptStr<<endl;
-    cout<<"MCPSCUERROR: The above script compille failed !"<<endl;
+    cout<<"MFPSCUERROR: The above script compille failed !"<<endl;
     return -1;
   }
 
@@ -104,7 +104,7 @@ int InterpCScript_DiffusorsDef(char* scriptStr){
 
   if(!p_SetDiffusor){
     cout<<scriptStr<<endl;
-    cout<<"MCPSCUERROR: The above script interperate failed!"<<endl;
+    cout<<"MFPSCUERROR: The above script interperate failed!"<<endl;
     return -1;
   }else{
     p_SetDiffusor(DiffusorsList);
@@ -135,7 +135,7 @@ int InterpCScript_DiffusorsDef(char* scriptStr){
   tcc_add_include_path(s, path);
 
   if(!s){
-    printf("%s\n","MCPSCUERROR: The TCC interperation init failed!");
+    printf("%s\n","MFPSCUERROR: The TCC interperation init failed!");
     return -1;
   }
 
@@ -143,7 +143,7 @@ int InterpCScript_DiffusorsDef(char* scriptStr){
 
   if(tcc_compile_string(s, scriptStr) == -1){
     printf("%s\n",scriptStr);
-    printf("%s\n","MCPSCUERROR: The above script compille failed !");
+    printf("%s\n","MFPSCUERROR: The above script compille failed !");
     return -1;
   }
 
@@ -159,7 +159,7 @@ int InterpCScript_DiffusorsDef(char* scriptStr){
 
   if(!p_SetDiffusor){
     printf("%s\n",scriptStr);
-    printf("%s\n","MCPSCUERROR: The above script interperate failed!");
+    printf("%s\n","MFPSCUERROR: The above script interperate failed!");
     return -1;
   }else{
     p_SetDiffusor(DiffusorsList);
@@ -228,7 +228,7 @@ int InterpCScript_ReactionsDef(char* scriptStr){
   tcc_add_include_path(s,pathStream.str().c_str());
 
   if(!s){
-    cout<<"MCPSCUERROR: The TCC interperation init failed!"<<endl;
+    cout<<"MFPSCUERROR: The TCC interperation init failed!"<<endl;
     return -1;
   }
 
@@ -239,7 +239,7 @@ int InterpCScript_ReactionsDef(char* scriptStr){
 
   if(tcc_compile_string(s, scriptStr) == -1){
     cout<<scriptStr<<endl;
-    cout<<"MCPSCUERROR: The above script compille failed !"<<endl;
+    cout<<"MFPSCUERROR: The above script compille failed !"<<endl;
     return -1;
   }
 
@@ -255,7 +255,7 @@ int InterpCScript_ReactionsDef(char* scriptStr){
 
   if(!p_SetReaction){
     cout<<scriptStr<<endl;
-    cout<<"MCPSCUERROR: The above script interperate failed!"<<endl;
+    cout<<"MFPSCUERROR: The above script interperate failed!"<<endl;
     return -1;
   }else{
     p_SetReaction(ReactionsList);
@@ -286,7 +286,7 @@ int InterpCScript_ReactionsDef(char* scriptStr){
   tcc_add_include_path(s, path);
 
   if(!s){
-    printf("%s\n","MCPSCUERROR: The TCC interperation init failed!");
+    printf("%s\n","MFPSCUERROR: The TCC interperation init failed!");
     return -1;
   }
 
@@ -294,7 +294,7 @@ int InterpCScript_ReactionsDef(char* scriptStr){
 
   if(tcc_compile_string(s, scriptStr) == -1){
     printf("%s\n",scriptStr);
-    printf("%s\n","MCPSCUERROR: The above script compille failed !");
+    printf("%s\n","MFPSCUERROR: The above script compille failed !");
     return -1;
   }
 
@@ -310,7 +310,7 @@ int InterpCScript_ReactionsDef(char* scriptStr){
 
   if(!p_SetReaction){
     printf("%s\n",scriptStr);
-    printf("%s\n","MCPSCUERROR: The above script interperate failed!");
+    printf("%s\n","MFPSCUERROR: The above script interperate failed!");
     return -1;
   }else{
     p_SetReaction(ReactionsList);

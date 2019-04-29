@@ -41,7 +41,7 @@ module MIGCOALE_ADDONDATA_HOST
         call RemoveComments(STR,"!")
         call EXTRACT_NUMB(STR,1,N,STRTEMP)
         if(N .LT. 1) then
-            write(*,*) "MCPSCUERROR: Too few parameters for dumplicate box strategy at line: ",LINE
+            write(*,*) "MFPSCUERROR: Too few parameters for dumplicate box strategy at line: ",LINE
             write(*,*) STR
             write(*,*) "You should special: &DUMPLICATEBOX  If use the dumplicate box strategy = "
             pause
@@ -58,7 +58,7 @@ module MIGCOALE_ADDONDATA_HOST
         call Get_StatementList(KEYWORD(1:LENTRIM(KEYWORD)), Host_SimuCtrlParam%AddOnData, STR, LINE)
         call EXTRACT_NUMB(STR,1,N,STRTEMP)
         if(N .LT. 1) then
-            write(*,*) "MCPSCUERROR: Too few parameters for surface energy at line: ",LINE
+            write(*,*) "MFPSCUERROR: Too few parameters for surface energy at line: ",LINE
             write(*,*) STR
             write(*,*) "You should special: &SURENG THE SURFACE ENERGY OF A BUBBLE = ! (ERG/CM^2))"
             pause
@@ -72,7 +72,7 @@ module MIGCOALE_ADDONDATA_HOST
         call Get_StatementList(KEYWORD(1:LENTRIM(KEYWORD)), Host_SimuCtrlParam%AddOnData, STR, LINE)
         call EXTRACT_NUMB(STR,6,N,STRTEMP)
         if(N .LT. 6) then
-            write(*,*) "MCPSCUERROR: Too few parameters for surface diffusion oarameters at line: ",LINE
+            write(*,*) "MFPSCUERROR: Too few parameters for surface diffusion oarameters at line: ",LINE
             write(*,*) STR
             write(*,*) "You should special: &SURDIF  THE Surface Diffusion coefficiens, prefactor (cm^2/s) and ES(ev): 0.0012, 1.0, 0.0012, 1.0, 0.0012, 1.0"
             pause
@@ -89,7 +89,7 @@ module MIGCOALE_ADDONDATA_HOST
         call Get_StatementList(KEYWORD(1:LENTRIM(KEYWORD)), Host_SimuCtrlParam%AddOnData, STR, LINE)
         call EXTRACT_NUMB(STR,6,N,STRTEMP)
         if(N .LT. 6) then
-            write(*,*) "MCPSCUERROR: Too few parameters for surface diffusion parameters in GB at line: ",LINE
+            write(*,*) "MFPSCUERROR: Too few parameters for surface diffusion parameters in GB at line: ",LINE
             write(*,*) STR
             write(*,*) "You should special: &GBSURDIF THE Surface Diffusion coefficiens in GB, prefactor (cm^2/s) and ES(ev): 0.0012, 1.0, 0.0012, 1.0, 0.0012, 1.0"
             pause

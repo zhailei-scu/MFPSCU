@@ -250,7 +250,7 @@ module MCMF_TYPEDEF_REACTIONSVALUE
         tempLength = MapLength
 
         if(size(SingleAtomsDivideArrays,DIM=1) .ne. p_ATOMS_GROUPS_NUMBER) then
-            write(*,*) "MCPSCUERROR: In current version, the max elements group is ",p_ATOMS_GROUPS_NUMBER
+            write(*,*) "MFPSCUERROR: In current version, the max elements group is ",p_ATOMS_GROUPS_NUMBER
             write(*,*) "However, the SingleAtomsDivideArrays own elements group: ",size(SingleAtomsDivideArrays,DIM=1)
             pause
             stop
@@ -364,7 +364,7 @@ module MCMF_TYPEDEF_REACTIONSVALUE
                 DO While(NextIndex .GT. 0)
 
                     if(SubjectCode .eq. this%RecordsEntities(IndexFor)%SubjectCode .AND. ObjectCode .eq. this%RecordsEntities(IndexFor)%ObjectCode) then
-                        write(*,*) "MCPSCUERROR: The reaction is redefined !"
+                        write(*,*) "MFPSCUERROR: The reaction is redefined !"
                         write(*,*) "Subject : ",KeySubject%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA
                         write(*,*) "Subject : ",KeySubject%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA
                         pause
@@ -374,7 +374,7 @@ module MCMF_TYPEDEF_REACTIONSVALUE
                     ICount = ICount + 1
 
                     if(ICount .GT. this%MapLength) then
-                        write(*,*) "MCPSCUERROR: The reactions map is not sufficient to store all kinds of reaction pairs."
+                        write(*,*) "MFPSCUERROR: The reactions map is not sufficient to store all kinds of reaction pairs."
                         pause
                         stop
                     end if
@@ -389,7 +389,7 @@ module MCMF_TYPEDEF_REACTIONSVALUE
                 DO While(.true.)
                     ICount = ICount + 1
                     if(ICount .GT. this%MapLength) then
-                        write(*,*) "MCPSCUERROR: The reactions map is not sufficient to store all kinds of reaction pairs."
+                        write(*,*) "MFPSCUERROR: The reactions map is not sufficient to store all kinds of reaction pairs."
                         pause
                         stop
                     end if

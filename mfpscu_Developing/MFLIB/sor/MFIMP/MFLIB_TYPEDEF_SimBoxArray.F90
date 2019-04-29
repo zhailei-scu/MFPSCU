@@ -64,8 +64,6 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     procedure,non_overridable,public,pass::LoadParameter_SimulationBoxes=>Load_Parameter_SimulationBoxes
     procedure,non_overridable,public,pass::Print_Parameter_SimulationBoxes
     procedure,non_overridable,private,pass::Load_Box_Shape
-    procedure,non_overridable,private,pass::Load_Box_SpaceDist
-    procedure,non_overridable,private,pass::Load_Box_Nucleation
     procedure,non_overridable,private,pass::Load_Box_AtomsDefine
     procedure,non_overridable,private,pass::Load_OneSecton_AtomDefine
     procedure,non_overridable,private,pass::Load_Box_Diffusors
@@ -101,8 +99,6 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
   private::Load_Parameter_SimulationBoxes
   private::Print_Parameter_SimulationBoxes
   private::Load_Box_Shape
-  private::Load_Box_SpaceDist
-  private::Load_Box_Nucleation
   private::Load_Box_AtomsDefine
   private::Load_OneSecton_AtomDefine
   private::Load_Box_Diffusors
@@ -248,7 +244,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     call GETKEYWORD("&", STR, KEYWORD)
     call UPCASE(KEYWORD)
     if(KEYWORD(1:LENTRIM(KEYWORD)) .ne. m_BOXSTARTFLAG) then
-      write(*,*) "MCPSCUERROR: The Start Flag of simulation box Parameters is Illegal: ",KEYWORD(1:LENTRIM(KEYWORD))
+      write(*,*) "MFPSCUERROR: The Start Flag of simulation box Parameters is Illegal: ",KEYWORD(1:LENTRIM(KEYWORD))
       pause
       stop
     end if
@@ -265,10 +261,6 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             exit
         case("&BOXSUBCTL")
           call this%Load_Box_Shape(hBoxFile,*100)
-        case("&SPACEDISTSUBCTL")
-          call this%Load_Box_SpaceDist(hBoxFile,*100)
-        case("&NUCLEATIONSUBCTL")
-          call this%Load_Box_Nucleation(hBoxFile,*100)
         case("&ATOMSUBCTL")
           call this%Load_Box_AtomsDefine(hBoxFile,*100)
         case("&DIFFUSORSUBCTL")
@@ -468,143 +460,6 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
   end subroutine Load_Box_Shape
 
   !*****************************************
-  subroutine Load_Box_SpaceDist(this,hBoxFile,*)
-    implicit none
-    !---Dummy Vars---
-    CLASS(SimulationBoxes)::this
-    integer,intent(in)::hBoxFile
-    !---Local Vars---
-    integer::LINE
-    integer::N
-    character*256::STR
-    character*32::KEYWORD
-    character*32::STRNUMB(10)
-    integer::INode
-    !---Body---
-    DO while(.true.)
-        call GETINPUTSTRLINE(hBoxFile,STR,LINE,"!",*100)
-        call RemoveComments(STR,"!")
-        STR = adjustl(STR)
-        call GETKEYWORD("&",STR,KEYWORD)
-        call UPCASE(KEYWORD)
-
-        select case(KEYWORD(1:LENTRIM(KEYWORD)))
-            case("&ENDSUBCTL")
-                exit
-            case("&NNODES")
-                call EXTRACT_NUMB(STR,1,N,STRNUMB)
-                if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR : Too few parameters for number of nodes in mean field"
-                    write(*,*) "You should special: '&NNODES The spatical nodes number = ' "
-                    pause
-                    stop
-                end if
-                this%NNodes = ISTR(STRNUMB(1))
-
-            case("&NODESPACE")
-                call EXTRACT_NUMB(STR,1,N,STRNUMB)
-                if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR : Too few parameters for node spaces in mean field"
-                    write(*,*) "You should special: 'NODESPACE The space for each node = ' "
-                    pause
-                    stop
-                end if
-
-                if(this%NNodes .LE. 0) then
-                    write(*,*) "MCPSCUERROR: The node number must greater than 0"
-                    write(*,*) this%NNodes
-                    pause
-                    stop
-                end if
-
-                call AllocateArray_Host(this%NodeSpace,this%NNodes,"NodeSpace")
-
-                if(N .eq. 1) then
-                    this%NodeSpace = DRSTR(STRNUMB(1))*this%LatticeLength
-                else if(N .GT. 1) then
-                    if(N .LT. this%NNodes) then
-                        write(*,*) "MCPSCUERROR: If you special the node thickness one by one, you should special all of them"
-                        write(*,*) "The nodes number set is : ",this%NNodes
-                        write(*,*) "However, you only give : ",N, " node space"
-                        write(*,*) "Or, you can give the nodes a same thickness"
-                        pause
-                        stop
-                    end if
-
-                    DO INode = 1,this%NNodes
-                        this%NodeSpace(INode) = DRSTR(STRNUMB(INode))*this%LatticeLength
-                    END DO
-                end if
-
-                if(sum(this%NodeSpace) .ne. this%BOXSIZE(3)) then
-                    write(*,*) "MCPSCUERROR: The total nodes thicknesses given is not equal with the box depth."
-                    write(*,*) "The total nodes thicknesses is : ",sum(this%NodeSpace)
-                    write(*,*) "The box depth is : ",this%BOXSIZE(3)
-                    pause
-                    stop
-                end if
-
-            case default
-                write(*,*) "MCPSCUERROR: The illegal flag: ",KEYWORD(1:LENTRIM(KEYWORD))
-                write(*,*) "Please check box file at Line: ",LINE
-                pause
-                stop
-        end select
-
-    END DO
-
-    return
-    100 return 1
-  end subroutine Load_Box_SpaceDist
-
-  !*****************************************
-  subroutine Load_Box_Nucleation(this,hBoxFile,*)
-    implicit none
-    !---Dummy Vars---
-    CLASS(SimulationBoxes)::this
-    integer,intent(in)::hBoxFile
-    !---Local Vars---
-    integer::LINE
-    integer::N
-    character*256::STR
-    character*32::KEYWORD
-    character*32::STRNUMB(10)
-    integer::INode
-    !---Body---
-    DO while(.true.)
-        call GETINPUTSTRLINE(hBoxFile,STR,LINE,"!",*100)
-        call RemoveComments(STR,"!")
-        STR = adjustl(STR)
-        call GETKEYWORD("&",STR,KEYWORD)
-        call UPCASE(KEYWORD)
-
-        select case(KEYWORD(1:LENTRIM(KEYWORD)))
-            case("&ENDSUBCTL")
-                exit
-            case("&CLUSTERSGROUP")
-                call EXTRACT_NUMB(STR,1,N,STRNUMB)
-                if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR : Too few parameters for number of cluster kind group in mean field"
-                    write(*,*) "You should special: '&CLUSTERSGROUP The max clusters group = ' "
-                    pause
-                    stop
-                end if
-                this%CKind = ISTR(STRNUMB(1))
-
-            case default
-                write(*,*) "MCPSCUERROR: The illegal flag: ",KEYWORD(1:LENTRIM(KEYWORD))
-                write(*,*) "Please check box file at Line: ",LINE
-                pause
-                stop
-        end select
-
-    END DO
-
-    return
-    100 return 1
-  end subroutine Load_Box_Nucleation
-
-  !*****************************************
   subroutine Load_Box_AtomsDefine(this,hBoxFile,*)
     implicit none
     !---Dummy Vars---
@@ -631,7 +486,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&GROUPSUBCTL")
                 call this%Load_OneSecton_AtomDefine(hBoxFile,*100)
             case default
-                write(*,*) "MCPSCUERROR: The illegal flag: ",KEYWORD(1:LENTRIM(KEYWORD))
+                write(*,*) "MFPSCUERROR: The illegal flag: ",KEYWORD(1:LENTRIM(KEYWORD))
                 write(*,*) "Please check box file at Line: ",LINE
                 pause
                 stop
@@ -687,7 +542,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&NATOM")
                 call EXTRACT_NUMB(STR,1,N,STRNUMB)
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR : Too few parameters for Atoms number"
+                    write(*,*) "MFPSCUERROR : Too few parameters for Atoms number"
                     write(*,*) "You should special: '&NATOM    the number of atoms in the group = 1' "
                     pause
                     stop
@@ -697,7 +552,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&ATOMP")
                 call EXTRACT_SUBSTR(STR,1,N,STRNUMB)
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR : You must define the Atom symbol"
+                    write(*,*) "MFPSCUERROR : You must define the Atom symbol"
                     write(*,*) STR
                     write(*,*) "You should special: '&ATOMP atomic symbol = (symbol), element index = ,  atomic mass= ' "
                     pause
@@ -710,7 +565,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 
                 call EXTRACT_NUMB(STR,2,N,STRNUMB)
                 if(N .LT. 2) then
-                    write(*,*) "MCPSCUERROR : Too few parameters for Atoms define"
+                    write(*,*) "MFPSCUERROR : Too few parameters for Atoms define"
                     write(*,*) STR
                     write(*,*) "You should special: '&ATOMP    atomic symbol = (symbol), element index = ,  atomic mass= ' "
                     pause
@@ -723,7 +578,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&ATOMVOLUM")
                 call EXTRACT_NUMB(STR,1,N,STRNUMB)
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: Too few parameters for matrix atom,you should specify the volum(in nm^3)"
+                    write(*,*) "MFPSCUERROR: Too few parameters for matrix atom,you should specify the volum(in nm^3)"
                     write(*,*) STR
                     write(*,*) "You should specify : '&ATOMVOLUM   Volum of matrix atom (in nm^3) = ' "
                     pause
@@ -734,7 +589,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 isMatrixAtom = .true.
 
             case default
-                write(*,*) "MCPSCUERROR: The Illegal flag: ",KEYWORD(1:LENTRIM(KEYWORD))
+                write(*,*) "MFPSCUERROR: The Illegal flag: ",KEYWORD(1:LENTRIM(KEYWORD))
                 write(*,*) "At box file Line: ",LINE
                 pause
                 stop
@@ -781,7 +636,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&REACTDEFSUBCTL")
                 call this%LoadReactions(hBoxFile,*100)
             case default
-                write(*,*) "MCPSCUERROR: Illegal symbol:",KEYWORD
+                write(*,*) "MFPSCUERROR: Illegal symbol:",KEYWORD
                 write(*,*) "Please check box file at Line: ",LINE
                 pause
                 stop
@@ -824,7 +679,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&FUNCSUBCTL")
                 call this%LoadDiffusorsValueFromScript(hBoxFile,*100)
             case default
-                write(*,*) "MCPSCUERROR: Illegal Keyword: ",KEYWORD
+                write(*,*) "MFPSCUERROR: Illegal Keyword: ",KEYWORD
                 write(*,*) "Please check box file at Line: ",LINE
                 pause
                 STOP
@@ -874,7 +729,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&SYMBOL")
                 call EXTRACT_SUBSTR(STR,1,N,STRNUMB)
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: You must specialize the diffusors symbol by 'Element1'#'number of Element1'@'Element2'#'number of Element2' "
+                    write(*,*) "MFPSCUERROR: You must specialize the diffusors symbol by 'Element1'#'number of Element1'@'Element2'#'number of Element2' "
                     pause
                     stop
                 end if
@@ -884,7 +739,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 call EXTRACT_NUMB(STR,1,N,STRNUMB)
 
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: You must special the diffusor value type in free matrix."
+                    write(*,*) "MFPSCUERROR: You must special the diffusor value type in free matrix."
                     write(*,*) "At Line: ",LINE
                     pause
                     stop
@@ -895,7 +750,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 if(newDiffusor%DiffusorValueType_Free .eq. p_DiffuseCoefficient_ByValue) then
                     call EXTRACT_NUMB(STR,2,N,STRNUMB)
                     if(N .LT. 2) then
-                        write(*,*) "MCPSCUERROR: If you had used the by-diffusionValue strategy, you should give the diffusor value."
+                        write(*,*) "MFPSCUERROR: If you had used the by-diffusionValue strategy, you should give the diffusor value."
                         write(*,*) "At Line: ",LINE
                         pause
                         stop
@@ -905,7 +760,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                     call EXTRACT_NUMB(STR,3,N,STRNUMB)
 
                     if(N .LT. 3) then
-                        write(*,*) "MCPSCUERROR: If you had used the by-Arrhenius strategy, you should give the prefacotr and active energy."
+                        write(*,*) "MFPSCUERROR: If you had used the by-Arrhenius strategy, you should give the prefacotr and active energy."
                         write(*,*) "At Line: ",LINE
                         pause
                         stop
@@ -913,7 +768,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                     newDiffusor%PreFactor_Free = DRSTR(STRNUMB(2))
                     newDiffusor%ActEnergy_Free = DRSTR(STRNUMB(3))
                 else if(newDiffusor%DiffusorValueType_Free .ne. p_DiffuseCoefficient_ByBCluster) then
-                    write(*,*) "MCPSCUERROR: unknown diffusor value type :",newDiffusor%DiffusorValueType_Free
+                    write(*,*) "MFPSCUERROR: unknown diffusor value type :",newDiffusor%DiffusorValueType_Free
                     write(*,*) "At line: ",LINE
                     pause
                     stop
@@ -923,7 +778,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 call EXTRACT_NUMB(STR,1,N,STRNUMB)
 
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: You must special the ECR value type in free matrix."
+                    write(*,*) "MFPSCUERROR: You must special the ECR value type in free matrix."
                     write(*,*) "At Line: ",LINE
                     pause
                     stop
@@ -934,7 +789,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 if(newDiffusor%ECRValueType_Free .eq. p_ECR_ByValue) then
                     call EXTRACT_NUMB(STR,2,N,STRNUMB)
                     if(N .LT. 2) then
-                        write(*,*) "MCPSCUERROR: If you had used the by-ECRValue strategy, you should give the ECR value."
+                        write(*,*) "MFPSCUERROR: If you had used the by-ECRValue strategy, you should give the ECR value."
                         write(*,*) "At Line: ",LINE
                         pause
                         stop
@@ -946,7 +801,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 call EXTRACT_NUMB(STR,1,N,STRNUMB)
 
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: You must special the diffusor value type in GB."
+                    write(*,*) "MFPSCUERROR: You must special the diffusor value type in GB."
                     write(*,*) "At Line: ",LINE
                     pause
                     stop
@@ -957,7 +812,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 if(newDiffusor%DiffusorValueType_InGB .eq. p_DiffuseCoefficient_ByValue) then
                     call EXTRACT_NUMB(STR,2,N,STRNUMB)
                     if(N .LT. 2) then
-                        write(*,*) "MCPSCUERROR: If you had used the by-diffusionValue strategy, you should give the diffusor value."
+                        write(*,*) "MFPSCUERROR: If you had used the by-diffusionValue strategy, you should give the diffusor value."
                         write(*,*) "At Line: ",LINE
                         pause
                         stop
@@ -967,7 +822,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                     call EXTRACT_NUMB(STR,3,N,STRNUMB)
 
                     if(N .LT. 3) then
-                        write(*,*) "MCPSCUERROR: If you had used the by-Arrhenius strategy, you should give the prefacotr and active energy."
+                        write(*,*) "MFPSCUERROR: If you had used the by-Arrhenius strategy, you should give the prefacotr and active energy."
                         write(*,*) "At Line: ",LINE
                         pause
                         stop
@@ -975,7 +830,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                     newDiffusor%PreFactor_InGB = DRSTR(STRNUMB(2))
                     newDiffusor%ActEnergy_InGB = DRSTR(STRNUMB(3))
                 else if(newDiffusor%DiffusorValueType_InGB .ne. p_DiffuseCoefficient_ByBCluster) then
-                    write(*,*) "MCPSCUERROR: unknown diffusor value type :",newDiffusor%DiffusorValueType_InGB
+                    write(*,*) "MFPSCUERROR: unknown diffusor value type :",newDiffusor%DiffusorValueType_InGB
                     write(*,*) "At line: ",LINE
                     pause
                     stop
@@ -985,7 +840,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 call EXTRACT_NUMB(STR,1,N,STRNUMB)
 
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: You must special the ECR value type in GB."
+                    write(*,*) "MFPSCUERROR: You must special the ECR value type in GB."
                     write(*,*) "At Line: ",LINE
                     pause
                     stop
@@ -996,7 +851,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 if(newDiffusor%ECRValueType_InGB .eq. p_ECR_ByValue) then
                     call EXTRACT_NUMB(STR,2,N,STRNUMB)
                     if(N .LT. 2) then
-                        write(*,*) "MCPSCUERROR: If you had used the by-ECRValue strategy, you should give the ECR value."
+                        write(*,*) "MFPSCUERROR: If you had used the by-ECRValue strategy, you should give the ECR value."
                         write(*,*) "At Line: ",LINE
                         pause
                         stop
@@ -1005,7 +860,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 end if
 
             case default
-                write(*,*) "MCPSCUERROR: The unknown symbol: ",KEYWORD(1:LENTRIM(KEYWORD))
+                write(*,*) "MFPSCUERROR: The unknown symbol: ",KEYWORD(1:LENTRIM(KEYWORD))
                 write(*,*) "Please check box file at Line: ",LINE
                 pause
                 stop
@@ -1085,7 +940,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&FUNCSUBCTL")
                 call this%LoadReactionsFromScript(hBoxFile,*100)
             case default
-                write(*,*) "MCPSCUERROR: Illegal Keyword: ",KEYWORD
+                write(*,*) "MFPSCUERROR: Illegal Keyword: ",KEYWORD
                 write(*,*) "Please check box file at Line: ",LINE
                 pause
                 STOP
@@ -1136,7 +991,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&REACTPAIRS")
                 call EXTRACT_SUBSTR(STR,2,N,STRNUMB)
                 if(N .LT. 2) then
-                    write(*,*) "MCPSCUERROR: You must specialize the &REACTPAIRS The reaction pairs by 'symbol of subject cluster', 'symbol of oubject cluster' "
+                    write(*,*) "MFPSCUERROR: You must specialize the &REACTPAIRS The reaction pairs by 'symbol of subject cluster', 'symbol of oubject cluster' "
                     pause
                     stop
                 end if
@@ -1146,7 +1001,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 call EXTRACT_NUMB(STR,1,N,STRNUMB)
 
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: You must special the reaction coefficients type."
+                    write(*,*) "MFPSCUERROR: You must special the reaction coefficients type."
                     write(*,*) "At Line: ",LINE
                     pause
                     stop
@@ -1157,7 +1012,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 if(newReactionPair%ReactionCoefficientType .eq. p_ReactionCoefficient_ByValue) then
                     call EXTRACT_NUMB(STR,2,N,STRNUMB)
                     if(N .LT. 2) then
-                        write(*,*) "MCPSCUERROR: If you had used the reaction coefficients by-value strategy, you should give the corresponded value."
+                        write(*,*) "MFPSCUERROR: If you had used the reaction coefficients by-value strategy, you should give the corresponded value."
                         write(*,*) "At Line: ",LINE
                         pause
                         stop
@@ -1167,7 +1022,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                     call EXTRACT_NUMB(STR,3,N,STRNUMB)
 
                     if(N .LT. 3) then
-                        write(*,*) "MCPSCUERROR: If you had used reaction coefficients by-Arrhenius strategy , you should give the prefacotr and active energy."
+                        write(*,*) "MFPSCUERROR: If you had used reaction coefficients by-Arrhenius strategy , you should give the prefacotr and active energy."
                         write(*,*) "At Line: ",LINE
                         pause
                         stop
@@ -1175,7 +1030,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                     newReactionPair%PreFactor = DRSTR(STRNUMB(2))
                     newReactionPair%ActEnergy = DRSTR(STRNUMB(3))
                 else
-                    write(*,*) "MCPSCUERROR: unknown reaction coefficients type :",newReactionPair%ReactionCoefficientType
+                    write(*,*) "MFPSCUERROR: unknown reaction coefficients type :",newReactionPair%ReactionCoefficientType
                     write(*,*) "At line: ",LINE
                     pause
                     stop
@@ -1185,7 +1040,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 call EXTRACT_NUMB(STR,1,N,STRNUMB)
 
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: You must special the ECR value type."
+                    write(*,*) "MFPSCUERROR: You must special the ECR value type."
                     write(*,*) "At Line: ",LINE
                     pause
                     stop
@@ -1196,7 +1051,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 if(newReactionPair%ECRValueType .eq. p_ECR_ByValue) then
                     call EXTRACT_NUMB(STR,2,N,STRNUMB)
                     if(N .LT. 2) then
-                        write(*,*) "MCPSCUERROR: If you had used the by-ECRValue strategy, you should give the ECR value (LU)."
+                        write(*,*) "MFPSCUERROR: If you had used the by-ECRValue strategy, you should give the ECR value (LU)."
                         write(*,*) "At Line: ",LINE
                         pause
                         stop
@@ -1205,7 +1060,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 end if
 
             case default
-                write(*,*) "MCPSCUERROR: The unknown symbol: ",KEYWORD(1:LENTRIM(KEYWORD))
+                write(*,*) "MFPSCUERROR: The unknown symbol: ",KEYWORD(1:LENTRIM(KEYWORD))
                 write(*,*) "Please check box file at Line: ",LINE
                 pause
                 stop
@@ -1293,7 +1148,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 call this%Load_GB_SpecialDistFromExteFunc(hBoxFile,*100)
 
             case default
-                write(*,*) "MCPSCUERROR: unKnown type to for grain boundary distribution!"
+                write(*,*) "MFPSCUERROR: unKnown type to for grain boundary distribution!"
                 write(*,*) KEYWORD
                 pause
                 stop
@@ -1331,7 +1186,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&GRAINSNUMBER")
                 call EXTRACT_NUMB(STR,1,N,STRTEMP)
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: Too few parameters for the minial (cut-off) distance between seeds."
+                    write(*,*) "MFPSCUERROR: Too few parameters for the minial (cut-off) distance between seeds."
                     write(*,*) "At line: ",LINE
                     write(*,*) "You should special: &CUTOFF   The minial (cut-off) distance between seeds ="
                     pause
@@ -1345,7 +1200,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 this%m_GrainBoundary%GBInitSimple_Strategy = p_GBInitSimple_ByGVolumCtl
                 call this%Load_GB_Simple_Distribution_ByGVolumCtl(hBoxFile,*100)
             case default
-                write(*,*) "MCPSCUERROR: The Illegal flag: ",KEYWORD(1:LENTRIM(KEYWORD))
+                write(*,*) "MFPSCUERROR: The Illegal flag: ",KEYWORD(1:LENTRIM(KEYWORD))
                 write(*,*) "At box file Line: ",LINE
                 pause
                 stop
@@ -1384,7 +1239,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&MINCUTOFF")
                 call EXTRACT_NUMB(STR,1,N,STRTEMP)
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: Too few parameters for the minial (cut-off) distance between seeds."
+                    write(*,*) "MFPSCUERROR: Too few parameters for the minial (cut-off) distance between seeds."
                     write(*,*) "At line: ",LINE
                     write(*,*) "You should special: &MINCUTOFF   The minial (cut-off) distance between seeds ="
                     pause
@@ -1394,7 +1249,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&MAXCUTOFF")
                 call EXTRACT_NUMB(STR,1,N,STRTEMP)
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: Too few parameters for the max (cut-off) distance between seeds."
+                    write(*,*) "MFPSCUERROR: Too few parameters for the max (cut-off) distance between seeds."
                     write(*,*) "At line: ",LINE
                     write(*,*) "You should special: &MAXCUTOFF   The max (cut-off) distance between seeds ="
                     pause
@@ -1404,7 +1259,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&DISTANCE_GAUSS")
                 call EXTRACT_NUMB(STR,2,N,STRTEMP)
                 if(N .LT. 2) then
-                    write(*,*) "MCPSCUERROR: Too few parameters for the distance distribution between seeds."
+                    write(*,*) "MFPSCUERROR: Too few parameters for the distance distribution between seeds."
                     write(*,*) "At line: ",LINE
                     write(*,*) "You should special: &DISTANCE_GAUSS THE GAUSS DISTRIBUTION CENTRAL =, THE HALF WIDTH ="
                     pause
@@ -1413,7 +1268,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 this%m_GrainBoundary%SeedsDistINI = DRSTR(STRTEMP(1))*this%LatticeLength
                 this%m_GrainBoundary%SeedsDistSD = DRSTR(STRTEMP(2))*this%LatticeLength
             case default
-                write(*,*) "MCPSCUERROR: The Illegal flag: ",KEYWORD(1:LENTRIM(KEYWORD))
+                write(*,*) "MFPSCUERROR: The Illegal flag: ",KEYWORD(1:LENTRIM(KEYWORD))
                 write(*,*) "At box file Line: ",LINE
                 pause
                 stop
@@ -1422,7 +1277,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     END DO
 
     if(this%m_GrainBoundary%Cutoff(2) .LT. this%m_GrainBoundary%Cutoff(1)) then
-        write(*,*) "MCPSCUERROR: the Cut-off distance setting error."
+        write(*,*) "MFPSCUERROR: the Cut-off distance setting error."
         write(*,*) "Min cut-off: ",this%m_GrainBoundary%Cutoff(1)
         write(*,*) "Max cut-off: ",this%m_GrainBoundary%Cutoff(2)
         pause
@@ -1459,7 +1314,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&MINCUTOFF")
                 call EXTRACT_NUMB(STR,1,N,STRTEMP)
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: Too few parameters for the minial (cut-off) volum between grains."
+                    write(*,*) "MFPSCUERROR: Too few parameters for the minial (cut-off) volum between grains."
                     write(*,*) "At line: ",LINE
                     write(*,*) "You should special: &MINCUTOFF The minial(cut-off) volum for grain ="
                     pause
@@ -1469,7 +1324,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&MAXCUTOFF")
                 call EXTRACT_NUMB(STR,1,N,STRTEMP)
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: Too few parameters for the max (cut-off) volum between grains."
+                    write(*,*) "MFPSCUERROR: Too few parameters for the max (cut-off) volum between grains."
                     write(*,*) "At line: ",LINE
                     write(*,*) "You should special: &MAXCUTOFF The max(cut-off) volum for grain ="
                     pause
@@ -1479,7 +1334,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             case("&VOLUM_GAUSS")
                 call EXTRACT_NUMB(STR,2,N,STRTEMP)
                 if(N .LT. 2) then
-                    write(*,*) "MCPSCUERROR: Too few parameters for the volum distribution between grains."
+                    write(*,*) "MFPSCUERROR: Too few parameters for the volum distribution between grains."
                     write(*,*) "At line: ",LINE
                     write(*,*) "You should special: &VOLUM_GAUSS THE GAUSS DISTRIBUTION CENTRAL =, THE HALF WIDTH ="
                     pause
@@ -1488,7 +1343,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 this%m_GrainBoundary%GVolumINI = DRSTR(STRTEMP(1))*(this%LatticeLength**3)
                 this%m_GrainBoundary%GVolumSD  = DRSTR(STRTEMP(2))*(this%LatticeLength**3)
             case default
-                write(*,*) "MCPSCUERROR: The Illegal flag: ",KEYWORD(1:LENTRIM(KEYWORD))
+                write(*,*) "MFPSCUERROR: The Illegal flag: ",KEYWORD(1:LENTRIM(KEYWORD))
                 write(*,*) "At box file Line: ",LINE
                 pause
                 stop
@@ -1497,7 +1352,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     END DO
 
     if(this%m_GrainBoundary%Cutoff(2) .LT. this%m_GrainBoundary%Cutoff(1)) then
-        write(*,*) "MCPSCUERROR: the Cut-off distance setting error."
+        write(*,*) "MFPSCUERROR: the Cut-off distance setting error."
         write(*,*) "Min cut-off: ",this%m_GrainBoundary%Cutoff(1)
         write(*,*) "Max cut-off: ",this%m_GrainBoundary%Cutoff(2)
         pause
@@ -1536,21 +1391,21 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 call EXTRACT_SUBSTR(STR,1,N,STRTMP)
 
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: You must special the grain boundary configuration file path !"
+                    write(*,*) "MFPSCUERROR: You must special the grain boundary configuration file path !"
                     write(*,*) "At line : ",LINE
                     pause
                     stop
                 end if
 
                 if(LENTRIM(STRTMP(1)) .LE. 0) then
-                    write(*,*) "MCPSCUERROR: The grain boundary configuration file path is null !"
+                    write(*,*) "MFPSCUERROR: The grain boundary configuration file path is null !"
                     pause
                     stop
                 end if
 
                 this%m_GrainBoundary%GBCfgFileName = adjustl((trim(STRTMP(1))))
             case default
-                write(*,*) "MCPSCUERROR: The Illegal flag: ",KEYWORD(1:LENTRIM(KEYWORD))
+                write(*,*) "MFPSCUERROR: The Illegal flag: ",KEYWORD(1:LENTRIM(KEYWORD))
                 write(*,*) "At box file Line: ",LINE
                 pause
                 stop
@@ -1802,14 +1657,14 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 !        case(SPMF_OUTCFG_FORMAT18)
 !            call this%Putin_SPMF_OUTCFG_FORMAT18(cfgFile,Host_SimuCtrlParam,SimuRecord,RNFACTOR,SURDIFPRE_FREE,SURDIFPRE_INGB)
 !        case default
-!            write(*,*) "MCPSCUERROR: You must special the box file format at the beginning of the file."
+!            write(*,*) "MFPSCUERROR: You must special the box file format at the beginning of the file."
 !            pause
 !            stop
 !    end select
 
 
     return
-    100 write(*,*) "MCPSCUERROR: Fail to load the configuration at file: ",cfgFile
+    100 write(*,*) "MFPSCUERROR: Fail to load the configuration at file: ",cfgFile
         write(*,*) "At line: ",LINE
         write(*,*) STR
         pause
@@ -1882,7 +1737,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 !    call UPCASE(KEYWORD)
 !
 !    if(.not. IsStrEqual(adjustl(trim(KEYWORD)),OKMC_OUTCFG_FORMAT18)) then
-!        write(*,*) "MCPSCUERROR: the format of OKMC configuration file is not right at LINE: ",LINE
+!        write(*,*) "MFPSCUERROR: the format of OKMC configuration file is not right at LINE: ",LINE
 !        write(*,*) STR
 !        pause
 !        stop
@@ -1930,13 +1785,13 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 !                    call RemoveComments(STR,"!")
 !                    read(STR,fmt="(A20,1x,I14, 1x, 3(1PE14.4, 1x))",ERR=100) CEmpty,ISeedTemp,this%m_GrainBoundary%GrainSeeds(ISeed)%m_POS(1:3)
 !                    if(.not. IsStrEqual(CEmpty,"&SEEDDATA")) then
-!                        write(*,*) "MCPSCUERROR: The grain seeds number is less than the recorded one."
+!                        write(*,*) "MFPSCUERROR: The grain seeds number is less than the recorded one."
 !                        pause
 !                        stop
 !                    end if
 !
 !                    if(ISeedTemp .ne. ISeed) then
-!                        write(*,*) "MCPSCUERROR: The grain seeds index is not correct: ",ISeed
+!                        write(*,*) "MFPSCUERROR: The grain seeds index is not correct: ",ISeed
 !                        pause
 !                        stop
 !                    end if
@@ -1971,14 +1826,14 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 !                                                                        tempBoxesInfo%SEExpdIndexBox(IBox,1:2),  &
 !                                                                        tempBoxesInfo%SEVirtualIndexBox(IBox,1:2)
 !                    if(.not. IsStrEqual(CEmpty,"&BOXSEDATA")) then
-!                        write(*,*) "MCPSCUERROR: The box clusters start and end index record is less than the control file recorded."
+!                        write(*,*) "MFPSCUERROR: The box clusters start and end index record is less than the control file recorded."
 !                        pause
 !                        stop
 !                    end if
 !
 !                    if(IBoxTemp .ne. IBox) then
 !                        write(*,*) STR
-!                        write(*,*) "MCPSCUERROR: The box index is not correct: ",IBox,IBoxTemp
+!                        write(*,*) "MFPSCUERROR: The box index is not correct: ",IBox,IBoxTemp
 !                        write(*,*) "At Line: ",LINE
 !                        pause
 !                        stop
@@ -1986,7 +1841,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 !
 !                    if((tempBoxesInfo%SEExpdIndexBox(IBox,2) - tempBoxesInfo%SEExpdIndexBox(IBox,1)) .LT. &
 !                       (tempBoxesInfo%SEUsedIndexBox(IBox,2) - tempBoxesInfo%SEUsedIndexBox(IBox,1))) then
-!                        write(*,*) "MCPSCUERROR: The recorded used clusters number is less than the expand clusters number !"
+!                        write(*,*) "MFPSCUERROR: The recorded used clusters number is less than the expand clusters number !"
 !                        write(*,*) "In box: ",IBox
 !                        write(*,*) "The recorded start and end clusters index for used clusters is: ",tempBoxesInfo%SEUsedIndexBox(IBox,1),tempBoxesInfo%SEUsedIndexBox(IBox,2)
 !                        write(*,*) "The recorded start and end clusters index for expand clusters is: ",tempBoxesInfo%SEExpdIndexBox(IBox,1),tempBoxesInfo%SEExpdIndexBox(IBox,2)
@@ -1996,7 +1851,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 !
 !                    if((tempBoxesInfo%SEVirtualIndexBox(IBox,2) - tempBoxesInfo%SEVirtualIndexBox(IBox,1)) .LT. &
 !                       (tempBoxesInfo%SEExpdIndexBox(IBox,2) - tempBoxesInfo%SEExpdIndexBox(IBox,1))) then
-!                        write(*,*) "MCPSCUERROR: The recorded virtual clusters number is less than the expand clusters number !"
+!                        write(*,*) "MFPSCUERROR: The recorded virtual clusters number is less than the expand clusters number !"
 !                        write(*,*) "In box: ",IBox
 !                        write(*,*) "The recorded start and end clusters index for virtual clusters is: ",tempBoxesInfo%SEVirtualIndexBox(IBox,1),tempBoxesInfo%SEVirtualIndexBox(IBox,2)
 !                        write(*,*) "The recorded start and end clusters index for expand clusters is: ",tempBoxesInfo%SEExpdIndexBox(IBox,1),tempBoxesInfo%SEExpdIndexBox(IBox,2)
@@ -2022,7 +1877,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 !                END DO
 !
 !            case default
-!                write(*,*) "MCPSCUERROR: Illegal flag: ",KEYWORD
+!                write(*,*) "MFPSCUERROR: Illegal flag: ",KEYWORD
 !                write(*,*) STR
 !                pause
 !                stop
@@ -2075,7 +1930,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 !        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = ISTR(STRTMP(3))
 !
 !        if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) .GT. this%m_GrainBoundary%GrainNum) then
-!            write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+!            write(*,*) "MFPSCUERROR: The grain number is greater than the seeds number in system."
 !            write(*,*) this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1)
 !            pause
 !            stop
@@ -2084,7 +1939,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 !        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) = ISTR(STRTMP(4))
 !
 !        if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) .GT. this%m_GrainBoundary%GrainNum) then
-!            write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+!            write(*,*) "MFPSCUERROR: The grain number is greater than the seeds number in system."
 !            write(*,*) this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2)
 !            pause
 !            stop
@@ -2169,7 +2024,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 !    close(hFile)
 !
 !    return
-!    100 write(*,*) "MCPSCUERROR: Fail to load the configuration file"
+!    100 write(*,*) "MFPSCUERROR: Fail to load the configuration file"
 !        write(*,*) "At line: ",LINE
 !        write(*,*) "STR",STR
 !        write(*,*) "STR(1:1)",STR(1:1)
@@ -2257,7 +2112,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     call UPCASE(KEYWORD)
 
     if(.not. IsStrEqual(adjustl(trim(KEYWORD)),MF_OUTCFG_FORMAT18)) then
-        write(*,*) "MCPSCUERROR: the format of mean field configuration file is not right at LINE: ",LINE
+        write(*,*) "MFPSCUERROR: the format of mean field configuration file is not right at LINE: ",LINE
         write(*,*) STR
         pause
         stop
@@ -2308,7 +2163,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 END DO
 
             case default
-                write(*,*) "MCPSCUERROR: Illegal flag: ",KEYWORD
+                write(*,*) "MFPSCUERROR: Illegal flag: ",KEYWORD
                 write(*,*) STR
                 pause
                 stop
@@ -2317,7 +2172,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     END DO
 
     if(NATomsUsed .LE. 0) then
-        write(*,*) "MCPSCUERROR: None of elements are special."
+        write(*,*) "MFPSCUERROR: None of elements are special."
         pause
         stop
     end if
@@ -2343,7 +2198,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
         call EXTRACT_NUMB(STR,NATomsUsed + 1,N,STRTMP)
 
         if(N .LT. (NATomsUsed+1)) then
-            write(*,*) "MCPSCUERROR: The data not include atoms composition, concentration."
+            write(*,*) "MFPSCUERROR: The data not include atoms composition, concentration."
             write(*,*) "At LINE: ",LINE
             write(*,*) STR
             pause
@@ -2355,7 +2210,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     END DO
 
     if(NClustersGroup .LE. 0) then
-        write(*,*) "MCPSCUERROR: There are not any clusters group are defined in meanfield configuration file."
+        write(*,*) "MFPSCUERROR: There are not any clusters group are defined in meanfield configuration file."
         pause
         stop
     end if
@@ -2411,7 +2266,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
         call EXTRACT_NUMB(STR,NATomsUsed+1,N,STRTMP)
 
         if(N .LT. (NATomsUsed+1)) then
-            write(*,*) "MCPSCUERROR: The data not include atoms composition, concentration."
+            write(*,*) "MFPSCUERROR: The data not include atoms composition, concentration."
             write(*,*) "At LINE: ",LINE
             write(*,*) STR
             pause
@@ -2455,7 +2310,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     close(hFile)
 
     return
-    100 write(*,*) "MCPSCUERROR: Fail to load the configuration file"
+    100 write(*,*) "MFPSCUERROR: Fail to load the configuration file"
         write(*,*) "At line: ",LINE
         write(*,*) STR
         pause
@@ -2546,7 +2401,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     call UPCASE(KEYWORD)
 
     if(.not. IsStrEqual(adjustl(trim(KEYWORD)),SPMF_OUTCFG_FORMAT18)) then
-        write(*,*) "MCPSCUERROR: the format of space special mean field configuration file is not right at LINE: ",LINE
+        write(*,*) "MFPSCUERROR: the format of space special mean field configuration file is not right at LINE: ",LINE
         write(*,*) STR
         pause
         stop
@@ -2609,7 +2464,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 LayerNum = ISTR(STRTMP(1))
 
                 if(LayerNum .LE. 0) then
-                    write(*,*) "MCPSCUERROR: The layer number is less than 1."
+                    write(*,*) "MFPSCUERROR: The layer number is less than 1."
                     write(*,*) "At line : ",LINE
                     pause
                     stop
@@ -2628,7 +2483,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                     call UPCASE(KEYWORD)
 
                     if(.not. IsStrEqual(KEYWORD(1:LENTRIM(KEYWORD)),"&LAYERTHICK")) then
-                        write(*,*) "MCPSCUERROR: the layers number is less than the recorded layers number ."
+                        write(*,*) "MFPSCUERROR: the layers number is less than the recorded layers number ."
                         pause
                         stop
                     end if
@@ -2646,7 +2501,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                 end if
 
             case default
-                write(*,*) "MCPSCUERROR: Illegal flag: ",KEYWORD
+                write(*,*) "MFPSCUERROR: Illegal flag: ",KEYWORD
                 write(*,*) STR
                 pause
                 stop
@@ -2655,7 +2510,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     END DO
 
     if(NATomsUsed .LE. 0) then
-        write(*,*) "MCPSCUERROR: None of elements are special."
+        write(*,*) "MFPSCUERROR: None of elements are special."
         pause
         stop
     end if
@@ -2685,7 +2540,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
         call EXTRACT_NUMB(STR,NATomsUsed + 5,N,STRTMP)
 
         if(N .LT. (NATomsUsed + 5)) then
-            write(*,*) "MCPSCUERROR: The data not include atoms composition, cluster status,GB seed 1,GB seed 2, concentration,layer."
+            write(*,*) "MFPSCUERROR: The data not include atoms composition, cluster status,GB seed 1,GB seed 2, concentration,layer."
             write(*,*) "At line: ",LINE
             write(*,*) STR
             pause
@@ -2704,7 +2559,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 
             ILayer = tempLayer
         else
-            write(*,*) "MCPSCUERROR: The layer number should be increase, but here it is decreasing."
+            write(*,*) "MFPSCUERROR: The layer number should be increase, but here it is decreasing."
             write(*,*) "At line :",LINE
             write(*,*) "For Layer number: ",tempLayer
             pause
@@ -2714,7 +2569,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     END DO
 
     if(MaxGroups .LE. 0) then
-        write(*,*) "MCPSCUERROR: There are not any clusters group are defined in meanfield configuration file."
+        write(*,*) "MFPSCUERROR: There are not any clusters group are defined in meanfield configuration file."
         pause
         stop
     end if
@@ -2725,7 +2580,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     end if
 
     if(sum(LayersThick) .GT. this%BOXSIZE(3)) then
-        write(*,*) "MCPSCUERROR: The SPMF depth is greater than box depth"
+        write(*,*) "MFPSCUERROR: The SPMF depth is greater than box depth"
         write(*,*) "The SPMF depth is: ",sum(LayersThick)
         write(*,*) "The box depth is: ",this%BOXSIZE(3)
         pause
@@ -2778,7 +2633,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
         call EXTRACT_NUMB(STR,NATomsUsed+5,N,STRTMP)
 
         if(N .LT. (NATomsUsed + 5)) then
-            write(*,*) "MCPSCUERROR: The data not include atoms composition, cluster status,GB seed 1, GB seed 2, concentration,layer."
+            write(*,*) "MFPSCUERROR: The data not include atoms composition, cluster status,GB seed 1, GB seed 2, concentration,layer."
             write(*,*) "At line: ",LINE
             write(*,*) STR
             pause
@@ -2791,7 +2646,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
             IGroup = IGroup + 1
             ILayer = tempLayer
         else
-            write(*,*) "MCPSCUERROR: The layer number should be increase, but here it is decreasing."
+            write(*,*) "MFPSCUERROR: The layer number should be increase, but here it is decreasing."
             write(*,*) "At line :",LINE
             write(*,*) "For Layer number: ",tempLayer
             pause
@@ -2803,7 +2658,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
         ClustersSample(ILayer,IGroup)%m_GrainID(1) = ISTR(STRTMP(NATomsUsed + 2))
 
         if(ClustersSample(ILayer,IGroup)%m_GrainID(1) .GT. this%m_GrainBoundary%GrainNum) then
-            write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+            write(*,*) "MFPSCUERROR: The grain number is greater than the seeds number in system."
             write(*,*) ClustersSample(ILayer,IGroup)%m_GrainID(1)
             pause
             stop
@@ -2812,7 +2667,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
         ClustersSample(ILayer,IGroup)%m_GrainID(2) = ISTR(STRTMP(NATomsUsed + 3))
 
         if(ClustersSample(ILayer,IGroup)%m_GrainID(2) .GT. this%m_GrainBoundary%GrainNum) then
-            write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+            write(*,*) "MFPSCUERROR: The grain number is greater than the seeds number in system."
             write(*,*) ClustersSample(ILayer,IGroup)%m_GrainID(2)
             pause
             stop
@@ -2871,7 +2726,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     close(hFile)
 
     return
-    100 write(*,*) "MCPSCUERROR: Fail to load the configuration file"
+    100 write(*,*) "MFPSCUERROR: Fail to load the configuration file"
         write(*,*) "At line: ",LINE
         write(*,*) STR
         pause
@@ -2918,7 +2773,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 !    NClustersGroup = size(ClustersSampleConcentrate,dim=2)
 !
 !    if(LayerNum .ne. size(ClustersSampleConcentrate,dim=1)) then
-!        write(*,*) "MCPSCUERROR: The layer number is not equal between layerThick and ClustersSampleConcentrate"
+!        write(*,*) "MFPSCUERROR: The layer number is not equal between layerThick and ClustersSampleConcentrate"
 !        write(*,*) "The layer number in layerThick is: ",LayerNum
 !        write(*,*) "However: the Layer number in ClustersSampleConcentrate is ",size(ClustersSampleConcentrate,dim=1)
 !        pause
@@ -2986,7 +2841,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 !                        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = ClustersSample(ILayer,IGroup)%m_GrainID(1)
 !
 !                        if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) .GT. this%m_GrainBoundary%GrainNum) then
-!                            write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+!                            write(*,*) "MFPSCUERROR: The grain number is greater than the seeds number in system."
 !                            write(*,*) this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1)
 !                            pause
 !                            stop
@@ -2995,7 +2850,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 !                        this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) = ClustersSample(ILayer,IGroup)%m_GrainID(2)
 !
 !                        if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) .GT. this%m_GrainBoundary%GrainNum) then
-!                            write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+!                            write(*,*) "MFPSCUERROR: The grain number is greater than the seeds number in system."
 !                            write(*,*) this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2)
 !                            pause
 !                            stop
@@ -3082,7 +2937,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 !
 !                            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = ClustersSample(ILayer,IGroup)%m_GrainID(1)
 !                            if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) .GT. this%m_GrainBoundary%GrainNum) then
-!                                write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+!                                write(*,*) "MFPSCUERROR: The grain number is greater than the seeds number in system."
 !                                write(*,*) this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1)
 !                                pause
 !                                stop
@@ -3090,7 +2945,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 !
 !                            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) = ClustersSample(ILayer,IGroup)%m_GrainID(2)
 !                            if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) .GT. this%m_GrainBoundary%GrainNum) then
-!                                write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+!                                write(*,*) "MFPSCUERROR: The grain number is greater than the seeds number in system."
 !                                write(*,*) this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2)
 !                                pause
 !                                stop

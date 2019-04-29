@@ -65,7 +65,6 @@ module MIGCOALE_IMPLANTATION
 
         contains
         procedure,non_overridable,public,pass::Load_ImplantSection
-        procedure,non_overridable,public,pass::InitImplantInfo_DevPart
         procedure,non_overridable,public,pass::ReadImplantSection
         procedure,non_overridable,public,pass::ReadImplantSection_Simple
         procedure,non_overridable,public,pass::ReadImplantClusterSizeDist_Simple
@@ -75,25 +74,25 @@ module MIGCOALE_IMPLANTATION
         procedure,non_overridable,public,pass::Putin_SRIM2003_OUTCFG_Distribution
         procedure,non_overridable,public,pass::Putin_OKMC_FORMAT18_Distribution
         procedure,non_overridable,public,pass::ReadImplantSection_SpecialDistFromExteFunc
-        procedure,non_overridable,public,pass::ImplantClusters_FastStrategy
-        procedure,non_overridable,public,pass::AdjustTimeStep_Implant
-        procedure,non_overridable,private,pass::Cal_ImplantANDExpandSize
-        procedure,non_overridable,private,pass::DoImplantTillVirtualBoundary_CPUTOGPU
-        procedure,non_overridable,private,pass::DoImplantTillVirtualBoundary_CPU
-        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_Simple
-        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_Depth_LAY
-        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_Depth_SubBox
-        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_Depth_Gauss
-        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_FromFile
-        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_FromExteFunc
-        procedure,non_overridable,private,pass::DoImplantTillVirtualBoundary_GPUTOCPU
-        procedure,non_overridable,private,pass::DoImplantTillVirtualBoundary_GPU
-        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_Simple
-        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_Depth_LAY
-        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_Depth_SubBox
-        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_Depth_Gauss
-        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_FromFile
-        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_FromExteFunc
+!        procedure,non_overridable,public,pass::ImplantClusters_FastStrategy
+!        procedure,non_overridable,public,pass::AdjustTimeStep_Implant
+!        procedure,non_overridable,private,pass::Cal_ImplantANDExpandSize
+!        procedure,non_overridable,private,pass::DoImplantTillVirtualBoundary_CPUTOGPU
+!        procedure,non_overridable,private,pass::DoImplantTillVirtualBoundary_CPU
+!        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_Simple
+!        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_Depth_LAY
+!        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_Depth_SubBox
+!        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_Depth_Gauss
+!        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_FromFile
+!        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_FromExteFunc
+!        procedure,non_overridable,private,pass::DoImplantTillVirtualBoundary_GPUTOCPU
+!        procedure,non_overridable,private,pass::DoImplantTillVirtualBoundary_GPU
+!        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_Simple
+!        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_Depth_LAY
+!        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_Depth_SubBox
+!        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_Depth_Gauss
+!        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_FromFile
+!        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_FromExteFunc
         procedure,non_overridable,public,pass::CopyImplantSectionFromOther
         procedure,non_overridable,public,pass::Clean=>Clean_ImplantSection
         Generic::ASSIGNMENT(=)=>CopyImplantSectionFromOther
@@ -110,7 +109,6 @@ module MIGCOALE_IMPLANTATION
         contains
         procedure,non_overridable,public,pass::Init=>Init_ImplantList
         procedure,non_overridable,private,pass::Load_ImplantList
-        procedure,non_overridable,private,pass::CheckImplantList
         procedure,non_overridable,public,pass::AppendOneSection=>AppendOne_ImplantSection
         procedure,non_overridable,public,pass::Get_P=>GetImplantSection_P
         procedure,non_overridable,public,pass::Clean=>Clean_ImplantList
@@ -127,31 +125,30 @@ module MIGCOALE_IMPLANTATION
     private::Putin_SRIM2003_OUTCFG_Distribution
     private::Putin_OKMC_FORMAT18_Distribution
     private::ReadImplantSection_SpecialDistFromExteFunc
-    private::ImplantClusters_FastStrategy
-    private::AdjustTimeStep_Implant
-    private::Cal_ImplantANDExpandSize
-    private::DoImplantTillVirtualBoundary_CPUTOGPU
-    private::DoImplantTillVirtualBoundary_CPU
-    private::FillVirtualBoundary_CPU_Simple
-    private::FillVirtualBoundary_CPU_Depth_LAY
-    private::FillVirtualBoundary_CPU_Depth_SubBox
-    private::FillVirtualBoundary_CPU_Depth_Gauss
-    private::FillVirtualBoundary_CPU_FromFile
-    private::FillVirtualBoundary_CPU_FromExteFunc
-    private::DoImplantTillVirtualBoundary_GPUTOCPU
-    private::DoImplantTillVirtualBoundary_GPU
-    private::FillVirtualBoundary_GPU_Simple
-    private::FillVirtualBoundary_GPU_Depth_LAY
-    private::FillVirtualBoundary_GPU_Depth_SubBox
-    private::FillVirtualBoundary_GPU_Depth_Gauss
-    private::FillVirtualBoundary_GPU_FromFile
-    private::FillVirtualBoundary_GPU_FromExteFunc
+!    private::ImplantClusters_FastStrategy
+!    private::AdjustTimeStep_Implant
+!    private::Cal_ImplantANDExpandSize
+!    private::DoImplantTillVirtualBoundary_CPUTOGPU
+!    private::DoImplantTillVirtualBoundary_CPU
+!    private::FillVirtualBoundary_CPU_Simple
+!    private::FillVirtualBoundary_CPU_Depth_LAY
+!    private::FillVirtualBoundary_CPU_Depth_SubBox
+!    private::FillVirtualBoundary_CPU_Depth_Gauss
+!    private::FillVirtualBoundary_CPU_FromFile
+!    private::FillVirtualBoundary_CPU_FromExteFunc
+!    private::DoImplantTillVirtualBoundary_GPUTOCPU
+!    private::DoImplantTillVirtualBoundary_GPU
+!    private::FillVirtualBoundary_GPU_Simple
+!    private::FillVirtualBoundary_GPU_Depth_LAY
+!    private::FillVirtualBoundary_GPU_Depth_SubBox
+!    private::FillVirtualBoundary_GPU_Depth_Gauss
+!    private::FillVirtualBoundary_GPU_FromFile
+!    private::FillVirtualBoundary_GPU_FromExteFunc
     private::CopyImplantSectionFromOther
     private::Clean_ImplantSection
     private::CleanImplantSection
     private::Init_ImplantList
     private::Load_ImplantList
-    private::CheckImplantList
     private::AppendOne_ImplantSection
     private::GetImplantSection_P
     private::Clean_ImplantList
@@ -207,7 +204,7 @@ module MIGCOALE_IMPLANTATION
         call UPCASE(KEYWORD)
 
         if(.not. IsStrEqual(KEYWORD,m_IMPFINPUTF)) then
-            write(*,*) "MCPSCUERROR: Unknown file header: ",KEYWORD
+            write(*,*) "MFPSCUERROR: Unknown file header: ",KEYWORD
             write(*,*) "In file: ",truePath
             pause
             stop
@@ -232,7 +229,7 @@ module MIGCOALE_IMPLANTATION
 
                     call this%AppendOneSection(tempImplantSection)
                 case default
-                    write(*,*) "MCPSCUERROR: Unknown flag: ",KEYWORD
+                    write(*,*) "MFPSCUERROR: Unknown flag: ",KEYWORD
                     write(*,*) "At Line: ",LINE
                     pause
                     stop
@@ -242,7 +239,7 @@ module MIGCOALE_IMPLANTATION
 
         return
 
-        100 write(*,*) "MCPSCUERROR: Fail to read the file: ",truePath
+        100 write(*,*) "MFPSCUERROR: Fail to read the file: ",truePath
             write(*,*) "At Line: ",LINE
             pause
             stop
@@ -261,7 +258,7 @@ module MIGCOALE_IMPLANTATION
         cursor=>this
 
         if(.not. associated(cursor)) then
-            write(*,*) "MCPSCUERROR: You should allocate the ImplantList first!"
+            write(*,*) "MFPSCUERROR: You should allocate the ImplantList first!"
             pause
             stop
         end if
@@ -324,7 +321,7 @@ module MIGCOALE_IMPLANTATION
         Nullify(cursor)
 
         if(.not. associated(TheResult)) then
-            write(*,*) "MCPSCUERROR: Cannot find the Implantation section by the id: ",TheIndex
+            write(*,*) "MFPSCUERROR: Cannot find the Implantation section by the id: ",TheIndex
             pause
             stop
         end if
@@ -411,7 +408,7 @@ module MIGCOALE_IMPLANTATION
                 case("&TYPE")
                     call EXTRACT_NUMB(STR,1,N,STRTMP)
                     if(N .LT. 1) then
-                        write(*,*) "MCPSCUERROR: Too few parameters for implantation distribution type."
+                        write(*,*) "MFPSCUERROR: Too few parameters for implantation distribution type."
                         write(*,*) "At Line :", LINE
                         write(*,*) "You should special by the way : &TYPE The implantation cluster distribution type =  "
                         pause
@@ -420,7 +417,7 @@ module MIGCOALE_IMPLANTATION
                     this%ImplantConfigType = ISTR(STRTMP(1))
                     exit
                 case default
-                    write(*,*) "MCPSCUERROR: You must special the implantation distribution type first!"
+                    write(*,*) "MFPSCUERROR: You must special the implantation distribution type first!"
                     write(*,*) "By the way: &TYPE The implantation cluster distribution type = "
                     write(*,*) "However, the words you input is: ",STR
                     pause
@@ -441,7 +438,7 @@ module MIGCOALE_IMPLANTATION
                 case("&FLUX")
                     call EXTRACT_NUMB(STR,2,N,STRTMP)
                     if(N .LT. 2) then
-                        write(*,*) "MCPSCUERROR: Too few parameters for the implantation flux ."
+                        write(*,*) "MFPSCUERROR: Too few parameters for the implantation flux ."
                         write(*,*) "At Line :", LINE
                         write(*,*) "You should special by the way: &FLUX THE implantation flux = , the reflect ratio = "
                         pause
@@ -451,7 +448,7 @@ module MIGCOALE_IMPLANTATION
                     ReflectRatio = DRSTR(STRTMP(2))
 
                     if(ReflectRatio .LT. 0 .or. ReflectRatio .GT. 1.D0) then
-                        write(*,*) "MCPSCUERROR: The reflect ratio should between 0 and 1"
+                        write(*,*) "MFPSCUERROR: The reflect ratio should between 0 and 1"
                         write(*,*) "However, the current reflect ratio is: ",ReflectRatio
                         pause
                         stop
@@ -461,7 +458,7 @@ module MIGCOALE_IMPLANTATION
                 case("&FEXPAND")
                     call EXTRACT_NUMB(STR,1,N,STRTMP)
                     if(N .LT. 1) then
-                        write(*,*) "MCPSCUERROR: Too few parameters for the implantation expand factor ."
+                        write(*,*) "MFPSCUERROR: Too few parameters for the implantation expand factor ."
                         write(*,*) "At Line :", LINE
                         write(*,*) "You should special by the way: &FEXPAND The expand size factor = "
                         pause
@@ -472,7 +469,7 @@ module MIGCOALE_IMPLANTATION
                 case("&FMEMOCCUP")
                     call EXTRACT_NUMB(STR,1,N,STRTMP)
                     if(N .LT. 1) then
-                        write(*,*) "MCPSCUERROR: Too few parameters for the memory occupy factor."
+                        write(*,*) "MFPSCUERROR: Too few parameters for the memory occupy factor."
                         write(*,*) "At Line :", LINE
                         write(*,*) "You should special by the way: &FMEMOCCUP TThe memory occupied factor ="
                         pause
@@ -481,7 +478,7 @@ module MIGCOALE_IMPLANTATION
                     this%MemoryOccupyFactor = ISTR(STRTMP(1))
 
                     if(this%MemoryOccupyFactor .LE. 1) then
-                        write(*,*) "MCPSCUERROR: The MemoryOccupyFactor cannot less than 1"
+                        write(*,*) "MFPSCUERROR: The MemoryOccupyFactor cannot less than 1"
                         pause
                         stop
                     end if
@@ -490,7 +487,7 @@ module MIGCOALE_IMPLANTATION
                     call this%ReadImplantSection(hFile,KEYWORD,SimBoxes,Host_SimuCtrlParam,LINE)
 
                 case default
-                    write(*,*) "MCPSCUERROR: Unknown Flag: ",KEYWORD
+                    write(*,*) "MFPSCUERROR: Unknown Flag: ",KEYWORD
                     write(*,*) "At LINE: ",LINE
                     pause
                     stop
@@ -499,7 +496,7 @@ module MIGCOALE_IMPLANTATION
 
         return
 
-        100 write(*,*) "MCPSCUERROR : Load implantation configuration file failed !"
+        100 write(*,*) "MFPSCUERROR : Load implantation configuration file failed !"
             write(*,*) "At line :",LINE
             write(*,*) "The program would stop."
             pause
@@ -525,7 +522,7 @@ module MIGCOALE_IMPLANTATION
             case(p_ImplantConfig_SpecialDistFromExteFunc)
                 call this%ReadImplantSection_SpecialDistFromExteFunc(hFile,KEYWORD,SimBoxes,Host_SimuCtrlParam,LINE)
             case default
-                write(*,*) "MCPSCUERROR: Unknown strategy for the implantation configuration:",this%ImplantConfigType
+                write(*,*) "MFPSCUERROR: Unknown strategy for the implantation configuration:",this%ImplantConfigType
                 pause
                 stop
         end select
@@ -553,14 +550,14 @@ module MIGCOALE_IMPLANTATION
             case("&DEPTHSUBCTL")
                     call this%ReadImplantClusterDepthDist_Simple(hFile,SimBoxes,LINE)
             case default
-                write(*,*) "MCPSCUERROR: The Illegal flag: ",KEYWORD
+                write(*,*) "MFPSCUERROR: The Illegal flag: ",KEYWORD
                 pause
                 stop
         end select
 
         return
 
-        100 write(*,*) "MCPSCUERROR : Load implantation configuration file failed !"
+        100 write(*,*) "MFPSCUERROR : Load implantation configuration file failed !"
             write(*,*) "At line :",LINE
             write(*,*) "The program would stop."
             pause
@@ -587,7 +584,7 @@ module MIGCOALE_IMPLANTATION
         !---Body---
 
         if(.not. IsStrEqual(PreKEYWORD,"&EXTFSUBCTL")) then
-            write(*,*) "MCPSCUERROR: You must special the &EXTFSUBCTL when the implant strategy is chosen by outer file ."
+            write(*,*) "MFPSCUERROR: You must special the &EXTFSUBCTL when the implant strategy is chosen by outer file ."
             write(*,*) "However, you had special the key word :",KEYWORD
             write(*,*) "At line: ",LINE
             pause
@@ -607,14 +604,14 @@ module MIGCOALE_IMPLANTATION
                 case("&DISTFILETYPE")
                     call EXTRACT_SUBSTR(STR,1,N,STRTEMP)
                     if(N .LT. 1) then
-                        write(*,*) "MCPSCUERROR: You must special the implantation configuration file type if you had chosen the file model."
+                        write(*,*) "MFPSCUERROR: You must special the implantation configuration file type if you had chosen the file model."
                         write(*,*) "By the way: &DISTFILETYPE The distribution file type = ! 'DISTOKMC18','BOXMF18','BOXSPMF18','DISTSRIM','DISTPANDA' "
                         pause
                         stop
                     end if
 
                     if(LENTRIM(STRTEMP(1)) .LE. 0) then
-                        write(*,*) "MCPSCUERROR: The implant configuration file type is null."
+                        write(*,*) "MFPSCUERROR: The implant configuration file type is null."
                         write(*,*) "At line: ",LINE
                         pause
                         stop
@@ -628,8 +625,8 @@ module MIGCOALE_IMPLANTATION
                         call EXTRACT_SUBSTR(STR,2,N,STRTEMP)
 
                         if(N .LT. 2) then
-                            write(*,*) "MCPSCUERROR: when the specialized distribution type is 'DISTSRIM' or 'DISTPANDA'"
-                            write(*,*) "MCPSCUERROR: you must special the implantation ion type."
+                            write(*,*) "MFPSCUERROR: when the specialized distribution type is 'DISTSRIM' or 'DISTPANDA'"
+                            write(*,*) "MFPSCUERROR: you must special the implantation ion type."
                             pause
                             stop
                         end if
@@ -643,8 +640,8 @@ module MIGCOALE_IMPLANTATION
                         call EXTRACT_NUMB(STR,1,N,STRTEMP)
 
                         if(N .LT. 1) then
-                            write(*,*) "MCPSCUERROR: when the specialized distribution type is 'DISTSRIM' or 'DISTOKMC18'"
-                            write(*,*) "MCPSCUERROR: you must special the layer number that you want to divide."
+                            write(*,*) "MFPSCUERROR: when the specialized distribution type is 'DISTSRIM' or 'DISTOKMC18'"
+                            write(*,*) "MFPSCUERROR: you must special the layer number that you want to divide."
                             pause
                             stop
                         end if
@@ -652,7 +649,7 @@ module MIGCOALE_IMPLANTATION
                         LayerNum = ISTR(STRTEMP(1))
 
                         if(LayerNum .LE. 0) then
-                            write(*,*) "MCPSCUERROR: the total layer number cannot be less than 0 when it is set for SRIM or OKMC18 distribution"
+                            write(*,*) "MFPSCUERROR: the total layer number cannot be less than 0 when it is set for SRIM or OKMC18 distribution"
                             pause
                             stop
                         end if
@@ -662,14 +659,14 @@ module MIGCOALE_IMPLANTATION
                 case("&DISTFILE")
                     call EXTRACT_SUBSTR(STR,1,N,STRTEMP)
                     if(N .LT. 1) then
-                        write(*,*) "MCPSCUERROR: You must special the implantation configuration file if you had chosen the file model."
+                        write(*,*) "MFPSCUERROR: You must special the implantation configuration file if you had chosen the file model."
                         write(*,*) "By the way: &DISTFILE The distribution file path = "
                         pause
                         stop
                     end if
 
                     if(LENTRIM(STRTEMP(1)) .LE. 0) then
-                        write(*,*) "MCPSCUERROR: The implant configuration file name is null."
+                        write(*,*) "MFPSCUERROR: The implant configuration file name is null."
                         write(*,*) "At line: ",LINE
                         pause
                         stop
@@ -678,7 +675,7 @@ module MIGCOALE_IMPLANTATION
                     this%ImplantCfgFileName = INQUIREFILE(STRTEMP(1),Host_SimuCtrlParam%InputFilePath)
 
                 case default
-                    write(*,*) "MCPSCUERROR: Illegal flag: ",KEYWORD
+                    write(*,*) "MFPSCUERROR: Illegal flag: ",KEYWORD
                     pause
                     stop
             end select
@@ -701,7 +698,7 @@ module MIGCOALE_IMPLANTATION
                 call this%Putin_PANDA_OUTCFG_Distribution(SimBoxes,Host_SimuCtrlParam)
 
             case default
-                write(*,*) "MCPSCUERROR: Unknown Implant Configuration file type : ",this%ImplantCfgFileType
+                write(*,*) "MFPSCUERROR: Unknown Implant Configuration file type : ",this%ImplantCfgFileType
                 write(*,*) "In current version, only the ", &
                             OKMC_DIST_FORMAT18," ",         &
                             MF_OUTCFG_FORMAT18," ",         &
@@ -716,14 +713,14 @@ module MIGCOALE_IMPLANTATION
         ! Note, the out put SampleRate may be the concentrate, we need to convert it to rate now.
         TotalSampleRate = sum(this%ClustersSampleRate)
         if(TotalSampleRate .LE. 0) then
-            write(*,*) "MCPSCUERROR: The total concentrate cannot less equal with 0"
+            write(*,*) "MFPSCUERROR: The total concentrate cannot less equal with 0"
             pause
             stop
         end if
         this%ClustersSampleRate = this%ClustersSampleRate/TotalSampleRate
 
         return
-        100 write(*,*) "MCPSCUERROR : Load implantation configuration file failed !"
+        100 write(*,*) "MFPSCUERROR : Load implantation configuration file failed !"
             write(*,*) "At line :",LINE
             write(*,*) "The program would stop."
             pause
@@ -774,7 +771,7 @@ module MIGCOALE_IMPLANTATION
         END DO
 
         if(LayerNum .LE. 0) then
-            write(*,*) "MCPSCUERROR: The layers number in panda distribution is less than 1, that is impossible."
+            write(*,*) "MFPSCUERROR: The layers number in panda distribution is less than 1, that is impossible."
             pause
             stop
         end if
@@ -841,7 +838,7 @@ module MIGCOALE_IMPLANTATION
             call EXTRACT_NUMB(STR,2,N,STRTMP)
 
             if(N .LT. 2) then
-                write(*,*) "MCPSCUERROR: The panda distribution file data cannot be recognized in line: ",LINE
+                write(*,*) "MFPSCUERROR: The panda distribution file data cannot be recognized in line: ",LINE
                 write(*,*) STR
                 write(*,*) "At file: ",this%ImplantCfgFileName
                 pause
@@ -852,7 +849,7 @@ module MIGCOALE_IMPLANTATION
             SumOfThick = SumOfThick + this%LayerThick(ILayer)
 
             if(SumOfThick .GT. SimBoxes%BOXSIZE(3)) then
-                write(*,*) "MCPSCUERROR: The PANDA depth distribution is greater than simulation box depth."
+                write(*,*) "MFPSCUERROR: The PANDA depth distribution is greater than simulation box depth."
                 write(*,*) "The PANDA depth is: ",SumOfThick
                 write(*,*) "The simulation box depth is : ",SimBoxes%BOXSIZE(3)
                 pause
@@ -920,7 +917,7 @@ module MIGCOALE_IMPLANTATION
         END DO
 
         if(StoppedNum .LE. 0) then
-            write(*,*) "MCPSCUERROR: The bins number in SRIM2003 distribution is less than 1, that is impossible."
+            write(*,*) "MFPSCUERROR: The bins number in SRIM2003 distribution is less than 1, that is impossible."
             pause
             stop
         end if
@@ -947,7 +944,7 @@ module MIGCOALE_IMPLANTATION
                 call EXTRACT_NUMB(STR,4,N,STRTMP)
 
                 if(N .LT. 4) then
-                    write(*,*) "MCPSCUERROR: The SRIM2003 distribution file data cannot be recognized in line: ",LINE
+                    write(*,*) "MFPSCUERROR: The SRIM2003 distribution file data cannot be recognized in line: ",LINE
                     write(*,*) STR
                     write(*,*) "At file: ",this%ImplantCfgFileName
                     pause
@@ -959,7 +956,7 @@ module MIGCOALE_IMPLANTATION
                 StoppedPosition(IIon,3) = DRSTR(STRTMP(4))*C_AM2CM ! lateral Z
 
                 if(StoppedPosition(IIon,2) .LT. SimBoxes%BOXBOUNDARY(1,1) .or. StoppedPosition(IIon,2) .GT. SimBoxes%BOXBOUNDARY(1,2)) then
-                    write(*,*) "MCPSCUERROR: The SRIM2003 distribution is out of the simulation box in lateral X."
+                    write(*,*) "MFPSCUERROR: The SRIM2003 distribution is out of the simulation box in lateral X."
                     write(*,*) STR
                     write(*,*) "Current position in lateral X is (cm) : ",StoppedPosition(IIon,2)
                     write(*,*) "However, the box boundary range from ",SimBoxes%BOXBOUNDARY(1,1)," To ",SimBoxes%BOXBOUNDARY(1,2)
@@ -968,7 +965,7 @@ module MIGCOALE_IMPLANTATION
                 end if
 
                 if(StoppedPosition(IIon,3) .LT. SimBoxes%BOXBOUNDARY(2,1) .or. StoppedPosition(IIon,3) .GT. SimBoxes%BOXBOUNDARY(2,2)) then
-                    write(*,*) "MCPSCUERROR: The SRIM2003 distribution is out of the simulation box in lateral Y."
+                    write(*,*) "MFPSCUERROR: The SRIM2003 distribution is out of the simulation box in lateral Y."
                     write(*,*) STR
                     write(*,*) "Current position in lateral Y is (cm) : ",StoppedPosition(IIon,3)
                     write(*,*) "However, the box boundary range from ",SimBoxes%BOXBOUNDARY(2,1)," To ",SimBoxes%BOXBOUNDARY(2,2)
@@ -977,7 +974,7 @@ module MIGCOALE_IMPLANTATION
                 end if
 
                 if(StoppedPosition(IIon,1) .LT. SimBoxes%BOXBOUNDARY(3,1) .or. StoppedPosition(IIon,1) .GT. SimBoxes%BOXBOUNDARY(3,2)) then
-                    write(*,*) "MCPSCUERROR: The SRIM2003 distribution is out of the simulation box in depth."
+                    write(*,*) "MFPSCUERROR: The SRIM2003 distribution is out of the simulation box in depth."
                     write(*,*) STR
                     write(*,*) "Current depth is (cm) : ",StoppedPosition(IIon,1)
                     write(*,*) "However, the box boundary range from ",SimBoxes%BOXBOUNDARY(3,1)," To ",SimBoxes%BOXBOUNDARY(3,2)
@@ -1089,7 +1086,7 @@ module MIGCOALE_IMPLANTATION
 
 
         return
-        100 write(*,*) "MCPSCUERROR: Fail to load the implant distribution at file: ",this%ImplantCfgFileName
+        100 write(*,*) "MFPSCUERROR: Fail to load the implant distribution at file: ",this%ImplantCfgFileName
             write(*,*) "At line: ",LINE
             write(*,*) STR
             pause
@@ -1127,7 +1124,7 @@ module MIGCOALE_IMPLANTATION
                 case("&NATOMDIST")
                     call EXTRACT_NUMB(STR,4,N,STRTMP)
                     if(N .LT. 4) then
-                        write(*,*) "MCPSCUERROR: Too few parameters for the cluster size distribution"
+                        write(*,*) "MFPSCUERROR: Too few parameters for the cluster size distribution"
                         write(*,*) "You should special: &NATOMDIST The atoms number in each cluster distribution as Gauss that central = , distribution half width = , left cut = ,right cut = "
                         pause
                         stop
@@ -1137,7 +1134,7 @@ module MIGCOALE_IMPLANTATION
                     this%NACUT(1) = DRSTR(STRTMP(3))
                     this%NACUT(2) = DRSTR(STRTMP(4))
                     if(this%NACUT(1) .GE. this%NACUT(2)) then
-                        write(*,*) "MCPSCUERROR: The right cut cannot less than left cut."
+                        write(*,*) "MFPSCUERROR: The right cut cannot less than left cut."
                         write(*,*) "LCut",this%NACUT(1)
                         write(*,*) "RCut",this%NACUT(2)
                         pause
@@ -1147,12 +1144,12 @@ module MIGCOALE_IMPLANTATION
                 case("&ELEMENTCOMPOSIT")
                     call EXTRACT_SUBSTR(STR,p_ATOMS_GROUPS_NUMBER,NElements,STRTMP)
                     if(NElements .LE. 0) then
-                        write(*,*) "MCPSCUERROR: None of atoms kind (Elements) are specialized "
+                        write(*,*) "MFPSCUERROR: None of atoms kind (Elements) are specialized "
                         write(*,*) "You should special like that : &ELEMENTCOMPOSIT The included element = 'A', 'B' ."
                         pause
                         stop
                     else if(NElements .GT. p_ATOMS_GROUPS_NUMBER) then
-                        write(*,*) "MCPSCUERROR: the specialized elements kinds is : ",N
+                        write(*,*) "MFPSCUERROR: the specialized elements kinds is : ",N
                         write(*,*) "which is great than the max permitted elements kinds :",p_ATOMS_GROUPS_NUMBER
                         pause
                         stop
@@ -1165,7 +1162,7 @@ module MIGCOALE_IMPLANTATION
 
                     call EXTRACT_NUMB(STR,p_ATOMS_GROUPS_NUMBER,N,STRTMP)
                     if(N .ne. NElements) then
-                        write(*,*) "MCPSCUERROR: The elements weights number is not equal with the elements kinds which given."
+                        write(*,*) "MFPSCUERROR: The elements weights number is not equal with the elements kinds which given."
                         write(*,*) "The elements kinds number is :",NElements
                         write(*,*) "But the weights number is :",N
                         pause
@@ -1179,7 +1176,7 @@ module MIGCOALE_IMPLANTATION
                         END DO
 
                         if(sum(this%CompositWeight) .LE. 0.D0) then
-                            write(*,*) "MCPSCUERROR: The sum of elements weights must great than 0 ."
+                            write(*,*) "MFPSCUERROR: The sum of elements weights must great than 0 ."
                             write(*,*) STR
                             write(*,*) "At Line :",LINE
                             pause
@@ -1189,7 +1186,7 @@ module MIGCOALE_IMPLANTATION
                         this%CompositWeight = this%CompositWeight/sum(this%CompositWeight)
                     end if
                 CASE default
-                    write(*,*) "MCPSCUERROR: Illegal Symbol: ", KEYWORD
+                    write(*,*) "MFPSCUERROR: Illegal Symbol: ", KEYWORD
                     pause
                     stop
             END SELECT
@@ -1198,7 +1195,7 @@ module MIGCOALE_IMPLANTATION
 
         return
 
-        100 write(*,*) "MCPSCUERROR : Load implantation configuration file failed for cluster size!"
+        100 write(*,*) "MFPSCUERROR : Load implantation configuration file failed for cluster size!"
             write(*,*) "At line :",LINE
             write(*,*) STR
             write(*,*) "The program would stop."
@@ -1240,7 +1237,7 @@ module MIGCOALE_IMPLANTATION
 
                     call EXTRACT_NUMB(STR,1,N,STRTMP)
                     if(N .LT. 1) then
-                        write(*,*) "MCPSCUERROR: Too few parameters for the clusters depth distribution layer type"
+                        write(*,*) "MFPSCUERROR: Too few parameters for the clusters depth distribution layer type"
                         write(*,*) "You should special: &DEPTH_LAYER THE NUMBER OF DEPTH DISTRIBUTION LAYER = , THE ENTRIES DISTRIBUTION ="
                         write(*,*) "At line: ",LINE
                         pause
@@ -1249,7 +1246,7 @@ module MIGCOALE_IMPLANTATION
 
                     LayerNum = ISTR(STRTMP(1))
                     if(LayerNum .LT. 1) then
-                        write(*,*) "MCPSCUERROR: The layer number should greater than 1"
+                        write(*,*) "MFPSCUERROR: The layer number should greater than 1"
                         write(*,*) "At line :",LINE
                         write(*,*) STR
                         pause
@@ -1259,7 +1256,7 @@ module MIGCOALE_IMPLANTATION
                     call EXTRACT_NUMB(STR,LayerNum*2+1,N,STRTMP)
 
                     if((N-1) .NE. LayerNum*2) then
-                        write(*,*) "MCPSCUERROR: the specialeld layer is not equal with your setting"
+                        write(*,*) "MFPSCUERROR: the specialeld layer is not equal with your setting"
                         write(*,*) STR
                         write(*,*) "At line :", LINE
                         pause
@@ -1292,7 +1289,7 @@ module MIGCOALE_IMPLANTATION
                     ! Note, the out put SampleRate may be the concentrate, we need to convert it to rate now.
                     TotalSampleRate = sum(this%ClustersSampleRate)
                     if(TotalSampleRate .LE. 0) then
-                        write(*,*) "MCPSCUERROR: The total concentrate cannot less equal with 0"
+                        write(*,*) "MFPSCUERROR: The total concentrate cannot less equal with 0"
                         pause
                         stop
                     end if
@@ -1305,7 +1302,7 @@ module MIGCOALE_IMPLANTATION
 
                     call EXTRACT_NUMB(STR,3,N,STRTMP)
                     if(N .LT. 3) then
-                        write(*,*) "MCPSCUERROR: Too few parameters for the clusters depth distribution subbox type"
+                        write(*,*) "MFPSCUERROR: Too few parameters for the clusters depth distribution subbox type"
                         write(*,*) "You shoud special: &DEPTH_SUBBOX THE SUBOX SHAPE IS THAT: X =, Y =, Z ="
                         write(*,*) "At line: ",LINE
                         pause
@@ -1322,7 +1319,7 @@ module MIGCOALE_IMPLANTATION
 
                     call EXTRACT_NUMB(STR,2,N,STRTMP)
                     if(N .LT. 2) then
-                        write(*,*) "MCPSCUERROR: Too few parameters for the clusters depth distribution gauss type"
+                        write(*,*) "MFPSCUERROR: Too few parameters for the clusters depth distribution gauss type"
                         write(*,*) "You shoud special: &DEPTH_GAUSS THE GAUSS DISTRIBUTION CENTRAL = , THE HALF WIDTH = "
                         write(*,*) "At line: ",LINE
                         pause
@@ -1331,7 +1328,7 @@ module MIGCOALE_IMPLANTATION
                     this%DepthINI = DRSTR(STRTMP(1))*C_NM2CM
                     this%DepthSDINI = DRSTR(STRTMP(2))*C_NM2CM
                 CASE default
-                    write(*,*) "MCPSCUERROR: Illegal Symbol: ", KEYWORD
+                    write(*,*) "MFPSCUERROR: Illegal Symbol: ", KEYWORD
                     pause
                     stop
             END SELECT
@@ -1340,7 +1337,7 @@ module MIGCOALE_IMPLANTATION
 
         return
 
-        100 write(*,*) "MCPSCUERROR : Load Implantation configuration file failed for clusters depth distribution!"
+        100 write(*,*) "MFPSCUERROR : Load Implantation configuration file failed for clusters depth distribution!"
             write(*,*) "At line :",LINE
             write(*,*) "The program would stop."
             pause
@@ -1633,7 +1630,7 @@ module MIGCOALE_IMPLANTATION
 !            Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) =  Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) + ImplantNumEachBox
 !
 !            if(Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) .GT. Host_Boxes%m_BoxesInfo%SEExpdIndexBox(IBox,2)) then
-!                write(*,*) "MCPSCUERROR: The expand size for box ,",IBox," is not enough!"
+!                write(*,*) "MFPSCUERROR: The expand size for box ,",IBox," is not enough!"
 !                write(*,*) "Implant number is: ",ImplantNumEachBox
 !                write(*,*) "End of the used clusters index is, ",Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2)
 !                write(*,*) "End of the expd clusters index is, ",Host_Boxes%m_BoxesInfo%SEExpdIndexBox(IBox,2)
@@ -1642,7 +1639,7 @@ module MIGCOALE_IMPLANTATION
 !            end if
 !
 !            if(Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) .GT. Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2)) then
-!                write(*,*) "MCPSCUERROR: The virtual size for box ,",IBox," is not enough!"
+!                write(*,*) "MFPSCUERROR: The virtual size for box ,",IBox," is not enough!"
 !                write(*,*) "Implant number is: ",ImplantNumEachBox
 !                write(*,*) "End of the used clusters index is, ",Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2)
 !                write(*,*) "End of the virtual clusters index is, ",Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2)
@@ -1820,7 +1817,7 @@ module MIGCOALE_IMPLANTATION
 !            case(p_ImplantConfig_SpecialDistFromExteFunc)
 !                call this%FillVirtualBoundary_CPU_FromExteFunc(Host_Boxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
 !            case default
-!                write(*,*) "MCPSCUERROR: Unknown strategy for the implantation configuration:",this%ImplantConfigType
+!                write(*,*) "MFPSCUERROR: Unknown strategy for the implantation configuration:",this%ImplantConfigType
 !                pause
 !                stop
 !        end select
@@ -1843,7 +1840,7 @@ module MIGCOALE_IMPLANTATION
 !            case(p_DEPT_DIS_GAS)
 !                call this%FillVirtualBoundary_CPU_Depth_Gauss(SimBoxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
 !            case default
-!                write(*,*) "MCPSCUERROR : Unknown way to Unknown strategy for the simple implantation configuration: ",this%ImplantDepthDistType
+!                write(*,*) "MFPSCUERROR : Unknown way to Unknown strategy for the simple implantation configuration: ",this%ImplantDepthDistType
 !                pause
 !                stop
 !        end select
@@ -1897,7 +1894,7 @@ module MIGCOALE_IMPLANTATION
 !            end if
 !
 !            if((NC - NCUsed) .LT. NewAllocateNCEachBox) then
-!                write(*,*) "MCPSCUERROR: The allocated  memory space are to implant the clusters"
+!                write(*,*) "MFPSCUERROR: The allocated  memory space are to implant the clusters"
 !                write(*,*) "For box :",IBox
 !                write(*,*) "The free of allocated allocated  memory space is: ",NC - NCUsed
 !                write(*,*) "The waiting to be implanted clusters number is:",NewAllocateNCEachBox
@@ -1913,7 +1910,7 @@ module MIGCOALE_IMPLANTATION
 !            end if
 !
 !            if(ICFROM .LT. Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2)) then
-!                write(*,*) "MCPSCUERROR: The allocated  memory space are too small to implant the clusters"
+!                write(*,*) "MFPSCUERROR: The allocated  memory space are too small to implant the clusters"
 !                write(*,*) "For box :",IBox
 !                write(*,*) "It would occupy other free clusters for id: ",ICFROM
 !                pause
@@ -1921,7 +1918,7 @@ module MIGCOALE_IMPLANTATION
 !            end if
 !
 !            if(size(this%ClustersSample) .LE. 0) then
-!                write(*,*) "MCPSCUERROR: The number of sample clusters is less than 1: "
+!                write(*,*) "MFPSCUERROR: The number of sample clusters is less than 1: "
 !                write(*,*) "There would be no clusters to be implanted from the sample distribution."
 !                pause
 !                stop
@@ -1958,7 +1955,7 @@ module MIGCOALE_IMPLANTATION
 !                            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_POS = POS
 !
 !                            if(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD .GT. 0.D0) then
-!                                write(*,*) "MCPSCUERROR: the implant position had been occupied in memory",IC
+!                                write(*,*) "MFPSCUERROR: the implant position had been occupied in memory",IC
 !                                pause
 !                            end if
 !
@@ -1991,7 +1988,7 @@ module MIGCOALE_IMPLANTATION
 !                                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = this%ClustersSample(ILayer,IGroup)%m_GrainID(1)
 !
 !                                if(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) .GT. Host_Boxes%m_GrainBoundary%GrainNum) then
-!                                    write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+!                                    write(*,*) "MFPSCUERROR: The grain number is greater than the seeds number in system."
 !                                    write(*,*) Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1)
 !                                    pause
 !                                    stop
@@ -2000,7 +1997,7 @@ module MIGCOALE_IMPLANTATION
 !                                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) = this%ClustersSample(ILayer,IGroup)%m_GrainID(2)
 !
 !                                if(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) .GT. Host_Boxes%m_GrainBoundary%GrainNum) then
-!                                    write(*,*) "MCPSCUERROR: The grain number is greater than the seeds number in system."
+!                                    write(*,*) "MFPSCUERROR: The grain number is greater than the seeds number in system."
 !                                    write(*,*) Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2)
 !                                    pause
 !                                    stop
@@ -2144,7 +2141,7 @@ module MIGCOALE_IMPLANTATION
 !        end if
 !
 !        if((NC - NCUsed) .LT. NewAllocateNCEachBox) then
-!            write(*,*) "MCPSCUERROR: The allocated  memory space are to implant the clusters"
+!            write(*,*) "MFPSCUERROR: The allocated  memory space are to implant the clusters"
 !            write(*,*) "For box :",IBox
 !            write(*,*) "The free of allocated allocated  memory space is: ",NC - NCUsed
 !            write(*,*) "The waiting to be implanted clusters number is:",NewAllocateNCEachBox
@@ -2156,7 +2153,7 @@ module MIGCOALE_IMPLANTATION
 !        ICTO = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2)
 !
 !        if(ICFROM .LT. Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2)) then
-!            write(*,*) "MCPSCUERROR: The allocated  memory space are too small to implant the clusters"
+!            write(*,*) "MFPSCUERROR: The allocated  memory space are too small to implant the clusters"
 !            write(*,*) "For box :",IBox
 !            write(*,*) "It would occupy other free clusters for id: ",IC
 !            pause
@@ -2281,7 +2278,7 @@ module MIGCOALE_IMPLANTATION
 !        end if
 !
 !        if((NC - NCUsed) .LT. NewAllocateNCEachBox) then
-!            write(*,*) "MCPSCUERROR: The allocated  memory space are to implant the clusters"
+!            write(*,*) "MFPSCUERROR: The allocated  memory space are to implant the clusters"
 !            write(*,*) "For box :",IBox
 !            write(*,*) "The free of allocated allocated  memory space is: ",NC - NCUsed
 !            write(*,*) "The waiting to be implanted clusters number is:",NewAllocateNCEachBox
@@ -2292,7 +2289,7 @@ module MIGCOALE_IMPLANTATION
 !        IC = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) - NewAllocateNCEachBox
 !
 !        if(IC .LT. Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2)) then
-!            write(*,*) "MCPSCUERROR: The allocated  memory space are too small to implant the clusters"
+!            write(*,*) "MFPSCUERROR: The allocated  memory space are too small to implant the clusters"
 !            write(*,*) "For box :",IBox
 !            write(*,*) "It would occupy other free clusters for id: ",IC
 !            pause
@@ -2395,7 +2392,7 @@ module MIGCOALE_IMPLANTATION
 !            end if
 !
 !            if((NC - NCUsed) .LT. NewAllocateNCEachBox) then
-!                write(*,*) "MCPSCUERROR: The allocated  memory space are to implant the clusters"
+!                write(*,*) "MFPSCUERROR: The allocated  memory space are to implant the clusters"
 !                write(*,*) "For box :",IBox
 !                write(*,*) "The free of allocated allocated  memory space is: ",NC - NCUsed
 !                write(*,*) "The waiting to be implanted clusters number is:",NewAllocateNCEachBox
@@ -2406,7 +2403,7 @@ module MIGCOALE_IMPLANTATION
 !            IC = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) - NewAllocateNCEachBox
 !
 !            if(IC .LT. Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2)) then
-!                write(*,*) "MCPSCUERROR: The allocated  memory space are too small to implant the clusters"
+!                write(*,*) "MFPSCUERROR: The allocated  memory space are too small to implant the clusters"
 !                write(*,*) "For box :",IBox
 !                write(*,*) "It would occupy other free clusters for id: ",IC
 !                pause
@@ -2532,7 +2529,7 @@ module MIGCOALE_IMPLANTATION
 !            case(p_ImplantConfig_SpecialDistFromExteFunc)
 !                call this%FillVirtualBoundary_GPU_FromExteFunc(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,Dev_MigCoaleGVars,NewAllocateNCEachBox)
 !            case default
-!                write(*,*) "MCPSCUERROR: Unknown strategy for the implantation configuration:",this%ImplantConfigType
+!                write(*,*) "MFPSCUERROR: Unknown strategy for the implantation configuration:",this%ImplantConfigType
 !                pause
 !                stop
 !        end select
@@ -2560,7 +2557,7 @@ module MIGCOALE_IMPLANTATION
 !            case(p_DEPT_DIS_GAS)
 !                call this%FillVirtualBoundary_GPU_Depth_Gauss(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,Dev_MigCoaleGVars,NewAllocateNCEachBox)
 !            case default
-!                write(*,*) "MCPSCUERROR : Unknown way to Unknown strategy for the simple implantation configuration: ",this%ImplantDepthDistType
+!                write(*,*) "MFPSCUERROR : Unknown way to Unknown strategy for the simple implantation configuration: ",this%ImplantDepthDistType
 !                pause
 !                stop
 !        end select

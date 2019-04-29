@@ -177,8 +177,8 @@ module MFLIB_TYPEDEF_GEOMETRY
         integer::I
         !---Body---
         if(this%m_count .ne. size(theArray)) then
-            write(*,*) "MCPSCUERROR: the convert from Grainseed List to Grainseeds array failed!"
-            write(*,*) "MCPSCUERROR: becasue the size is not same!"
+            write(*,*) "MFPSCUERROR: the convert from Grainseed List to Grainseeds array failed!"
+            write(*,*) "MFPSCUERROR: becasue the size is not same!"
             write(*,*) "The size of grainseeds list is:",this%m_count
             write(*,*) "The size of grainseeds array is:",size(theArray)
             pause
@@ -297,7 +297,7 @@ module MFLIB_TYPEDEF_GEOMETRY
             case(p_GBIniConfig_SpecialDistFromExteFunc)
                 call this%ConstructGrainBoundary_SpecialDistFromExteFunc()
             case default
-                write(*,*) "MCPSCUERROR: Unkonw way to construct the grain boundary in the boxes.",this%GBInitType
+                write(*,*) "MFPSCUERROR: Unkonw way to construct the grain boundary in the boxes.",this%GBInitType
                 pause
                 stop
         end select
@@ -318,7 +318,7 @@ module MFLIB_TYPEDEF_GEOMETRY
             case(p_GBInitSimple_ByGVolumCtl)
                 call this%ConstructGrainBoundary_Simple_ByGVolumCtl(BOXBOUNDARY)
             case default
-                write(*,*) "MCPSCUERROR: Unkonw way to construct the grain boundary in the boxes.",this%GBInitType
+                write(*,*) "MFPSCUERROR: Unkonw way to construct the grain boundary in the boxes.",this%GBInitType
                 pause
                 stop
         end select
@@ -460,7 +460,7 @@ module MFLIB_TYPEDEF_GEOMETRY
         END DO
 
         if(this%GrainNum .LE. 0) then
-            write(*,*) "MCPSCUERROR: The grain number is less than 0"
+            write(*,*) "MFPSCUERROR: The grain number is less than 0"
             pause
             stop
         end if
@@ -485,7 +485,7 @@ module MFLIB_TYPEDEF_GEOMETRY
             call EXTRACT_NUMB(STR,3,N,STRTMP)
 
             if(N .LT. 3) then
-                write(*,*) "MCPSCUERROR: The seed should be constructed by x, y and z, however, some dimension is lake at LINE: ",LINE
+                write(*,*) "MFPSCUERROR: The seed should be constructed by x, y and z, however, some dimension is lake at LINE: ",LINE
                 write(*,*) STR
                 pause
                 stop

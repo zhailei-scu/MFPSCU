@@ -100,7 +100,7 @@ module MCMF_TYPEDEF_ATOMSLIST
         !---Body---
         cursorP=>this
         if(.not. associated(cursorP)) then
-            write(*,*) "MCPSCUERROR: You should allocate the AtomsList first!"
+            write(*,*) "MFPSCUERROR: You should allocate the AtomsList first!"
             pause
             stop
         end if
@@ -123,7 +123,7 @@ module MCMF_TYPEDEF_ATOMSLIST
         !---Body---
         cursorP=>this
         if(.not. associated(cursorP)) then
-            write(*,*) "MCPSCUERROR: You should allocate the AtomsList first!"
+            write(*,*) "MFPSCUERROR: You should allocate the AtomsList first!"
             pause
             stop
         end if
@@ -138,14 +138,14 @@ module MCMF_TYPEDEF_ATOMSLIST
             cursor=>this%next
 
             if(IsStrEqual(cursorP%m_Atom%m_Symbol,newOne%m_Symbol)) then
-                write(*,*) "MCPSCUERROR: The element symbol is redifined: ",newOne%m_Symbol
+                write(*,*) "MFPSCUERROR: The element symbol is redifined: ",newOne%m_Symbol
                 pause
                 stop
             end if
 
             DO While(associated(cursor))
                 if(IsStrEqual(cursor%m_Atom%m_Symbol,newOne%m_Symbol)) then
-                    write(*,*) "MCPSCUERROR: The element symbol is redifined: ",newOne%m_Symbol
+                    write(*,*) "MFPSCUERROR: The element symbol is redifined: ",newOne%m_Symbol
                     pause
                     stop
                 end if
@@ -167,7 +167,7 @@ module MCMF_TYPEDEF_ATOMSLIST
         this%m_ListCount = this%m_ListCount + 1
 
         if(this%m_ListCount .GT. p_ATOMS_GROUPS_NUMBER) then
-            write(*,*) "MCPSCUERROR: The defined elements group number is greater than defined max atoms kinds: ",p_ATOMS_GROUPS_NUMBER
+            write(*,*) "MFPSCUERROR: The defined elements group number is greater than defined max atoms kinds: ",p_ATOMS_GROUPS_NUMBER
             pause
             stop
         end if
@@ -252,7 +252,7 @@ module MCMF_TYPEDEF_ATOMSLIST
             if(IsStrEqual(tempSymbol,cursor%m_Atom%m_Symbol)) then
                 TheIndex = tempIndex
                 if(TheIndex .ne. cursor%m_Atom%m_ID) then
-                    write(*,*) "MCPSCUERROR: The elements id is not stored correct: ",Symbol
+                    write(*,*) "MFPSCUERROR: The elements id is not stored correct: ",Symbol
                     write(*,*) "The definded id is ",cursor%m_Atom%m_ID
                     write(*,*) "However, it is located in the atoms defined list for postion: ",TheIndex
                     pause
@@ -271,7 +271,7 @@ module MCMF_TYPEDEF_ATOMSLIST
         nullify(cursor)
 
         if(TheIndex .LE. 0) then
-            write(*,*) "MCPSCUERROR: The element is not defined: ",Symbol
+            write(*,*) "MFPSCUERROR: The element is not defined: ",Symbol
             pause
             stop
         end if
@@ -330,7 +330,7 @@ module MCMF_TYPEDEF_ATOMSLIST
         pCursor=>this
 
         if(.not. associated(pCursor)) then
-            write(*,*) "MCPSCUERROR: You need to allocate the AtomsList first!"
+            write(*,*) "MFPSCUERROR: You need to allocate the AtomsList first!"
             pause
             stop
         end if

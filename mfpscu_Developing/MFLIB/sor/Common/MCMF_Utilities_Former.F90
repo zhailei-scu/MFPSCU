@@ -377,7 +377,7 @@ module MCMF_UTILITIES_FORMER
     end if
 
     if(ISTAT .ne. 0) then
-        write(*,*) "MCPSCUERROR: open file failed:",fileName
+        write(*,*) "MFPSCUERROR: open file failed:",fileName
         write(*,*) openInfo
         pause
         close(fileUnit)
@@ -407,7 +407,7 @@ module MCMF_UTILITIES_FORMER
     end if
 
     if(ISTAT .ne. 0) then
-        write(*,*) "MCPSCUERROR: create file failed:",fileName
+        write(*,*) "MFPSCUERROR: create file failed:",fileName
         write(*,*) openInfo
         pause
         close(fileUnit)
@@ -545,7 +545,7 @@ module MCMF_UTILITIES_FORMER
         if(resultPath(2:2) .eq. ":") then
             INQUIRE(FILE=resultPath(1:2),EXIST=exits)
             if(.not. exits) then
-                write(*,fmt="(A,A,A)") "MCPSCUERROR: The derive :",resultPath(1:1)," is not exit."
+                write(*,fmt="(A,A,A)") "MFPSCUERROR: The derive :",resultPath(1:1)," is not exit."
                 pause
                 stop
             end if

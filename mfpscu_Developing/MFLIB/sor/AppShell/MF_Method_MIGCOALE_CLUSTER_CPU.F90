@@ -4,6 +4,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
     use MIGCOALE_TYPEDEF_STATISTICINFO
     use MIGCOALE_ADDONDATA_HOST
     use MIGCOALE_IMPLANTATION
+    use NUCLEATION_SPACEDIST
     implicit none
 
     integer, parameter, private::p_ClusterIniConfig_Simple = 0
@@ -17,7 +18,13 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         integer::InitType = -1
 
-        integer,dimension(:),allocatable::NClusters
+        integer::InitCKind = 200
+
+        integer::CKind_Range_From = 1
+        integer::CKind_Range_To = 200
+        integer::CKind_Range_Interval = 1
+
+        integer::InitNNodes = 1
 
         character*256::InitCfgFileName = ""
 
@@ -33,15 +40,15 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         integer::InitDepthDistType = -1
 
-        real(kind=KMCDF)::DepthINI = 0.D0
-
-        real(kind=KMCDF)::DepthSDINI = 0.D0
-
-        real(kind=KMCDF)::SUBBOXBOUNDARY(3,2) = 0.D0
+        real(kind=KMCDF)::InitConcentrate = 0.D0
 
         real(kind=KMCDF),dimension(:),allocatable::LayerThick
 
         real(kind=KMCDF),dimension(:),allocatable::PNCLayers
+
+        real(kind=KMCDF)::DepthINI = 0.D0
+
+        real(kind=KMCDF)::DepthSDINI = 0.D0
 
         contains
         procedure,non_overridable,public,pass::CopyInitBoxSimCfgFromOther
@@ -134,11 +141,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
                 call m_MigCoalClusterRecord%SetStartImplantTime(m_MigCoalClusterRecord%GetSimuTimes())
 
-                call copyInPhyParamsConstant(PSimCtrlParam)
-
                 call resolveAddOnData(Host_SimBoxes,PSimCtrlParam)
-
-                call CopyAddOnDataToDev()
 
                 PImplantSection=>m_ImplantList%Get_P(PSimCtrlParam%ImplantSectID)
 
@@ -174,6 +177,11 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         !---Local Vars---
         integer::TotalSize
         !---Body---
+
+        call InitSimu_SpaceDist(Host_SimBoxes,Host_SimuCtrlParam)
+
+        call NucleationSimu_SpaceDist(Host_SimBoxes,Host_SimuCtrlParam)
+
 
 !        Associate(Host_ClustesInfo=>Host_Boxes%m_ClustersInfo_CPU,Dev_ClustesInfo=>Dev_Boxes%dm_ClusterInfo_GPU, &
 !              TBasicInfo=>Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Integral)
@@ -262,13 +270,13 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         !---Body---
         this%InitType = other%InitType
 
-        if(allocated(this%NClusters)) then
-            deallocate(this%NClusters)
-        end if
-        if(size(other%NClusters) .GT. 0) then
-            allocate(this%NClusters(size(other%NClusters)))
-            this%NClusters = other%NClusters
-        end if
+        this%InitCKind = other%InitCKind
+
+        this%CKind_Range_From = other%CKind_Range_From
+        this%CKind_Range_To = other%CKind_Range_To
+        this%CKind_Range_Interval = other%CKind_Range_Interval
+
+        this%InitNNodes = other%InitNNodes
 
         this%InitCfgFileName = other%InitCfgFileName
 
@@ -285,11 +293,11 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         this%InitDepthDistType = other%InitDepthDistType
 
+        this%InitConcentrate = other%InitConcentrate
+
         this%DepthINI = other%DepthINI
 
         this%DepthSDINI = other%DepthSDINI
-
-        this%SUBBOXBOUNDARY = other%SUBBOXBOUNDARY
 
         call DeAllocateArray_Host(this%LayerThick,"LayerThick")
         call AllocateArray_Host(this%LayerThick,size(other%LayerThick),"LayerThick")
@@ -310,9 +318,13 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         !---Body---
         this%InitType = -1
 
-        if(allocated(this%NClusters)) then
-            deallocate(this%NClusters)
-        end if
+        this%InitCKind = 200
+
+        this%CKind_Range_From = 1
+        this%CKind_Range_To = 200
+        this%CKind_Range_Interval = 1
+
+        this%InitNNodes = 1
 
         this%InitCfgFileName = ""
 
@@ -328,6 +340,8 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         this%InitDepthDistType = -1
 
+        this%InitConcentrate = 0.D0
+
         call DeAllocateArray_Host(this%LayerThick,"LayerThick")
 
         call DeAllocateArray_Host(this%PNCLayers,"PNCLayers")
@@ -335,8 +349,6 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         this%DepthINI = 0.D0
 
         this%DepthSDINI = 0.D0
-
-        this%SUBBOXBOUNDARY = 0.D0
 
         return
     end subroutine
@@ -481,7 +493,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         INQUIRE(File=SimBoxes%IniConfig(1:LENTRIM(SimBoxes%IniConfig)),exist=existed)
 
         if(.not. existed) then
-            write(*,*) "MCPSCUERROR: The box initial file do not existed!"
+            write(*,*) "MFPSCUERROR: The box initial file do not existed!"
             write(*,*) SimBoxes%IniConfig
             pause
             stop
@@ -495,7 +507,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         call GETKEYWORD("&",STR,KEYWORD)
         call UPCASE(KEYWORD)
         if(KEYWORD(1:LENTRIM(KEYWORD)) .ne. m_INIFSTARTFLAG) then
-            write(*,*) "MCPSCUERROR: The Start Flag of Init box Parameters is Illegal: ",KEYWORD(1:LENTRIM(KEYWORD))
+            write(*,*) "MFPSCUERROR: The Start Flag of Init box Parameters is Illegal: ",KEYWORD(1:LENTRIM(KEYWORD))
             pause
             stop
         end if
@@ -510,18 +522,25 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
             select case(KEYWORD(1:LENTRIM(KEYWORD)))
                 case("&ENDINITINPUTF")
                     exit
-                case("&GROUPSUBCTL")
-                    call ReadInitBoxSimCfg_OneGroup(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE,*100)
-
+                case("&SIMPLEDISTSUBCTL")
+                    InitBoxCfgList%TheValue%InitType = p_ClusterIniConfig_Simple
+                    call ReadInitSimulationBoxesConfig_Simple(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE)
+                case("&FILEDISTSUBCTL")
+                    InitBoxCfgList%TheValue%InitType = p_ClusterIniConfig_SpecialDistFromFile
+                    call ReadInitSimulationBoxesConfig_SpecialDistFromFile(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE)
+                case("&FUNCDISTSUBCTL")
+                    InitBoxCfgList%TheValue%InitType = p_ClusterIniConfig_SpecialDistFromExteFunc
+                    call ReadInitSimulationBoxesConfig_SpecialDistFromExteFunc(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE)
                 case default
-                    write(*,*) "MCPSCUERROR: You must speical the initial input group by group"
-                    write(*,*) "By the way: &GROUPSUBCTL 'TYPE' "
-                    write(*,*) "However, the words you input is: ",STR
+                    write(*,*) "MFPSCUERROR: Unknown strategy to initial configuration."
                     write(*,*) "At LINE: ",LINE
+                    write(*,*) KEYWORD(1:LENTRIM(KEYWORD))
                     pause
                     stop
             end select
         END DO
+
+        call CheckInitSimulationBoxesConfig(SimBoxes,Host_SimuCtrlParam,InitBoxCfgList)
 
         call DOInitSimulationBoxesConfig(SimBoxes,Host_SimuCtrlParam,Record,InitBoxCfgList)
 
@@ -616,7 +635,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         return
 
-        100 write(*,*) "MCPSCUERROR : Load init config file"//SimBoxes%IniConfig(1:LENTRIM(SimBoxes%IniConfig))//"failed !"
+        100 write(*,*) "MFPSCUERROR : Load init config file"//SimBoxes%IniConfig(1:LENTRIM(SimBoxes%IniConfig))//"failed !"
             write(*,*) "At line :",LINE
             write(*,*) "The program would stop."
             pause
@@ -624,13 +643,195 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
     end subroutine InitSimulationBoxesConfig
 
     !*****************************************************************
-    subroutine ReadInitBoxSimCfg_OneGroup(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE,*)
+    subroutine CheckInitSimulationBoxesConfig(SimBoxes,Host_SimuCtrlParam,InitBoxCfgList)
+        !---Dummy Vars---
+        type(SimulationBoxes)::SimBoxes
+        type(SimulationCtrlParam)::Host_SimuCtrlParam
+        type(InitBoxSimCfgList),target::InitBoxCfgList
+        !---Local Vars---
+        type(InitBoxSimCfgList),pointer::PInitBoxCfgList=>null()
+        !---Body---
+        PInitBoxCfgList=>InitBoxCfgList
+
+        Do While(associated(PInitBoxCfgList))
+
+        End Do
+
+        return
+    end subroutine
+
+    !*****************************************************************
+    subroutine ReadInitSimulationBoxesConfig_Simple(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE)
         implicit none
         !---Dummy Vars---
         integer,intent(in)::hFile
         type(SimulationBoxes)::SimBoxes
         type(SimulationCtrlParam)::Host_SimuCtrlParam
-        type(InitBoxSimCfgList)::InitBoxCfgList
+        type(InitBoxSimCfgList),target::InitBoxCfgList
+        integer::LINE
+        !---Local Vars---
+        character*256::STR
+        character*32::KEYWORD
+        character*32::STRTMP(10)
+        integer::N
+        integer::IGroup
+        type(InitBoxSimCfgList),pointer::PInitBoxCfgList=>null()
+        type(InitBoxSimCfg)::tempInitBoxSimCfg
+        !---Body---
+        IGroup = 0
+
+        DO While(.true.)
+            call GETINPUTSTRLINE(hFile,STR,LINE, "!", *100)
+            call RemoveComments(STR,"!")
+            STR = adjustl(STR)
+            call GETKEYWORD("&",STR,KEYWORD)
+            call UPCASE(KEYWORD)
+
+            select case(KEYWORD(1:LENTRIM(KEYWORD)))
+                case("&ENDSUBCTL")
+                    exit
+                case("&SPACEDISTSUBCTL")
+                    call ReadInitBoxSimCfg_Simple_SpaceDist(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE,*100)
+                    PInitBoxCfgList=>InitBoxCfgList%next
+
+                    DO While(associated(PInitBoxCfgList))
+
+                        PInitBoxCfgList%TheValue%InitNNodes = InitBoxCfgList%TheValue%InitNNodes
+
+                        call AllocateArray_Host(PInitBoxCfgList%TheValue%LayerThick,InitBoxCfgList%TheValue%InitNNodes,"LayerThick")
+
+                        PInitBoxCfgList%TheValue%LayerThick = InitBoxCfgList%TheValue%LayerThick
+
+                        PInitBoxCfgList=>PInitBoxCfgList%next
+                    END DO
+
+                case("&GROUPSUBCTL")
+                    if(IGroup .eq. 0) then
+                        call ReadInitBoxSimCfg_Simple_OneGroup(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList%TheValue,LINE,*100)
+                    else
+                        call tempInitBoxSimCfg%Clean_InitBoxSimCfg()
+                        tempInitBoxSimCfg = InitBoxCfgList%TheValue
+                        call ReadInitBoxSimCfg_Simple_OneGroup(hFile,SimBoxes,Host_SimuCtrlParam,tempInitBoxSimCfg,LINE,*100)
+                        call InitBoxCfgList%AppendOne_InintSimBoxCfg(tempInitBoxSimCfg)
+                    end if
+
+                case default
+                    write(*,*) "MFPSCUERROR: The Illegal flag: ",KEYWORD
+                    pause
+                    stop
+            end select
+
+        END DO
+
+        return
+
+        100 write(*,*) "MFPSCUERROR : Load init config file failed !"
+            write(*,*) "At line :",LINE
+            write(*,*) "The program would stop."
+            pause
+            stop
+    end subroutine ReadInitSimulationBoxesConfig_Simple
+
+
+    !****************************************************************
+    subroutine ReadInitBoxSimCfg_Simple_SpaceDist(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE,*)
+        !---Dummy Vars---
+        integer,intent(in)::hFile
+        type(SimulationBoxes)::SimBoxes
+        type(SimulationCtrlParam)::Host_SimuCtrlParam
+        type(InitBoxSimCfgList),target::InitBoxCfgList
+        integer::LINE
+        !---Local Vars---
+        character*256::STR
+        character*32::KEYWORD
+        character*32::STRNUMB(10)
+        integer::N
+        integer::INode
+        !---Body---
+
+        DO While(.true.)
+            call GETINPUTSTRLINE(hFile,STR,LINE, "!", *100)
+            call RemoveComments(STR,"!")
+            STR = adjustl(STR)
+            call GETKEYWORD("&",STR,KEYWORD)
+            call UPCASE(KEYWORD)
+
+
+            select case(KEYWORD(1:LENTRIM(KEYWORD)))
+                case("&ENDSBCTL")
+                    exit
+                case("&NNODES")
+                    call EXTRACT_NUMB(STR,1,N,STRNUMB)
+                    if(N .LT. 1) then
+                        write(*,*) "MFPSCUERROR : Too few parameters for number of nodes in mean field"
+                        write(*,*) "You should special: '&NNODES The spatical nodes number = ' "
+                        pause
+                        stop
+                    end if
+                    InitBoxCfgList%TheValue%InitNNodes = ISTR(STRNUMB(1))
+
+                case("&NODESPACE")
+                    call EXTRACT_NUMB(STR,1,N,STRNUMB)
+                    if(N .LT. 1) then
+                        write(*,*) "MFPSCUERROR : Too few parameters for node spaces in mean field"
+                        write(*,*) "You should special: 'NODESPACE The space for each node = ' "
+                        pause
+                        stop
+                    end if
+
+                    if(InitBoxCfgList%TheValue%InitNNodes .LE. 0) then
+                        write(*,*) "MFPSCUERROR: The node number must greater than 0"
+                        write(*,*) InitBoxCfgList%TheValue%InitNNodes
+                        pause
+                        stop
+                    end if
+
+                    call AllocateArray_Host(InitBoxCfgList%TheValue%LayerThick,InitBoxCfgList%TheValue%InitNNodes,"LayerThick")
+
+                    if(N .eq. 1) then
+                        InitBoxCfgList%TheValue%LayerThick = DRSTR(STRNUMB(1))*SimBoxes%LatticeLength
+                    else if(N .GT. 1) then
+                        if(N .LT. InitBoxCfgList%TheValue%InitNNodes) then
+                            write(*,*) "MFPSCUERROR: If you special the node thickness one by one, you should special all of them"
+                            write(*,*) "The nodes number set is : ",InitBoxCfgList%TheValue%InitNNodes
+                            write(*,*) "However, you only give : ",N, " node space"
+                            write(*,*) "Or, you can give the nodes a same thickness"
+                            pause
+                            stop
+                        end if
+
+                        DO INode = 1,InitBoxCfgList%TheValue%InitNNodes
+                            InitBoxCfgList%TheValue%LayerThick(INode) = DRSTR(STRNUMB(INode))*SimBoxes%LatticeLength
+                        END DO
+                    end if
+
+                    if(sum(InitBoxCfgList%TheValue%LayerThick) .ne. SimBoxes%BOXSIZE(3)) then
+                        write(*,*) "MFPSCUERROR: The total nodes thicknesses given is not equal with the box depth."
+                        write(*,*) "The total nodes thicknesses is : ",sum(InitBoxCfgList%TheValue%LayerThick)
+                        write(*,*) "The box depth is : ",SimBoxes%BOXSIZE(3)
+                        pause
+                        stop
+                    end if
+                case default
+                    write(*,*) "MFPSCUERROR: Unknown key word :",KEYWORD
+                    write(*,*) STR
+                    write(*,*) "At Line: ",LINE
+            end select
+        END DO
+
+        return
+        100 return 1
+    end subroutine ReadInitBoxSimCfg_Simple_SpaceDist
+
+
+    !*****************************************************************
+    subroutine ReadInitBoxSimCfg_Simple_OneGroup(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfg,LINE,*)
+        implicit none
+        !---Dummy Vars---
+        integer,intent(in)::hFile
+        type(SimulationBoxes)::SimBoxes
+        type(SimulationCtrlParam)::Host_SimuCtrlParam
+        type(InitBoxSimCfg)::InitBoxCfg
         integer::LINE
         !---Local Vars---
         type(InitBoxSimCfg)::tempInitBoxSimCfg
@@ -640,8 +841,6 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         integer::N
         !---Body---
 
-        call tempInitBoxSimCfg%Clean_InitBoxSimCfg()
-
         DO While(.true.)
             call GETINPUTSTRLINE(hFile,STR,LINE, "!", *100)
             call RemoveComments(STR,"!")
@@ -652,133 +851,31 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
             select case(KEYWORD(1:LENTRIM(KEYWORD)))
                 case("&ENDSUBCTL")
                     exit
-                case("&TYPE")
-                    call EXTRACT_NUMB(STR,1,N,STRTMP)
-                    if(N .LT. 1) then
-                        write(*,*) "MCPSCUERROR: Too few parameters for bubbles initial type : "
-                        write(*,*) "At Line :", LINE
-                        write(*,*) "You should special by the way : &TYPE The bubble initial type =  "
-                        pause
-                        stop
-                    end if
-                    tempInitBoxSimCfg%InitType = ISTR(STRTMP(1))
-                    exit
+                case("&CLUSTERRANGESUBCTL")
+                    call ReadClusterRange_Simple(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfg,LINE,*100)
+                case("&SIZESUBCTL")
+                    call ReadClusterSizeDist_Simple(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfg,LINE,*100)
+                case("&CONCENTDISTSUBCTL")
+                    call ReadClusterConcentrateDist_Simple(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfg,LINE,*100)
                 case default
-                    write(*,*) "MCPSCUERROR: You must special the bubble init type first!"
-                    write(*,*) "By the way: &TYPE The initial type = "
-                    write(*,*) "However, the words you input is: ",STR
+                    write(*,*) "MFPSCUERROR: Unknown Keyword :",KEYWORD
+                    write(*,*) "At LINE",LINE
                     pause
                     stop
             end select
         END DO
-
-        select case(tempInitBoxSimCfg%InitType)
-            case(p_ClusterIniConfig_Simple)
-                call ReadInitSimulationBoxesConfig_Simple(hFile,SimBoxes,Host_SimuCtrlParam,tempInitBoxSimCfg,LINE)
-            case(p_ClusterIniConfig_SpecialDistFromFile)
-                call ReadInitSimulationBoxesConfig_SpecialDistFromFile(hFile,SimBoxes,Host_SimuCtrlParam,tempInitBoxSimCfg,LINE)
-            case(p_ClusterIniConfig_SpecialDistFromExteFunc)
-                call ReadInitSimulationBoxesConfig_SpecialDistFromExteFunc(hFile,SimBoxes,Host_SimuCtrlParam,tempInitBoxSimCfg,LINE)
-            case default
-                write(*,*) "MCPSCUERROR: Unknown strategy for the box initialization:",tempInitBoxSimCfg%InitType
-                pause
-                stop
-        end select
-
-        call InitBoxCfgList%AppendOne_InintSimBoxCfg(tempInitBoxSimCfg)
 
         return
         100 return 1
-    end subroutine ReadInitBoxSimCfg_OneGroup
-
-    !*****************************************************************
-    subroutine ReadInitSimulationBoxesConfig_Simple(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfg,LINE)
-        implicit none
-        !---Dummy Vars---
-        integer,intent(in)::hFile
-        type(SimulationBoxes)::SimBoxes
-        type(SimulationCtrlParam)::Host_SimuCtrlParam
-        type(InitBoxSimCfg)::InitBoxCfg
-        integer::LINE
-        !---Local Vars---
-        character*256::STR
-        character*32::KEYWORD
-        character*32::STRTMP(10)
-        integer::N
-        integer::IBox
-        integer::MultiBox
-        integer::SNC0
-        !---Body---
-
-        MultiBox = Host_SimuCtrlParam%MultiBox
-
-        DO While(.true.)
-            call GETINPUTSTRLINE(hFile,STR,LINE, "!", *100)
-            call RemoveComments(STR,"!")
-            STR = adjustl(STR)
-            call GETKEYWORD("&",STR,KEYWORD)
-            call UPCASE(KEYWORD)
-
-            select case(KEYWORD(1:LENTRIM(KEYWORD)))
-                case("&ENDSUBCTL")
-                    exit
-                case("&NUMBER")
-
-                    allocate(InitBoxCfg%NClusters(MultiBox))
-
-                    call EXTRACT_NUMB(STR,MultiBox,N,STRTMP)
-
-                    if(N .LT. 1) then
-                        write(*,*) "MCPSCUERROR: Too few parameters for the bubble number"
-                        write(*,*) "You shoud special: &NCLUSTER THE INITIAL NUMBER OF ENTRIES = "
-                        pause
-                        stop
-                    else if(N .GT. 1 .AND. N .LT. MultiBox) then
-                        write(*,*) "MCPSCUERROR: If you want to special the initial clusters number for each box"
-                        write(*,*) "You must list the initial clusters number for all boxes."
-                        write(*,*) "However, the simulation boxes number is :",MultiBox
-                        write(*,*) "The initial boxes clusters numbers are listed are: ",N
-                        write(*,*) "If you don not want to special the initial clusters number for each box,"
-                        write(*,*) "you can only special the initial clusters number in each box is same and you need only"
-                        write(*,*) "special one common clusters number."
-                        pause
-                        stop
-                    else if(N .eq. 1) then
-                        InitBoxCfg%NClusters = ISTR(STRTMP(1))
-                    else if(N .eq. MultiBox) then
-                        DO IBox = 1,MultiBox
-                            InitBoxCfg%NClusters(IBox) = ISTR(STRTMP(IBox))
-                        END DO
-                    end if
-
-                case("&SIZESUBCTL")
-                    call ReadClusterSizeDist_Simple(hFile,SimBoxes,InitBoxCfg,LINE)
-                case("&DEPTHSUBCTL")
-                    call ReadClusterDepthDist_Simple(hFile,SimBoxes,InitBoxCfg,LINE)
-                case default
-                    write(*,*) "MCPSCUERROR: The Illegal flag: ",KEYWORD
-                    pause
-                    stop
-            end select
-
-        END DO
-
-        return
-
-        100 write(*,*) "MCPSCUERROR : Load init config file failed !"
-            write(*,*) "At line :",LINE
-            write(*,*) "The program would stop."
-            pause
-            stop
-    end subroutine ReadInitSimulationBoxesConfig_Simple
+    end subroutine ReadInitBoxSimCfg_Simple_OneGroup
 
     !****************************************************************
-    subroutine ReadInitSimulationBoxesConfig_SpecialDistFromFile(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfg,LINE)
+    subroutine ReadInitSimulationBoxesConfig_SpecialDistFromFile(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE)
         !---Dummy Vars---
         integer,intent(in)::hFile
         type(SimulationBoxes)::SimBoxes
         type(SimulationCtrlParam)::Host_SimuCtrlParam
-        type(InitBoxSimCfg)::InitBoxCfg
+        type(InitBoxSimCfgList)::InitBoxCfgList
         integer::LINE
         !---Local Vars---
         character*256::STR
@@ -801,16 +898,16 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                     call EXTRACT_SUBSTR(STR,1,N,STRTMP)
 
                     if(N .LT. 1) then
-                        write(*,*) "MCPSCUERROR: Too few parameters for the clusters initialize file path"
+                        write(*,*) "MFPSCUERROR: Too few parameters for the clusters initialize file path"
                         write(*,*) "You should special: &INITFILE The initialize file path = "
                         pause
                         stop
                     end if
 
-                    InitBoxCfg%InitCfgFileName = INQUIREFILE(STRTMP(1),Host_SimuCtrlParam%InputFilePath)
+                    InitBoxCfgList%TheValue%InitCfgFileName = INQUIREFILE(STRTMP(1),Host_SimuCtrlParam%InputFilePath)
 
                 case default
-                    write(*,*) "MCPSCUERROR: The Illegal flag: ",KEYWORD
+                    write(*,*) "MFPSCUERROR: The Illegal flag: ",KEYWORD
                     pause
                     stop
             end select
@@ -818,20 +915,20 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         return
 
-        100 write(*,*) "MCPSCUERROR : Load init config file failed !"
+        100 write(*,*) "MFPSCUERROR : Load init config file failed !"
             write(*,*) "At line :",LINE
             write(*,*) "The program would stop."
             pause
             stop
     end subroutine ReadInitSimulationBoxesConfig_SpecialDistFromFile
 
-     !*****************************************************************
-    subroutine ReadInitSimulationBoxesConfig_SpecialDistFromExteFunc(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfg,LINE)
+    !*****************************************************************
+    subroutine ReadInitSimulationBoxesConfig_SpecialDistFromExteFunc(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE)
         !---Dummy Vars---
         integer,intent(in)::hFile
         type(SimulationBoxes)::SimBoxes
         type(SimulationCtrlParam)::Host_SimuCtrlParam
-        type(InitBoxSimCfg)::InitBoxCfg
+        type(InitBoxSimCfgList)::InitBoxCfgList
         integer::LINE
 
         ! @todo (zhail#1#):
@@ -840,12 +937,103 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         return
     end subroutine ReadInitSimulationBoxesConfig_SpecialDistFromExteFunc
 
+    !*****************************************************************
+    subroutine ReadClusterRange_Simple(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfg,LINE,*)
+        !---Dummy Vars---
+        integer,intent(in)::hFile
+        type(SimulationBoxes)::SimBoxes
+        type(SimulationCtrlParam)::Host_SimuCtrlParam
+        type(InitBoxSimCfg)::InitBoxCfg
+        integer::LINE
+        !---Local Vars---
+        character*256::STR
+        character*30::KEYWORD
+        character*32::STRTMP(10)
+        integer::N
+        !---Body---
+
+        DO While(.true.)
+            call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+            call RemoveComments(STR,"!")
+            STR = adjustl(STR)
+            call GETKEYWORD("&",STR,KEYWORD)
+            call UPCASE(KEYWORD)
+
+            select case(KEYWORD(1:LENTRIM(KEYWORD)))
+                case("&ENDSBUCTL")
+                    exit
+                case("&CLUSTERSGROUP")
+                    call EXTRACT_NUMB(STR,1,N,STRTMP)
+                    if(N .LT. 1) then
+                        write(*,*) "MFPSCUERROR: Too few parameters for clusters group number ."
+                        write(*,*) "You should special: '&CLUSTERSGROUP The max clusters group = ' "
+                        pause
+                        stop
+                    end if
+                    InitBoxCfg%InitCKind = ISTR(STRTMP(1))
+
+                    if(InitBoxCfg%InitCKind .LE. 0) then
+                        write(*,*) "MFPSCUERROR: The clusters kind number must greater than 0"
+                        write(*,*) InitBoxCfg%InitCKind
+                        pause
+                        stop
+                    end if
+
+                case("&RANGE")
+                    call EXTRACT_NUMB(STR,3,N,STRTMP)
+                    if(N .LT. 2) then
+                        write(*,*) "MFPSCUERROR: You must special the clusters range beginning and ending."
+                        write(*,*) "You should special like that : ' &RANGE The clusters atoms start from = , end to = , the interval = '"
+                        write(*,*) "At LINE :",LINE
+                        pause
+                        stop
+                    end if
+
+                    if(N .GE. 2) then
+                        InitBoxCfg%CKind_Range_From = ISTR(STRTMP(1))
+                        InitBoxCfg%CKind_Range_To = ISTR(STRTMP(2))
+                    end if
+
+                    if(N .GE. 3) then
+                        InitBoxCfg%CKind_Range_Interval = ISTR(STRTMP(3))
+                    end if
+
+                    if((InitBoxCfg%CKind_Range_To - InitBoxCfg%CKind_Range_From) .LT. InitBoxCfg%CKind_Range_Interval) then
+                        write(*,*) "MFPSCUERROR: The clusters range define is not true"
+                        write(*,*) "At line: ",LINE
+                        write(*,*) InitBoxCfg%CKind_Range_From, InitBoxCfg%CKind_Range_To, InitBoxCfg%CKind_Range_Interval
+                        pause
+                        stop
+                    end if
+
+                    if(((InitBoxCfg%CKind_Range_To - InitBoxCfg%CKind_Range_From)/InitBoxCfg%CKind_Range_Interval +2 ) .GT. InitBoxCfg%InitCKind) then
+                        write(*,*) "MFPSCUERROR: The total clusters kind you defined is : ",InitBoxCfg%InitCKind
+                        write(*,*) "However, the ranges you define is: ",InitBoxCfg%CKind_Range_From, InitBoxCfg%CKind_Range_To, InitBoxCfg%CKind_Range_Interval
+                        write(*,*) "Which had exceed the clusters kind."
+                        pause
+                    end if
+
+
+
+                case default
+                    write(*,*) "MFPSCUERROR: Unknown keyword: ",KEYWORD
+                    pause
+                    stop
+            end select
+
+        END DO
+
+        return
+        100 return 1
+    end subroutine
+
     !***************************************************************
-    subroutine ReadClusterSizeDist_Simple(hFile,SimBoxes,InitBoxCfg,LINE)
+    subroutine ReadClusterSizeDist_Simple(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfg,LINE,*)
         implicit none
         !---Dummy Vars---
         integer,intent(in)::hFile
         type(SimulationBoxes)::SimBoxes
+        type(SimulationCtrlParam)::Host_SimuCtrlParam
         type(InitBoxSimCfg)::InitBoxCfg
         integer::LINE
         !---Local Vars---
@@ -870,7 +1058,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                 CASE("&NATOMDIST")
                     call EXTRACT_NUMB(STR,4,N,STRTMP)
                     if(N .LT. 4) then
-                        write(*,*) "MCPSCUERROR: Too few parameters for the cluster size distribution"
+                        write(*,*) "MFPSCUERROR: Too few parameters for the cluster size distribution"
                         write(*,*) "You should special: &NATOMDIST The atoms number in each cluster distribution as Gauss that central = , distribution half width = , left cut = ,right cut ="
                         pause
                         stop
@@ -881,7 +1069,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                     InitBoxCfg%NACUT(2) = DRSTR(STRTMP(4))
 
                     if(InitBoxCfg%NACUT(1) .GE. InitBoxCfg%NACUT(2)) then
-                        write(*,*) "MCPSCUERROR: The right cut cannot less than left cut."
+                        write(*,*) "MFPSCUERROR: The right cut cannot less than left cut."
                         write(*,*) "LCut",InitBoxCfg%NACUT(1)
                         write(*,*) "RCut",InitBoxCfg%NACUT(2)
                         pause
@@ -890,15 +1078,18 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                 case("&ELEMENTCOMPOSIT")
                     call EXTRACT_SUBSTR(STR,p_ATOMS_GROUPS_NUMBER,NElements,STRTMP)
                     if(NElements .LE. 0) then
-                        write(*,*) "MCPSCUERROR: None of atoms kind (Elements) are specialized "
+                        write(*,*) "MFPSCUERROR: None of atoms kind (Elements) are specialized "
                         write(*,*) "You should special like that : &ELEMENTCOMPOSIT The included element = 'A', 'B' ."
                         pause
                         stop
                     else if(NElements .GT. p_ATOMS_GROUPS_NUMBER) then
-                        write(*,*) "MCPSCUERROR: the specialized elements kinds is : ",N
+                        write(*,*) "MFPSCUERROR: the specialized elements kinds is : ",N
                         write(*,*) "which is great than the max permitted elements kinds :",p_ATOMS_GROUPS_NUMBER
                         pause
                         stop
+                    else if(NElements .GT. 1) then
+                        write(*,*) "MFPSCU Info: Currently, the program only support one element."
+                        write(*,*) "So the first element would be chosen"
                     else
                         DO I = 1,NElements
                             InitBoxCfg%Elemets(I) = adjustl(trim(STRTMP(I)))
@@ -908,7 +1099,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
                     call EXTRACT_NUMB(STR,p_ATOMS_GROUPS_NUMBER,N,STRTMP)
                     if(N .ne. NElements) then
-                        write(*,*) "MCPSCUERROR: The elements weights number is not equal with the elements kinds which given."
+                        write(*,*) "MFPSCUERROR: The elements weights number is not equal with the elements kinds which given."
                         write(*,*) "The elements kinds number is :",NElements
                         write(*,*) "But the weights number is :",N
                         pause
@@ -922,7 +1113,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                         END DO
 
                         if(sum(InitBoxCfg%CompositWeight) .LE. 0.D0) then
-                            write(*,*) "MCPSCUERROR: The sum of elements weights must great than 0 ."
+                            write(*,*) "MFPSCUERROR: The sum of elements weights must great than 0 ."
                             write(*,*) STR
                             write(*,*) "At Line :",LINE
                             pause
@@ -932,7 +1123,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                         InitBoxCfg%CompositWeight = InitBoxCfg%CompositWeight/sum(InitBoxCfg%CompositWeight)
                     end if
                 CASE default
-                    write(*,*) "MCPSCUERROR: Illegal Symbol: ", KEYWORD
+                    write(*,*) "MFPSCUERROR: Illegal Symbol: ", KEYWORD
                     pause
                     stop
             END SELECT
@@ -941,20 +1132,16 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         return
 
-        100 write(*,*) "MCPSCUERROR : Load init config file failed for cluster size!"
-            write(*,*) "At line :",LINE
-            write(*,*) STR
-            write(*,*) "The program would stop."
-            pause
-            stop
+        100 return 1
     end subroutine ReadClusterSizeDist_Simple
 
     !***************************************************************
-    subroutine ReadClusterDepthDist_Simple(hFile,Host_SimBoxes,InitBoxCfg,LINE)
+    subroutine ReadClusterConcentrateDist_Simple(hFile,Host_SimBoxes,Host_SimuCtrlParam,InitBoxCfg,LINE,*)
         implicit none
         !---Dummy Vars---
         integer,intent(in)::hFile
         type(SimulationBoxes)::Host_SimBoxes
+        type(SimulationCtrlParam)::Host_SimuCtrlParam
         type(InitBoxSimCfg)::InitBoxCfg
         integer::LINE
         !---Local Vars---
@@ -962,6 +1149,8 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         character*32::KEYWORD
         character*32::STRTMP(10)
         integer::N
+        integer::LayerStart
+        integer::LayerEnd
         integer::LayerNum
         integer::I
         real(kind=KMCDF)::TotalLayerThick
@@ -978,84 +1167,65 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
             SELECT CASE(KEYWORD(1:LENTRIM(KEYWORD)))
                 CASE("&ENDSUBCTL")
                     exit
+                CASE("&CONCENTRATE")
+                    call EXTRACT_NUMB(STR,1,N,STRTMP)
+                    if(N .LT. 1) then
+                        write(*,*) "MFPSCUERROR: Too few parameters for concentration setting"
+                        write(*,*) "You should special: '&CONCENTRATE THE INITIAL CONCENTRATE OF ENTRIES =   ! (1/(cm^3))'"
+                        pause
+                        stop
+                    end if
+                    InitBoxCfg%InitConcentrate = DRSTR(STRTMP(1))
+
                 CASE("&DEPTH_LAYER")
                     InitBoxCfg%InitDepthDistType = p_DEPT_DIS_Layer
 
-                    call EXTRACT_NUMB(STR,1,N,STRTMP)
-                    if(N .LT. 1) then
-                        write(*,*) "MCPSCUERROR: Too few parameters for the bubble depth distribution layer type"
-                        write(*,*) "You should special: &DEPTH_LAYER THE NUMBER OF DEPTH DISTRIBUTION LAYER = , THE ENTRIES DISTRIBUTION ="
+                    call EXTRACT_NUMB(STR,2,N,STRTMP)
+                    if(N .LT. 2) then
+                        write(*,*) "MFPSCUERROR: Too few parameters for the bubble depth distribution layer type"
+                        write(*,*) "You should special: &DEPTH_LAYER The Layer from =  , end =   , THE CONCENTRATION DISTRIBUTION = "
                         write(*,*) "At line: ",LINE
                         pause
                         stop
                     end if
-                    LayerNum = ISTR(STRTMP(1))
+
+                    LayerStart = ISTR(STRTMP(1))
+                    LayerEnd = ISTR(STRTMP(2))
+
+                    LayerNum =  LayerEnd - LayerStart + 1
                     if(LayerNum .LT. 1) then
-                        write(*,*) "MCPSCUERROR: The layer number should greater than 1"
+                        write(*,*) "MFPSCUERROR: The layer number should greater than 1"
                         write(*,*) "At line :",LINE
                         write(*,*) STR
                         pause
                         stop
                     end if
 
-                    call EXTRACT_NUMB(STR,LayerNum*2+1,N,STRTMP)
-
-                    if((N-1) .NE. LayerNum*2) then
-                        write(*,*) "MCPSCUERROR: the specialeld layer is not equal with your setting"
-                        write(*,*) STR
-                        write(*,*) "At line :", LINE
-                        pause
-                        stop
-                    end if
-
-                    call AllocateArray_Host(InitBoxCfg%LayerThick,LayerNum,"LayerThick")
-                    InitBoxCfg%LayerThick = 0.D0
                     call AllocateArray_Host(InitBoxCfg%PNCLayers,LayerNum,"PNCLayers")
                     InitBoxCfg%PNCLayers = 0.D0
 
-                    DO I = 1,LayerNum
-                        InitBoxCfg%LayerThick(I) = DRSTR(STRTMP(I+1))
-                    END DO
+                    if(N .eq. 3) then
+                        InitBoxCfg%PNCLayers = DRSTR(STRTMP(3))
+                    else if(N .GT. 3) then
+                        if((N-2) .LT. LayerNum) then
+                            write(*,*) "MFPSCUERROR: If you special the initial concentrates for layers(nodes) one by one,"
+                            write(*,*) "You should give each of them."
+                            pause
+                            stop
+                        end if
 
-                    if(sum(InitBoxCfg%LayerThick) .LE. 0) then
-                        InitBoxCfg%LayerThick(1) = 1.D0
+                        DO I = 1,LayerNum
+                            InitBoxCfg%PNCLayers(I) = DRSTR(STRTMP(I+2))
+                        END DO
                     end if
-
-                    TotalLayerThick =  sum(InitBoxCfg%LayerThick)
-
-                    DO I = 1,LayerNum
-                        InitBoxCfg%LayerThick(I) = Host_SimBoxes%BOXSIZE(3)*InitBoxCfg%LayerThick(I)/TotalLayerThick
-                    END DO
-
-                    DO I = 1,LayerNum
-                        InitBoxCfg%PNCLayers(I) = DRSTR(STRTMP(I + LayerNum + 1))
-                    END DO
 
                     TotalPNC = sum(InitBoxCfg%PNCLayers)
                     if(TotalPNC .LE. 0) then
-                        write(*,*) "MCPSCUERROR: The total percent cannot less than 0"
+                        write(*,*) "MFPSCUERROR: The total percent cannot less than 0"
                         pause
                         stop
                     end if
                     InitBoxCfg%PNCLayers = InitBoxCfg%PNCLayers/TotalPNC
-
-
-                CASE("&DEPTH_SUBBOX")
-
-                    InitBoxCfg%InitDepthDistType = p_DEPT_DIS_BOX
-
-                    call EXTRACT_NUMB(STR,3,N,STRTMP)
-                    if(N .LT. 3) then
-                        write(*,*) "MCPSCUERROR: Too few parameters for the bubble depth distribution subbox type"
-                        write(*,*) "You shoud special: &DEPTH_SUBBOX THE SUBOX SHAPE IS THAT: X =, Y =, Z ="
-                        write(*,*) "At line: ",LINE
-                        pause
-                        stop
-                    end if
-                    DO I=1, 3
-                        InitBoxCfg%SUBBOXBOUNDARY(I,1) = Host_SimBoxes%BOXBOUNDARY(I,1) - DRSTR(STRTMP(I))*C_NM2CM/2
-                        InitBoxCfg%SUBBOXBOUNDARY(I,2) = Host_SimBoxes%BOXBOUNDARY(I,2) + DRSTR(STRTMP(I))*C_NM2CM/2
-                    END DO
 
                 CASE("&DEPTH_GAUSS")
 
@@ -1063,7 +1233,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
                     call EXTRACT_NUMB(STR,2,N,STRTMP)
                     if(N .LT. 2) then
-                        write(*,*) "MCPSCUERROR: Too few parameters for the bubble depth distribution gauss type"
+                        write(*,*) "MFPSCUERROR: Too few parameters for the bubble depth distribution gauss type"
                         write(*,*) "You shoud special: &DEPTH_GAUSS THE GAUSS DISTRIBUTION CENTRAL = , THE HALF WIDTH = "
                         write(*,*) "At line: ",LINE
                         pause
@@ -1072,7 +1242,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                     InitBoxCfg%DepthINI = DRSTR(STRTMP(1))*C_NM2CM
                     InitBoxCfg%DepthSDINI = DRSTR(STRTMP(2))*C_NM2CM
                 CASE default
-                    write(*,*) "MCPSCUERROR: Illegal Symbol: ", KEYWORD
+                    write(*,*) "MFPSCUERROR: Illegal Symbol: ", KEYWORD
                     pause
                     stop
             END SELECT
@@ -1080,13 +1250,8 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         END DO
 
         return
-
-        100 write(*,*) "MCPSCUERROR : Load init config file failed for bubble depth distribution!"
-            write(*,*) "At line :",LINE
-            write(*,*) "The program would stop."
-            pause
-            stop
-    end subroutine ReadClusterDepthDist_Simple
+        100 return 1
+    end subroutine ReadClusterConcentrateDist_Simple
 
     !*****************************************************************
     subroutine DOInitSimulationBoxesConfig(SimBoxes,Host_SimuCtrlParam,Record,InitBoxCfgList)
@@ -1119,7 +1284,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                 case(p_ClusterIniConfig_SpecialDistFromExteFunc)
                     call DoInitSimulationBoxesConfig_SpecialDistFromExteFunc(SimBoxes,Host_SimuCtrlParam,cursor%TheValue)
                 case default
-                    write(*,*) "MCPSCUERROR: Unknown strategy for the box initialization:",cursor%TheValue%InitType
+                    write(*,*) "MFPSCUERROR: Unknown strategy for the box initialization:",cursor%TheValue%InitType
                     pause
                     stop
             end select
@@ -1147,7 +1312,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
             case(p_DEPT_DIS_GAS)
                 call Init_Depth_Dis_Gauss(SimBoxes,Host_SimuCtrlParam,InitBoxCfg)
             case default
-                write(*,*) "MCPSCUERROR : Unknown way to initial the simulation box conifuration :",InitBoxCfg%InitDepthDistType
+                write(*,*) "MFPSCUERROR : Unknown way to initial the simulation box conifuration :",InitBoxCfg%InitDepthDistType
                 pause
                 stop
         end select
@@ -1632,7 +1797,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 !                   sum(TBasicInfo%NC(p_OUT_DESTROY_STATU:p_ABSORBED_STATU) + Record%RecordNCBeforeSweepOut_Integal(p_OUT_DESTROY_STATU:p_ABSORBED_STATU)) - &
 !                   Record%GetImplantedEntitiesNum() - sum(TBasicInfo%NC0) - TBasicInfo%NCDumpAdded) .ne. 0) then
 !
-!                   write(*,*) "MCPSCUERROR: The clusters number is not conservation."
+!                   write(*,*) "MFPSCUERROR: The clusters number is not conservation."
 !                   write(*,*) "The accumulated clusters for all kinds =",TBasicInfo%NC(p_ACTIVEFREE_STATU) + TBasicInfo%NC(p_ACTIVEINGB_STATU) + &
 !                               sum(TBasicInfo%NC(p_OUT_DESTROY_STATU:p_ABSORBED_STATU) + Record%RecordNCBeforeSweepOut_Integal(p_OUT_DESTROY_STATU:p_ABSORBED_STATU))
 !                   write(*,*) "The total implanted cluster number = ",Record%GetImplantedEntitiesNum()

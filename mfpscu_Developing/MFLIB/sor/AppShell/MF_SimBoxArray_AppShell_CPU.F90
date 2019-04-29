@@ -1,11 +1,10 @@
 module MF_SimBoxArray_AppShell_CPU
     use MFLIB_GLOBAL
-    use NUCLEATION_SPACEDIST
-    !use MF_MethodClass_Factory_CPU
+    use MF_MethodClass_Factory_CPU
 
     type(SimulationBoxes)::m_SimBoxes
     type(SimulationCtrlParam)::m_CtrlParam
-    !type(MFMethodClassCPU)::m_MethodClass
+    type(MFMethodClassCPU)::m_MethodClass
 
     contains
 
@@ -63,7 +62,7 @@ module MF_SimBoxArray_AppShell_CPU
         call m_SimBoxes%InitSimulationBox(m_CtrlParam)
 
         !********Init the simulation methods*******************
-        !call m_MethodClass%Register_Method_Class(m_AppType,m_SimBoxes,m_CtrlParam)
+        call m_MethodClass%Register_Method_Class(m_AppType,m_SimBoxes,m_CtrlParam)
 
         ISEED0 = m_CtrlParam%RANDSEED(1)
         call GetSeed_RAND32SEEDLIB(ISEED0,ISEED(1),ISEED(2))
@@ -73,22 +72,17 @@ module MF_SimBoxArray_AppShell_CPU
 
         call Print_Global_Variables(6,m_CtrlParam,m_SimBoxes)
 
-
-        !if(m_CtrlParam%INDEPBOX) then
-        !    TestLoops = m_CtrlParam%TOTALBOX/m_CtrlParam%MultiBox
-        !else
-        !    TestLoops = 1
-        !end if
+        if(m_CtrlParam%INDEPBOX) then
+            TestLoops = m_CtrlParam%TOTALBOX/m_CtrlParam%MultiBox
+        else
+            TestLoops = 1
+        end if
 
         !call m_OneStepProcudureList%AppendOne()
 
-        !DO ILoop = 1,TestLoops
-        !    call m_MethodClass%ForOneTest(m_SimBoxes,m_CtrlParam,dm_Boxes,ILoop)
-        !END DO
-
-        call InitSimu_SpaceDist(m_SimBoxes,m_CtrlParam)
-
-        call NucleationSimu_SpaceDist(m_SimBoxes,m_CtrlParam)
+        DO ILoop = 1,TestLoops
+            call m_MethodClass%ForOneTest(m_SimBoxes,m_CtrlParam,ILoop)
+        END DO
 
         return
     end subroutine AppShell_Main_CPU

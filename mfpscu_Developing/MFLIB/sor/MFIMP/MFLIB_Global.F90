@@ -64,7 +64,7 @@ module MFLIB_GLOBAL
           CtrlParam%RESTARTAT = 1
           m_AppType = KEYWORD(LENTRIM("&RESTART_")+1:LENTRIM(KEYWORD))
         case default
-          write(*,*) "MCPSCUERROR: Illegal flag in sample file: ",KEYWORD(1:LENTRIM(KEYWORD))
+          write(*,*) "MFPSCUERROR: Illegal flag in sample file: ",KEYWORD(1:LENTRIM(KEYWORD))
           pause
           close(fileUnit)
           stop
@@ -88,7 +88,7 @@ module MFLIB_GLOBAL
           case("&MFCTLF")
             call EXTRACT_SUBSTR(STR,1,N,STRTMP)
             if(N .LT. 1) then
-                write(*,*) "MCPSCUERROR: You must special the control file name or path"
+                write(*,*) "MFPSCUERROR: You must special the control file name or path"
                 write(*,*) STR
                 write(*,*) "At line: ",LINE
                 pause
@@ -99,7 +99,7 @@ module MFLIB_GLOBAL
           case("&MFBOXF")
             call EXTRACT_SUBSTR(STR,1,N,STRTMP)
             if(N .LT. 1) then
-                write(*,*) "MCPSCUERROR: You must special the box file name or path"
+                write(*,*) "MFPSCUERROR: You must special the box file name or path"
                 write(*,*) STR
                 write(*,*) "At line: ",LINE
                 pause
@@ -110,7 +110,7 @@ module MFLIB_GLOBAL
           case("&MFINIF")
             call EXTRACT_SUBSTR(STR,1,N,STRTMP)
             if(N .LT. 1) then
-                write(*,*) "MCPSCUERROR: You must special the Initialization file name or path"
+                write(*,*) "MFPSCUERROR: You must special the Initialization file name or path"
                 write(*,*) STR
                 write(*,*) "At line: ",LINE
                 pause
@@ -122,7 +122,7 @@ module MFLIB_GLOBAL
           case("&MFIMPF")
             call EXTRACT_SUBSTR(STR,1,N,STRTMP)
             if(N .LT. 1) then
-                write(*,*) "MCPSCUERROR: You must special the Implantation file name or path"
+                write(*,*) "MFPSCUERROR: You must special the Implantation file name or path"
                 write(*,*) STR
                 write(*,*) "At line: ",LINE
                 pause
@@ -161,7 +161,7 @@ module MFLIB_GLOBAL
 
     return
     !------------------------------------
-    100 write(*,*) "MCPSCUERROR: Failed to read line: ",LINE,"in file: ",sampleFilePath
+    100 write(*,*) "MFPSCUERROR: Failed to read line: ",LINE,"in file: ",sampleFilePath
     return
   end subroutine Initialize_Global_Variables
 

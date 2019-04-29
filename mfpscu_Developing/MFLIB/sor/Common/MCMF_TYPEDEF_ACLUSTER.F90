@@ -245,7 +245,7 @@ module MCMF_TYPEDEF_ACLUSTER
         cursorP=>this
 
         if(.not. associated(cursorP)) then
-            write(*,*) "MCPSCUERROR: you need to init the AAClusterList first!"
+            write(*,*) "MFPSCUERROR: you need to init the AAClusterList first!"
             pause
             stop
         end if
@@ -292,7 +292,7 @@ module MCMF_TYPEDEF_ACLUSTER
         cursorThis=>this
 
         if(.not. associated(cursorThis)) then
-            write(*,*) "MCPSCUERROR: you need to init the AAClusterList first!"
+            write(*,*) "MFPSCUERROR: you need to init the AAClusterList first!"
             pause
             stop
         end if
@@ -327,7 +327,7 @@ module MCMF_TYPEDEF_ACLUSTER
         cursor=>this
 
         if(.not. associated(cursor)) then
-            write(*,*) "MCPSCUERROR: you need to init the AAClusterList first!"
+            write(*,*) "MFPSCUERROR: you need to init the AAClusterList first!"
             pause
             stop
         end if
@@ -352,7 +352,7 @@ module MCMF_TYPEDEF_ACLUSTER
 
         thisCursorP=>this
         if(.not. associated(thisCursorP)) then
-            write(*,*) "MCPSCUERROR: You must allocate the list first !"
+            write(*,*) "MFPSCUERROR: You must allocate the list first !"
             pause
             stop
         end if

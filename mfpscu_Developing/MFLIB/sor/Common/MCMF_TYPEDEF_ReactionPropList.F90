@@ -99,7 +99,7 @@ module MCMF_TYPEDEF_ReactionPropList
         cursor=>this
 
         if(.not. associated(cursor)) then
-            write(*,*) "MCPSCUERROR: You should allocate the ReadReactionPropList first!"
+            write(*,*) "MFPSCUERROR: You should allocate the ReadReactionPropList first!"
             pause
             stop
         end if
@@ -133,7 +133,7 @@ module MCMF_TYPEDEF_ReactionPropList
         END DO
 
         if(2*ListCount .ne. tempIndex) then
-            write(*,*) "MCPSCUERROR: The reaction define List count is error."
+            write(*,*) "MFPSCUERROR: The reaction define List count is error."
             write(*,*) "The record list count is ",2*ListCount
             write(*,*) "In fact, the actual list count is: ",2*tempIndex
             pause
@@ -197,7 +197,7 @@ module MCMF_TYPEDEF_ReactionPropList
                 if(coverageCount .GE. p_ATOMS_GROUPS_NUMBER) then
                     Reaction = this%GetReadReactionByListIndex(I)
 
-                    write(*,*) "MCPSCUERROR: The reaction define is overlapping between reactions pair: ",Reaction%SubjectSymbol,Reaction%ObjectSymbol
+                    write(*,*) "MFPSCUERROR: The reaction define is overlapping between reactions pair: ",Reaction%SubjectSymbol,Reaction%ObjectSymbol
                     Reaction = this%GetReadReactionByListIndex(J)
                     write(*,*) "and reaction pair: ",Reaction%SubjectSymbol,Reaction%ObjectSymbol
                     pause
@@ -420,7 +420,7 @@ module MCMF_TYPEDEF_ReactionPropList
         !---Body---
         cursorOfSelf=>this
         if(.not. associated(cursorOfSelf)) then
-            write(*,*) "MCPSCUERROR: You need to allocate the ReadReactionPropList first!"
+            write(*,*) "MFPSCUERROR: You need to allocate the ReadReactionPropList first!"
             pause
             stop
         end if
@@ -466,7 +466,7 @@ module MCMF_TYPEDEF_ReactionPropList
         !---Body---
         cursorP=>this
         if(.not. associated(cursorP)) then
-            write(*,*) "MCPSCUERROR: You need to allocate the ReadReactionPropList first!"
+            write(*,*) "MFPSCUERROR: You need to allocate the ReadReactionPropList first!"
             pause
             stop
         end if
@@ -478,13 +478,13 @@ module MCMF_TYPEDEF_ReactionPropList
             cursor=>this%next
             cursorP=>this
             if(IsStrEqual(cursorP%Reaction%SubjectSymbol,newOne%SubjectSymbol) .AND. IsStrEqual(cursorP%Reaction%ObjectSymbol,newOne%ObjectSymbol)) then
-                write(*,*) "MCPSCUERROR: The Reaction is dumplicated: Subject: ",newOne%SubjectSymbol," object: ",newOne%ObjectSymbol
+                write(*,*) "MFPSCUERROR: The Reaction is dumplicated: Subject: ",newOne%SubjectSymbol," object: ",newOne%ObjectSymbol
                 pause
                 stop
             end if
 
             if(IsStrEqual(cursorP%Reaction%SubjectSymbol,newOne%ObjectSymbol) .AND. IsStrEqual(cursorP%Reaction%ObjectSymbol,newOne%SubjectSymbol)) then
-                write(*,*) "MCPSCUERROR: The Reaction is dumplicated for pairs Subject : ",cursorP%Reaction%SubjectSymbol," object: ",cursorP%Reaction%ObjectSymbol
+                write(*,*) "MFPSCUERROR: The Reaction is dumplicated for pairs Subject : ",cursorP%Reaction%SubjectSymbol," object: ",cursorP%Reaction%ObjectSymbol
                 write(*,*) "and : Subject: ",newOne%SubjectSymbol," object: ",newOne%ObjectSymbol
                 pause
                 stop
@@ -495,13 +495,13 @@ module MCMF_TYPEDEF_ReactionPropList
                 cursorP=>cursorP%next
 
                 if(IsStrEqual(cursorP%Reaction%SubjectSymbol,newOne%SubjectSymbol) .AND. IsStrEqual(cursorP%Reaction%ObjectSymbol,newOne%ObjectSymbol)) then
-                    write(*,*) "MCPSCUERROR: The Reaction is dumplicated: Subject: ",newOne%SubjectSymbol," object: ",newOne%ObjectSymbol
+                    write(*,*) "MFPSCUERROR: The Reaction is dumplicated: Subject: ",newOne%SubjectSymbol," object: ",newOne%ObjectSymbol
                     pause
                     stop
                 end if
 
                 if(IsStrEqual(cursorP%Reaction%SubjectSymbol,newOne%ObjectSymbol) .AND. IsStrEqual(cursorP%Reaction%ObjectSymbol,newOne%SubjectSymbol)) then
-                    write(*,*) "MCPSCUERROR: The Reaction is dumplicated for pairs Subject : ",cursorP%Reaction%SubjectSymbol," object: ",cursorP%Reaction%ObjectSymbol
+                    write(*,*) "MFPSCUERROR: The Reaction is dumplicated for pairs Subject : ",cursorP%Reaction%SubjectSymbol," object: ",cursorP%Reaction%ObjectSymbol
                     write(*,*) "and : Subject: ",newOne%SubjectSymbol," object: ",newOne%ObjectSymbol
                     pause
                     stop
@@ -539,7 +539,7 @@ module MCMF_TYPEDEF_ReactionPropList
         !---Body---
         cursorP=>this
         if(.not. associated(cursorP)) then
-            write(*,*) "MCPSCUERROR: You need to allocate the ReadReactionPropList first!"
+            write(*,*) "MFPSCUERROR: You need to allocate the ReadReactionPropList first!"
             pause
             stop
         end if
@@ -550,7 +550,7 @@ module MCMF_TYPEDEF_ReactionPropList
         end if
 
         if(ArraySize .GT. size(ReactionsArray)) then
-            write(*,*) "MCPSCUERROR: The aimmed size to appended to the ReadReactionPropList is greater than the Array size",ArraySize,size(ReactionsArray)
+            write(*,*) "MFPSCUERROR: The aimmed size to appended to the ReadReactionPropList is greater than the Array size",ArraySize,size(ReactionsArray)
             pause
             stop
         end if
@@ -576,7 +576,7 @@ module MCMF_TYPEDEF_ReactionPropList
         !---Body---
         cursor=>this
         if(.not. associated(cursor)) then
-            write(*,*) "MCPSCUERROR: You need to allocate the ReadReactionPropList first!"
+            write(*,*) "MFPSCUERROR: You need to allocate the ReadReactionPropList first!"
             pause
             stop
         end if
@@ -597,7 +597,7 @@ module MCMF_TYPEDEF_ReactionPropList
         END DO
 
         if(ListIndex .ne. tempIndex) then
-            write(*,*) "MCPSCUERROR: Cannot get the reaction pair form reaction list by index: ",ListIndex
+            write(*,*) "MFPSCUERROR: Cannot get the reaction pair form reaction list by index: ",ListIndex
             pause
             stop
         end if
@@ -618,7 +618,7 @@ module MCMF_TYPEDEF_ReactionPropList
         !---Body---
         cursor=>this
         if(.not. associated(cursor)) then
-            write(*,*) "MCPSCUERROR: You need to allocate the ReadReactionPropList first!"
+            write(*,*) "MFPSCUERROR: You need to allocate the ReadReactionPropList first!"
             pause
             stop
         end if
@@ -717,7 +717,7 @@ module MCMF_TYPEDEF_ReactionPropList
                                                                                cursor%Reaction%ECRValueType, &
                                                                                cursor%Reaction%ECR
 
-            if(SubjectConstructClusterList%GetList_Count() .GT. 0 .AND. ObjectConstructClusterList%GetList_Count()) then
+            if(SubjectConstructClusterList%GetList_Count() .GT. 0 .AND. ObjectConstructClusterList%GetList_Count() .GT. 0) then
                 SubjectClusterListCursor=>SubjectConstructClusterList
                 DO While(associated(SubjectClusterListCursor))
 
@@ -897,7 +897,7 @@ module MCMF_TYPEDEF_ReactionPropList
                 case(p_ReactionCoefficient_ByArrhenius)
                     TheValue = cursor%Reaction%PreFactor*exp(-C_EV2ERG*cursor%Reaction%ActEnergy/TKB)
                 case default
-                    write(*,*) "MCPSCUERROR: undefined type of reaction value.",cursor%Reaction%ReactionCoefficientType
+                    write(*,*) "MFPSCUERROR: undefined type of reaction value.",cursor%Reaction%ReactionCoefficientType
                     pause
                     stop
             end select

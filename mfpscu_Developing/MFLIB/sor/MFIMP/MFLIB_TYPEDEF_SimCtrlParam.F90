@@ -494,7 +494,7 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
     call GETKEYWORD("&", STR, KEYWORD)
     call UPCASE(KEYWORD)
     if(KEYWORD(1:LENTRIM(KEYWORD)) .ne. m_CTLSTARTFLAG) then
-      write(*,*) "MCPSCUERROR: The Start Flag of simulation Control Parameters is Illegal: ",KEYWORD(1:LENTRIM(KEYWORD))
+      write(*,*) "MFPSCUERROR: The Start Flag of simulation Control Parameters is Illegal: ",KEYWORD(1:LENTRIM(KEYWORD))
       pause
       stop
     end if
@@ -633,7 +633,7 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
             call EXTRACT_NUMB(STR,2,N,STRNUMB)
 
             if(N .LT. size(this%RANDSEED)) then
-                write(*,*) "MCPSCUERROR: The random seeds number shoud be at lease: ",size(this%RANDSEED)
+                write(*,*) "MFPSCUERROR: The random seeds number shoud be at lease: ",size(this%RANDSEED)
                 pause
                 stop
             end if
@@ -773,7 +773,7 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
         select case(KEYWORD(1:LENTRIM(KEYWORD)))
             case default
-                write(*,*) "MCPSCUERROR: Illegl symbol : ",KEYWORD,LINE
+                write(*,*) "MFPSCUERROR: Illegl symbol : ",KEYWORD,LINE
                 pause
                 stop
             case("&ENDSUBCTL")
@@ -875,7 +875,7 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
         select case(KEYWORD(1:LENTRIM(KEYWORD)))
             case default
-                write(*,*) "MCPSCUERROR: Illegl flag: ",KEYWORD,LINE
+                write(*,*) "MFPSCUERROR: Illegl flag: ",KEYWORD,LINE
                 pause
                 stop
             case("&ENDSUBCTL")
@@ -884,7 +884,7 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
                 call EXTRACT_NUMB(STR,3,N,STRNUMB)
 
                 if(N .LT. 3) then
-                    write(*,*) "MCPSCUERROR: please special the boundary condition in three direction."
+                    write(*,*) "MFPSCUERROR: please special the boundary condition in three direction."
                     write(*,*) "At control file line: ",LINE
                     write(*,*) "Should be '&PERIDIC If use periodic boundary condition: X = , Y = , Z = '."
                     pause
@@ -929,7 +929,7 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
                 call EXTRACT_NUMB(STR,1,N,STRTMP)
 
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: To few parameters for mean field max change rate setting"
+                    write(*,*) "MFPSCUERROR: To few parameters for mean field max change rate setting"
                     write(*,*) "At line: ",LINE
                     write(*,*) STR
                     pause
@@ -941,7 +941,7 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
                 call EXTRACT_NUMB(STR,1,N,STRTMP)
 
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: To few parameters for mean field clusters range dumplicate setting"
+                    write(*,*) "MFPSCUERROR: To few parameters for mean field clusters range dumplicate setting"
                     write(*,*) "At line: ",LINE
                     write(*,*) STR
                     pause
@@ -987,14 +987,14 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
             case("&IMPLANTID")
                 call EXTRACT_NUMB(STR,1,N,SUBNUM)
                 if(N .LT. 1) then
-                    write(*,*) "MCPSCUERROR: Too few parameters for the Keyword: ",KEYWORD
+                    write(*,*) "MFPSCUERROR: Too few parameters for the Keyword: ",KEYWORD
                     write(*,*) "You should special: '&IMPLANTID The used implantation id in current time section = '"
                     pause
                     stop
                 end if
                 this%ImplantSectID = ISTR(SUBNUM(1))
             case default
-                write(*,*) "MCPSCUERROR: The flag is illegal: ",KEYWORD
+                write(*,*) "MFPSCUERROR: The flag is illegal: ",KEYWORD
                 pause
                 stop
         end select

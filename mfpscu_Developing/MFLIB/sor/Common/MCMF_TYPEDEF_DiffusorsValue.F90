@@ -349,7 +349,7 @@ module MCMF_TYPEDEF_DiffusorsValue
         tempLength = MapLength
 
         if(size(SingleAtomsDivideArrays,DIM=1) .ne. p_ATOMS_GROUPS_NUMBER) then
-            write(*,*) "MCPSCUERROR: In current version, the max elements group is ",p_ATOMS_GROUPS_NUMBER
+            write(*,*) "MFPSCUERROR: In current version, the max elements group is ",p_ATOMS_GROUPS_NUMBER
             write(*,*) "However, the SingleAtomsDivideArrays own elements group: ",size(SingleAtomsDivideArrays,DIM=1)
             pause
             stop
@@ -459,7 +459,7 @@ module MCMF_TYPEDEF_DiffusorsValue
             DO While(NextIndex .GT. 0 .AND. Code .NE. this%TypesEntities(IndexFor)%Code)
 
                 if(Code .eq. this%TypesEntities(IndexFor)%Code) then
-                    write(*,*) "MCPSCUERROR: The diffusor is redefined !"
+                    write(*,*) "MFPSCUERROR: The diffusor is redefined !"
                     write(*,*) "Diffusor : ",Key%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA
                     pause
                     stop
@@ -468,7 +468,7 @@ module MCMF_TYPEDEF_DiffusorsValue
                 ICount = ICount + 1
 
                 if(ICount .GT. this%MapLength) then
-                    write(*,*) "MCPSCUERROR: The difussor map is not sufficient to store all kinds of diffusor."
+                    write(*,*) "MFPSCUERROR: The difussor map is not sufficient to store all kinds of diffusor."
                     pause
                     stop
                 end if
@@ -483,7 +483,7 @@ module MCMF_TYPEDEF_DiffusorsValue
             DO While(.true.)
                 ICount = ICount + 1
                 if(ICount .GT. this%MapLength) then
-                    write(*,*) "MCPSCUERROR: The difussor map is not sufficient to store all kinds of diffusor."
+                    write(*,*) "MFPSCUERROR: The difussor map is not sufficient to store all kinds of diffusor."
                     pause
                     stop
                 end if

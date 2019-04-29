@@ -157,7 +157,7 @@ module MIGCOALE_STATISTIC_CPU
 !    ! Do some check
 !
 !    if((DisappearFlag + 1 - ActiveFlag) .LT. 0) then
-!        write(*,*)  "MCPSCUERROR: The statistic error. The active and unactive clusters index would overlap."
+!        write(*,*)  "MFPSCUERROR: The statistic error. The active and unactive clusters index would overlap."
 !        pause
 !        stop
 !    end if

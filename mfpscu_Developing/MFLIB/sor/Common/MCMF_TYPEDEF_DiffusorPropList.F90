@@ -98,7 +98,7 @@ module MCMF_TYPEDEF_DiffusorPropList
         cursor=>this
 
         if(.not. associated(cursor)) then
-            write(*,*) "MCPSCUERROR: You should allocate the ReadDiffusorPropList first!"
+            write(*,*) "MFPSCUERROR: You should allocate the ReadDiffusorPropList first!"
             pause
             stop
         end if
@@ -126,7 +126,7 @@ module MCMF_TYPEDEF_DiffusorPropList
         END DO
 
         if(ListCount .ne. tempIndex) then
-            write(*,*) "MCPSCUERROR: The diffusor define List count is error."
+            write(*,*) "MFPSCUERROR: The diffusor define List count is error."
             write(*,*) "The record list count is ",ListCount
             write(*,*) "In fact, the actual list count is: ",tempIndex
             pause
@@ -173,7 +173,7 @@ module MCMF_TYPEDEF_DiffusorPropList
                 if(coverageCount .GE. p_ATOMS_GROUPS_NUMBER) then
                     Diffusor = this%GetReadDiffusorByListIndex(I)
 
-                    write(*,*) "MCPSCUERROR: The diffusor define is overlapping between diffusor ",Diffusor%symbol
+                    write(*,*) "MFPSCUERROR: The diffusor define is overlapping between diffusor ",Diffusor%symbol
                     Diffusor = this%GetReadDiffusorByListIndex(J)
                     write(*,*) "and diffusor: ",Diffusor%symbol
                     pause
@@ -380,7 +380,7 @@ module MCMF_TYPEDEF_DiffusorPropList
         !---Body---
         cursorOfSelf=>this
         if(.not. associated(cursorOfSelf)) then
-            write(*,*) "MCPSCUERROR: You need to allocate the ReadDiffusorPropList first!"
+            write(*,*) "MFPSCUERROR: You need to allocate the ReadDiffusorPropList first!"
             pause
             stop
         end if
@@ -426,7 +426,7 @@ module MCMF_TYPEDEF_DiffusorPropList
         !---Body---
         cursorP=>this
         if(.not. associated(cursorP)) then
-            write(*,*) "MCPSCUERROR: You need to allocate the ReadDiffusorPropList first!"
+            write(*,*) "MFPSCUERROR: You need to allocate the ReadDiffusorPropList first!"
             pause
             stop
         end if
@@ -438,7 +438,7 @@ module MCMF_TYPEDEF_DiffusorPropList
             cursor=>this%next
             cursorP=>this
             if(IsStrEqual(cursorP%Diffusor%symbol,newOne%symbol)) then
-                write(*,*) "MCPSCUERROR: The Diffusor is dumplicated:",newOne%symbol
+                write(*,*) "MFPSCUERROR: The Diffusor is dumplicated:",newOne%symbol
                 pause
                 stop
             end if
@@ -448,7 +448,7 @@ module MCMF_TYPEDEF_DiffusorPropList
                 cursorP=>cursorP%next
 
                 if(IsStrEqual(cursorP%Diffusor%symbol,newOne%symbol)) then
-                    write(*,*) "MCPSCUERROR: The Diffusor is dumplicated:",newOne%symbol
+                    write(*,*) "MFPSCUERROR: The Diffusor is dumplicated:",newOne%symbol
                     pause
                     stop
                 end if
@@ -485,7 +485,7 @@ module MCMF_TYPEDEF_DiffusorPropList
         !---Body---
         cursorP=>this
         if(.not. associated(cursorP)) then
-            write(*,*) "MCPSCUERROR: You need to allocate the ReadDiffusorPropList first!"
+            write(*,*) "MFPSCUERROR: You need to allocate the ReadDiffusorPropList first!"
             pause
             stop
         end if
@@ -496,7 +496,7 @@ module MCMF_TYPEDEF_DiffusorPropList
         end if
 
         if(ArraySize .GT. size(DiffusorsArray)) then
-            write(*,*) "MCPSCUERROR: The aimmed size to appended to the diffusorList is greater than the Array size",ArraySize,size(DiffusorsArray)
+            write(*,*) "MFPSCUERROR: The aimmed size to appended to the diffusorList is greater than the Array size",ArraySize,size(DiffusorsArray)
             pause
             stop
         end if
@@ -522,7 +522,7 @@ module MCMF_TYPEDEF_DiffusorPropList
         !---Body---
         cursor=>this
         if(.not. associated(cursor)) then
-            write(*,*) "MCPSCUERROR: You need to allocate the ReadDiffusorPropList first!"
+            write(*,*) "MFPSCUERROR: You need to allocate the ReadDiffusorPropList first!"
             pause
             stop
         end if
@@ -543,7 +543,7 @@ module MCMF_TYPEDEF_DiffusorPropList
         END DO
 
         if(ListIndex .ne. tempIndex) then
-            write(*,*) "MCPSCUERROR: Cannot get the diffusor form diffusor list by index: ",ListIndex
+            write(*,*) "MFPSCUERROR: Cannot get the diffusor form diffusor list by index: ",ListIndex
             pause
             stop
         end if
@@ -564,7 +564,7 @@ module MCMF_TYPEDEF_DiffusorPropList
         !---Body---
         cursor=>this
         if(.not. associated(cursor)) then
-            write(*,*) "MCPSCUERROR: You need to allocate the ReadDiffusorPropList first!"
+            write(*,*) "MFPSCUERROR: You need to allocate the ReadDiffusorPropList first!"
             pause
             stop
         end if
@@ -600,7 +600,7 @@ module MCMF_TYPEDEF_DiffusorPropList
         cursor=>this
 
         if(.not. associated(cursor)) then
-            write(*,*) "MCPSCUERROR: You should allocate the ReadDiffusorPropList first!"
+            write(*,*) "MFPSCUERROR: You should allocate the ReadDiffusorPropList first!"
             pause
             stop
         end if

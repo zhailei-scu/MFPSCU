@@ -137,7 +137,7 @@ module MIGCOALE_TYPEDEF_SIMRECORD
         integer, intent(in)::AddNum
         !---Body---
         if(AddNum .LT. 0) then
-            write(*,*) "MCPSCUERROR: The new implanted clusters number is not possible less than 0 :",AddNum
+            write(*,*) "MFPSCUERROR: The new implanted clusters number is not possible less than 0 :",AddNum
             pause
             stop
         end if

@@ -93,7 +93,7 @@ module MFLIB_TYPEDEF_ClustersInfo_CPU
         ClustersKindsNum = size(this%ClustersKindArray)
 
         if(ClustersKindsNum .ne. size(this%Concentrate,dim=1)) then
-            write(*,*) "MCPSCUERROR: The clusters kinds number for ClustersKindArray array is not same with concentrate."
+            write(*,*) "MFPSCUERROR: The clusters kinds number for ClustersKindArray array is not same with concentrate."
             pause
             stop
         end if

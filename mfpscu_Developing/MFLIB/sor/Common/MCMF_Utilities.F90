@@ -84,8 +84,8 @@ module MCMF_UTILITIES
         call separateStrByString(symbol,p_ElementsTypeSpe,ElementsStrs,ElemtsGroup)
 
         if(ElemtsGroup .GT. p_ATOMS_GROUPS_NUMBER) then
-            write(*,*) "MCPSCUERROR: The kinds of atoms in cluster "//adjustl(trim(symbol))//" is ",ElemtsGroup
-            write(*,*) "MCPSCUERROR: Which has been greater than defined max atoms kinds: ",p_ATOMS_GROUPS_NUMBER
+            write(*,*) "MFPSCUERROR: The kinds of atoms in cluster "//adjustl(trim(symbol))//" is ",ElemtsGroup
+            write(*,*) "MFPSCUERROR: Which has been greater than defined max atoms kinds: ",p_ATOMS_GROUPS_NUMBER
             pause
             stop
         end if
@@ -102,7 +102,7 @@ module MCMF_UTILITIES
 
             call separateStrByString(ElementsStrs(I),p_ElementsNumSpe,symbolANDNumRangeStr,SepNum)
             if(SepNum .NE. 2) then
-                write(*,*) "MCPSCUERROR: The Element "//ElementsStrs(I)//" define is not correct"
+                write(*,*) "MFPSCUERROR: The Element "//ElementsStrs(I)//" define is not correct"
                 write(*,*) "In cluster :",symbol
                 write(*,*) symbolANDNumRangeStr
                 pause
@@ -112,14 +112,14 @@ module MCMF_UTILITIES
             ElementIndex = BasicAtomsList%FindIndexBySymbol(symbolANDNumRangeStr(1))
 
             if(ElementIndex .LE. 0) then
-                write(*,*) "MCPSCUERROR: The element symbol is not defineded: ",symbolANDNumRangeStr(1)
+                write(*,*) "MFPSCUERROR: The element symbol is not defineded: ",symbolANDNumRangeStr(1)
                 write(*,*) "In cluster: ",symbol
                 pause
                 stop
             end if
 
             if(TheAtomsSetRange%m_SetsRange(ElementIndex)%m_NA_From .GT. 0) then
-                write(*,*) "MCPSCUERROR: Cannot define two ranges for one same element in one cluster symbol: ",symbol
+                write(*,*) "MFPSCUERROR: Cannot define two ranges for one same element in one cluster symbol: ",symbol
                 pause
                 stop
             end if
@@ -139,11 +139,11 @@ module MCMF_UTILITIES
                 TheAtomsSetRange%m_SetsRange(ElementIndex)%m_NA_From = ISTR(NumRangeStr(1))
                 TheAtomsSetRange%m_SetsRange(ElementIndex)%m_NA_To = ISTR(NumRangeStr(1))
             else if(SepNum .LE. 0) then
-                write(*,*) "MCPSCUERROR: you must special the atoms compents number for cluster: ",symbol
+                write(*,*) "MFPSCUERROR: you must special the atoms compents number for cluster: ",symbol
                 pause
                 stop
             else if(SepNum .GE. 3) then
-                write(*,*) "MCPSCUERROR: only up and down limits can be accepted, you have specialied too much limit for cluster :",symbol
+                write(*,*) "MFPSCUERROR: only up and down limits can be accepted, you have specialied too much limit for cluster :",symbol
                 pause
                 stop
             else if(SepNum .eq. 2) then
@@ -160,7 +160,7 @@ module MCMF_UTILITIES
             end if
 
             if(TheAtomsSetRange%m_SetsRange(ElementIndex)%m_NA_From .LE. 0 .AND. TheAtomsSetRange%m_SetsRange(ElementIndex)%m_NA_To .GT. 0) then
-                write(*,*) "MCPSCUERROR: The atoms number down limit cannot less than 1 in cluster: ",symbol
+                write(*,*) "MFPSCUERROR: The atoms number down limit cannot less than 1 in cluster: ",symbol
                 write(*,*) NumRangeStr
                 pause
                 stop
@@ -214,7 +214,7 @@ module MCMF_UTILITIES
     if(Length .GT. 0) then
         allocate(Array(Length),STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"allocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"allocate Failed !"
             pause
             stop
         end if
@@ -238,7 +238,7 @@ module MCMF_UTILITIES
     if(Length .GT. 0) then
         allocate(Array(Length),STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"allocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"allocate Failed !"
             pause
             stop
         end if
@@ -262,7 +262,7 @@ module MCMF_UTILITIES
     if(Length .GT. 0) then
         allocate(Array(Length),STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"allocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"allocate Failed !"
             pause
             stop
         end if
@@ -286,7 +286,7 @@ module MCMF_UTILITIES
     if(Length .GT. 0) then
         allocate(Array(Length),STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"allocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"allocate Failed !"
             pause
             stop
         end if
@@ -311,7 +311,7 @@ module MCMF_UTILITIES
     if(LengthX .GT. 0 .AND. LengthY .GT. 0) then
         allocate(Array(LengthX,LengthY),STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"allocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"allocate Failed !"
             pause
             stop
         end if
@@ -336,7 +336,7 @@ module MCMF_UTILITIES
     if(LengthX .GT. 0 .AND. LengthY .GT. 0) then
         allocate(Array(LengthX,LengthY),STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"allocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"allocate Failed !"
             pause
             stop
         end if
@@ -361,7 +361,7 @@ module MCMF_UTILITIES
     if(LengthX .GT. 0 .AND. LengthY .GT. 0) then
         allocate(Array(LengthX,LengthY),STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"allocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"allocate Failed !"
             pause
             stop
         end if
@@ -386,7 +386,7 @@ module MCMF_UTILITIES
     if(LengthX .GT. 0 .AND. LengthY .GT. 0) then
         allocate(Array(LengthX,LengthY),STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"allocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"allocate Failed !"
             pause
             stop
         end if
@@ -412,7 +412,7 @@ module MCMF_UTILITIES
     if(LengthX .GT. 0 .AND. LengthY .GT. 0 .AND. LengthZ .GT. 0) then
         allocate(Array(LengthX,LengthY,LengthZ),STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"allocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"allocate Failed !"
             pause
             stop
         end if
@@ -438,7 +438,7 @@ module MCMF_UTILITIES
     if(LengthX .GT. 0 .AND. LengthY .GT. 0 .AND. LengthZ .GT. 0) then
         allocate(Array(LengthX,LengthY,LengthZ),STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"allocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"allocate Failed !"
             pause
             stop
         end if
@@ -464,7 +464,7 @@ module MCMF_UTILITIES
     if(LengthX .GT. 0 .AND. LengthY .GT. 0 .AND. LengthZ .GT. 0) then
         allocate(Array(LengthX,LengthY,LengthZ),STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"allocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"allocate Failed !"
             pause
             stop
         end if
@@ -487,7 +487,7 @@ module MCMF_UTILITIES
     if(allocated(Array)) then
         deallocate(Array,STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"Deallocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"Deallocate Failed !"
             pause
             stop
         end if
@@ -510,7 +510,7 @@ module MCMF_UTILITIES
     if(allocated(Array)) then
         deallocate(Array,STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"Deallocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"Deallocate Failed !"
             pause
             stop
         end if
@@ -532,7 +532,7 @@ module MCMF_UTILITIES
     if(allocated(Array)) then
         deallocate(Array,STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"Deallocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"Deallocate Failed !"
             pause
             stop
         end if
@@ -554,7 +554,7 @@ module MCMF_UTILITIES
     if(allocated(Array)) then
         deallocate(Array,STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"Deallocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"Deallocate Failed !"
             pause
             stop
         end if
@@ -576,7 +576,7 @@ module MCMF_UTILITIES
     if(allocated(Array)) then
         deallocate(Array,STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"Deallocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"Deallocate Failed !"
             pause
             stop
         end if
@@ -598,7 +598,7 @@ module MCMF_UTILITIES
     if(allocated(Array)) then
         deallocate(Array,STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"Deallocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"Deallocate Failed !"
             pause
             stop
         end if
@@ -620,7 +620,7 @@ module MCMF_UTILITIES
     if(allocated(Array)) then
         deallocate(Array,STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"Deallocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"Deallocate Failed !"
             pause
             stop
         end if
@@ -642,7 +642,7 @@ module MCMF_UTILITIES
     if(allocated(Array)) then
         deallocate(Array,STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"Deallocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"Deallocate Failed !"
             pause
             stop
         end if
@@ -665,7 +665,7 @@ module MCMF_UTILITIES
     if(allocated(Array)) then
         deallocate(Array,STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"Deallocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"Deallocate Failed !"
             pause
             stop
         end if
@@ -687,7 +687,7 @@ module MCMF_UTILITIES
     if(allocated(Array)) then
         deallocate(Array,STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"Deallocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"Deallocate Failed !"
             pause
             stop
         end if
@@ -709,7 +709,7 @@ module MCMF_UTILITIES
     if(allocated(Array)) then
         deallocate(Array,STAT=istat)
         if(istat /=0) then
-            write(*,*) "MCPSCUERROR: The Array :",Name,"Deallocate Failed !"
+            write(*,*) "MFPSCUERROR: The Array :",Name,"Deallocate Failed !"
             pause
             stop
         end if
