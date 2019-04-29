@@ -821,7 +821,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
 
             select case(KEYWORD(1:LENTRIM(KEYWORD)))
-                case("&ENDSBCTL")
+                case("&ENDSUBCTL")
                     exit
                 case("&NNODES")
                     call EXTRACT_NUMB(STR,1,N,STRNUMB)
@@ -868,7 +868,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                         END DO
                     end if
 
-                    if(sum(InitBoxCfgList%TheValue%LayerThick) .ne. SimBoxes%BOXSIZE(3)) then
+                    if(DABS(sum(InitBoxCfgList%TheValue%LayerThick) - SimBoxes%BOXSIZE(3)) .GT. ZERO_PROXIMITY) then
                         write(*,*) "MFPSCUERROR: The total nodes thicknesses given is not equal with the box depth."
                         write(*,*) "The total nodes thicknesses is : ",sum(InitBoxCfgList%TheValue%LayerThick)
                         write(*,*) "The box depth is : ",SimBoxes%BOXSIZE(3)
@@ -1023,7 +1023,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
             call UPCASE(KEYWORD)
 
             select case(KEYWORD(1:LENTRIM(KEYWORD)))
-                case("&ENDSBUCTL")
+                case("&ENDSUBCTL")
                     exit
                 case("&CLUSTERSGROUP")
                     call EXTRACT_NUMB(STR,1,N,STRTMP)
@@ -1069,14 +1069,12 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                         stop
                     end if
 
-                    if(((InitBoxCfg%CKind_Range_To - InitBoxCfg%CKind_Range_From)/InitBoxCfg%CKind_Range_Interval +2 ) .GT. InitBoxCfg%InitCKind) then
+                    if(((InitBoxCfg%CKind_Range_To - InitBoxCfg%CKind_Range_From - 1)/InitBoxCfg%CKind_Range_Interval + 2) .GT. InitBoxCfg%InitCKind) then
                         write(*,*) "MFPSCUERROR: The total clusters kind you defined is : ",InitBoxCfg%InitCKind
                         write(*,*) "However, the ranges you define is: ",InitBoxCfg%CKind_Range_From, InitBoxCfg%CKind_Range_To, InitBoxCfg%CKind_Range_Interval
                         write(*,*) "Which had exceed the clusters kind."
                         pause
                     end if
-
-
 
                 case default
                     write(*,*) "MFPSCUERROR: Unknown keyword: ",KEYWORD

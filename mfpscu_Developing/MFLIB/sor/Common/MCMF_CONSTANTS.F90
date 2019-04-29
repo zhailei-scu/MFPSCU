@@ -101,6 +101,8 @@ module MCMF_CONSTANTS
     integer(kind=KMCLINT),parameter::TENPOWSEVEN = 1*10**7
     integer(kind=KMCLINT),parameter::TENPOWEIGHT = 1*10**8
 
+    real(kind=KMCDF),parameter::ZERO_PROXIMITY = 1.D-16
+
 
     !*** Math. and  Phys. constants used
     real(kind=KMCDF), parameter::PI=3.1415926535897932
