@@ -22,7 +22,6 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         integer::CKind_Range_From = 1
         integer::CKind_Range_To = 200
-        integer::CKind_Range_Interval = 1
 
         integer::InitNNodes = 1
 
@@ -274,7 +273,6 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         this%CKind_Range_From = other%CKind_Range_From
         this%CKind_Range_To = other%CKind_Range_To
-        this%CKind_Range_Interval = other%CKind_Range_Interval
 
         this%InitNNodes = other%InitNNodes
 
@@ -322,7 +320,6 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         this%CKind_Range_From = 1
         this%CKind_Range_To = 200
-        this%CKind_Range_Interval = 1
 
         this%InitNNodes = 1
 
@@ -523,12 +520,27 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                 case("&ENDINITINPUTF")
                     exit
                 case("&SIMPLEDISTSUBCTL")
+                    if(InitBoxCfgList%TheValue%InitType .GT. 0) then
+                        write(*,*) "MFPSCUERROR: Current problem only support one kind of initial type."
+                        pause
+                        stop
+                    end if
                     InitBoxCfgList%TheValue%InitType = p_ClusterIniConfig_Simple
                     call ReadInitSimulationBoxesConfig_Simple(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE)
                 case("&FILEDISTSUBCTL")
+                    if(InitBoxCfgList%TheValue%InitType .GT. 0) then
+                        write(*,*) "MFPSCUERROR: Current problem only support one kind of initial type."
+                        pause
+                        stop
+                    end if
                     InitBoxCfgList%TheValue%InitType = p_ClusterIniConfig_SpecialDistFromFile
                     call ReadInitSimulationBoxesConfig_SpecialDistFromFile(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE)
                 case("&FUNCDISTSUBCTL")
+                    if(InitBoxCfgList%TheValue%InitType .GT. 0) then
+                        write(*,*) "MFPSCUERROR: Current problem only support one kind of initial type."
+                        pause
+                        stop
+                    end if
                     InitBoxCfgList%TheValue%InitType = p_ClusterIniConfig_SpecialDistFromExteFunc
                     call ReadInitSimulationBoxesConfig_SpecialDistFromExteFunc(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE)
                 case default
@@ -658,6 +670,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         integer::GroupIndex
         character*10::Symbol1
         character*10::Symbol2
+        integer::INode
         !---Body---
         PInitBoxCfgList=>InitBoxCfgList
 
@@ -714,6 +727,25 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                     stop
                 end if
 
+                if(PInitBoxCfgList%TheValue%InitNNodes .ne. NPInitBoxCfgList%TheValue%InitNNodes) then
+                    write(*,*) "MFPSCUERROR: For each group, the nodes number should equal."
+                    write(*,*) "However, the nodes number in group ",GroupIndex," is ",PInitBoxCfgList%TheValue%InitNNodes
+                    write(*,*) "the nodes number in group ",GroupIndex + 1, " is ",NPInitBoxCfgList%TheValue%InitNNodes
+                    pause
+                    stop
+                end if
+
+                DO INode = 1,PInitBoxCfgList%TheValue%InitNNodes
+                    if(PInitBoxCfgList%TheValue%LayerThick(INode) .ne. NPInitBoxCfgList%TheValue%LayerThick(INode)) then
+                        write(*,*) "MFPSCUERROR: For each group ,each node space should be equal."
+                        write(*,*) "However, For node ",INode
+                        write(*,*) "the nodes space in group ",GroupIndex," is ",PInitBoxCfgList%TheValue%LayerThick(INode)
+                        write(*,*) "the nodes space in group ",GroupIndex+1," is ",NPInitBoxCfgList%TheValue%LayerThick(INode)
+                        pause
+                        stop
+                    end if
+                END DO
+
             end if
 
             PInitBoxCfgList=>PInitBoxCfgList%next
@@ -764,6 +796,21 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                         call AllocateArray_Host(PInitBoxCfgList%TheValue%LayerThick,InitBoxCfgList%TheValue%InitNNodes,"LayerThick")
 
                         PInitBoxCfgList%TheValue%LayerThick = InitBoxCfgList%TheValue%LayerThick
+
+                        PInitBoxCfgList=>PInitBoxCfgList%next
+                    END DO
+
+                case("&CLUSTERRANGESUBCTL")
+                    call ReadInitBoxSimCfg_Simple_ClusterRange(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE,*100)
+                    PInitBoxCfgList=>InitBoxCfgList%next
+
+                    DO While(associated(PInitBoxCfgList))
+
+                        PInitBoxCfgList%TheValue%InitCKind = InitBoxCfgList%TheValue%InitCKind
+
+                        PInitBoxCfgList%TheValue%CKind_Range_From = InitBoxCfgList%TheValue%CKind_Range_From
+
+                        PInitBoxCfgList%TheValue%CKind_Range_To = InitBoxCfgList%TheValue%CKind_Range_To
 
                         PInitBoxCfgList=>PInitBoxCfgList%next
                     END DO
@@ -886,6 +933,80 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         100 return 1
     end subroutine ReadInitBoxSimCfg_Simple_SpaceDist
 
+    !*****************************************************************
+    subroutine ReadInitBoxSimCfg_Simple_ClusterRange(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE,*)
+        !---Dummy Vars---
+        integer,intent(in)::hFile
+        type(SimulationBoxes)::SimBoxes
+        type(SimulationCtrlParam)::Host_SimuCtrlParam
+        type(InitBoxSimCfgList)::InitBoxCfgList
+        integer::LINE
+        !---Local Vars---
+        character*256::STR
+        character*30::KEYWORD
+        character*32::STRTMP(10)
+        integer::N
+        !---Body---
+
+        DO While(.true.)
+            call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
+            call RemoveComments(STR,"!")
+            STR = adjustl(STR)
+            call GETKEYWORD("&",STR,KEYWORD)
+            call UPCASE(KEYWORD)
+
+            select case(KEYWORD(1:LENTRIM(KEYWORD)))
+                case("&ENDSUBCTL")
+                    exit
+                case("&CLUSTERSGROUP")
+                    call EXTRACT_NUMB(STR,1,N,STRTMP)
+                    if(N .LT. 1) then
+                        write(*,*) "MFPSCUERROR: Too few parameters for clusters group number ."
+                        write(*,*) "You should special: '&CLUSTERSGROUP The max clusters group = ' "
+                        pause
+                        stop
+                    end if
+                    InitBoxCfgList%TheValue%InitCKind = ISTR(STRTMP(1))
+
+                    if(InitBoxCfgList%TheValue%InitCKind .LE. 0) then
+                        write(*,*) "MFPSCUERROR: The clusters kind number must greater than 0"
+                        write(*,*) InitBoxCfgList%TheValue%InitCKind
+                        pause
+                        stop
+                    end if
+
+                case("&RANGE")
+                    call EXTRACT_NUMB(STR,3,N,STRTMP)
+                    if(N .LT. 2) then
+                        write(*,*) "MFPSCUERROR: You must special the clusters range beginning and ending."
+                        write(*,*) "You should special like that : ' &RANGE The clusters atoms start from = , end to = , the interval = '"
+                        write(*,*) "At LINE :",LINE
+                        pause
+                        stop
+                    end if
+
+                    InitBoxCfgList%TheValue%CKind_Range_From = ISTR(STRTMP(1))
+                    InitBoxCfgList%TheValue%CKind_Range_To = ISTR(STRTMP(2))
+
+                    if((InitBoxCfgList%TheValue%CKind_Range_To - InitBoxCfgList%TheValue%CKind_Range_From + 1) .ne. InitBoxCfgList%TheValue%InitCKind) then
+                        write(*,*) "MFPSCUERROR: The total clusters kind you defined is : ",InitBoxCfgList%TheValue%InitCKind
+                        write(*,*) "However, the ranges you define is: ",InitBoxCfgList%TheValue%CKind_Range_From, InitBoxCfgList%TheValue%CKind_Range_To
+                        write(*,*) "they are not same."
+                        pause
+                    end if
+
+                case default
+                    write(*,*) "MFPSCUERROR: Unknown keyword: ",KEYWORD
+                    pause
+                    stop
+            end select
+
+        END DO
+
+        return
+        100 return 1
+    end subroutine ReadInitBoxSimCfg_Simple_ClusterRange
+
 
     !*****************************************************************
     subroutine ReadInitBoxSimCfg_Simple_OneGroup(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfg,LINE,*)
@@ -914,8 +1035,6 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
             select case(KEYWORD(1:LENTRIM(KEYWORD)))
                 case("&ENDSUBCTL")
                     exit
-                case("&CLUSTERRANGESUBCTL")
-                    call ReadClusterRange_Simple(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfg,LINE,*100)
                 case("&SIZESUBCTL")
                     call ReadClusterSizeDist_Simple(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfg,LINE,*100)
                 case("&CONCENTDISTSUBCTL")
@@ -1000,94 +1119,6 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         return
     end subroutine ReadInitSimulationBoxesConfig_SpecialDistFromExteFunc
 
-    !*****************************************************************
-    subroutine ReadClusterRange_Simple(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfg,LINE,*)
-        !---Dummy Vars---
-        integer,intent(in)::hFile
-        type(SimulationBoxes)::SimBoxes
-        type(SimulationCtrlParam)::Host_SimuCtrlParam
-        type(InitBoxSimCfg)::InitBoxCfg
-        integer::LINE
-        !---Local Vars---
-        character*256::STR
-        character*30::KEYWORD
-        character*32::STRTMP(10)
-        integer::N
-        !---Body---
-
-        DO While(.true.)
-            call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
-            call RemoveComments(STR,"!")
-            STR = adjustl(STR)
-            call GETKEYWORD("&",STR,KEYWORD)
-            call UPCASE(KEYWORD)
-
-            select case(KEYWORD(1:LENTRIM(KEYWORD)))
-                case("&ENDSUBCTL")
-                    exit
-                case("&CLUSTERSGROUP")
-                    call EXTRACT_NUMB(STR,1,N,STRTMP)
-                    if(N .LT. 1) then
-                        write(*,*) "MFPSCUERROR: Too few parameters for clusters group number ."
-                        write(*,*) "You should special: '&CLUSTERSGROUP The max clusters group = ' "
-                        pause
-                        stop
-                    end if
-                    InitBoxCfg%InitCKind = ISTR(STRTMP(1))
-
-                    if(InitBoxCfg%InitCKind .LE. 0) then
-                        write(*,*) "MFPSCUERROR: The clusters kind number must greater than 0"
-                        write(*,*) InitBoxCfg%InitCKind
-                        pause
-                        stop
-                    end if
-
-                case("&RANGE")
-                    call EXTRACT_NUMB(STR,3,N,STRTMP)
-                    if(N .LT. 2) then
-                        write(*,*) "MFPSCUERROR: You must special the clusters range beginning and ending."
-                        write(*,*) "You should special like that : ' &RANGE The clusters atoms start from = , end to = , the interval = '"
-                        write(*,*) "At LINE :",LINE
-                        pause
-                        stop
-                    end if
-
-                    if(N .GE. 2) then
-                        InitBoxCfg%CKind_Range_From = ISTR(STRTMP(1))
-                        InitBoxCfg%CKind_Range_To = ISTR(STRTMP(2))
-                    end if
-
-                    if(N .GE. 3) then
-                        InitBoxCfg%CKind_Range_Interval = ISTR(STRTMP(3))
-                    end if
-
-                    if((InitBoxCfg%CKind_Range_To - InitBoxCfg%CKind_Range_From) .LT. InitBoxCfg%CKind_Range_Interval) then
-                        write(*,*) "MFPSCUERROR: The clusters range define is not true"
-                        write(*,*) "At line: ",LINE
-                        write(*,*) InitBoxCfg%CKind_Range_From, InitBoxCfg%CKind_Range_To, InitBoxCfg%CKind_Range_Interval
-                        pause
-                        stop
-                    end if
-
-                    if(((InitBoxCfg%CKind_Range_To - InitBoxCfg%CKind_Range_From - 1)/InitBoxCfg%CKind_Range_Interval + 2) .GT. InitBoxCfg%InitCKind) then
-                        write(*,*) "MFPSCUERROR: The total clusters kind you defined is : ",InitBoxCfg%InitCKind
-                        write(*,*) "However, the ranges you define is: ",InitBoxCfg%CKind_Range_From, InitBoxCfg%CKind_Range_To, InitBoxCfg%CKind_Range_Interval
-                        write(*,*) "Which had exceed the clusters kind."
-                        pause
-                    end if
-
-                case default
-                    write(*,*) "MFPSCUERROR: Unknown keyword: ",KEYWORD
-                    pause
-                    stop
-            end select
-
-        END DO
-
-        return
-        100 return 1
-    end subroutine
-
     !***************************************************************
     subroutine ReadClusterSizeDist_Simple(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfg,LINE,*)
         implicit none
@@ -1135,6 +1166,27 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                         write(*,*) "RCut",InitBoxCfg%NACUT(2)
                         pause
                         stop
+                    end if
+
+
+                    if(InitBoxCfg%NACUT(2) .GE. InitBoxCfg%CKind_Range_From ) then
+                        if((InitBoxCfg%NACUT(2) - InitBoxCfg%CKind_Range_From) .GT. &
+                           ((InitBoxCfg%NACUT(2) - InitBoxCfg%NACUT(1)) + (InitBoxCfg%CKind_Range_To - InitBoxCfg%CKind_Range_From))  ) then
+                           write(*,*) "MFPSCUERROR: The clusters range is defined from ",InitBoxCfg%CKind_Range_From," to ",InitBoxCfg%CKind_Range_To
+                           write(*,*) "However the clusters size range is defined from ",InitBoxCfg%NACUT(1)," to ",InitBoxCfg%NACUT(2)
+                           write(*,*) "There are not covered."
+                           pause
+                           stop
+                        end if
+                    else
+                        if((InitBoxCfg%CKind_Range_To - InitBoxCfg%NACUT(1)) .GT. &
+                           ((InitBoxCfg%NACUT(2) - InitBoxCfg%NACUT(1)) + (InitBoxCfg%CKind_Range_To - InitBoxCfg%CKind_Range_From))  ) then
+                           write(*,*) "MFPSCUERROR: The clusters range is defined from ",InitBoxCfg%CKind_Range_From," to ",InitBoxCfg%CKind_Range_To
+                           write(*,*) "However the clusters size range is defined from ",InitBoxCfg%NACUT(1)," to ",InitBoxCfg%NACUT(2)
+                           write(*,*) "There are not covered."
+                           pause
+                           stop
+                        end if
                     end if
                 case("&ELEMENTCOMPOSIT")
                     call EXTRACT_SUBSTR(STR,p_ATOMS_GROUPS_NUMBER,NElements,STRTMP)
@@ -1347,13 +1399,10 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         type(MigCoalClusterRecord)::Record
         type(InitBoxSimCfgList),target::InitBoxCfgList
         !---Local Vars---
-        integer::MultiBox
         type(InitBoxSimCfgList),pointer::cursor=>null()
         integer::IBox
         integer::TNC0
         !---Body---
-
-        MultiBox = Host_SimuCtrlParam%MultiBox
 
         cursor=>InitBoxCfgList
 
@@ -1392,8 +1441,6 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         select case(InitBoxCfg%InitDepthDistType)
             case(p_DEPT_DIS_Layer)
                 call Init_Depth_Dis_LAY(SimBoxes,Host_SimuCtrlParam,InitBoxCfg)
-            case(p_DEPT_DIS_BOX)
-                call Init_Depth_Dis_SubBox(SimBoxes,Host_SimuCtrlParam,InitBoxCfg)
             case(p_DEPT_DIS_GAS)
                 call Init_Depth_Dis_Gauss(SimBoxes,Host_SimuCtrlParam,InitBoxCfg)
             case default
@@ -1442,108 +1489,70 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
       type(SimulationCtrlParam)::Host_SimuCtrlParam
       type(InitBoxSimCfg)::InitBoxCfg
       !-----local variables---
-      integer::MultiBox
-      real(kind=KMCDF)::POS(3)
-      real(kind=KMCDF)::Z0
-      real(kind=KMCDF)::BOXBOUNDARY(3,2)
-      real(kind=KMCDF)::BOXSIZE(3)
-      integer::IBox, II, IC, LAY, PNC
-      integer::J
-      integer::SNC0,SNC
-      integer::LayerNum
+      integer::IKind
       integer::NAtoms
       type(DiffusorValue)::TheDiffusorValue
+      integer::I
       !---Body---
-!      MultiBox = Host_SimuCtrlParam%MultiBox
-!
-!      BOXBOUNDARY = Host_Boxes%BOXBOUNDARY
-!      BOXSIZE = Host_Boxes%BOXSIZE
-!
-!      LayerNum = size(InitBoxCfg%LayerThick)
-!
-!      call Host_Boxes%ExpandClustersInfor_CPU(Host_SimuCtrlParam,InitBoxCfg%NClusters)
-!
-!      DO IBox = 1,MultiBox
-!
-!        SNC0 = InitBoxCfg%NClusters(IBox)
-!        SNC  = 0
-!        Z0  = 0.D0
-!
-!        IC = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) - SNC0
-!
-!        DO LAY=1, LayerNum
-!
-!            if(LAY .EQ. LayerNum) THEN
-!                PNC = SNC0 - SNC
-!            else
-!                PNC = SNC0*InitBoxCfg%PNCLayers(LAY)
-!            end if
-!
-!            SNC = SNC + PNC
-!            Z0 = BOXBOUNDARY(3,1) + sum(InitBoxCfg%LayerThick(1:LAY-1))
-!
-!            DO II = 1, PNC
-!
-!                IC = IC + 1
-!                !Initialize the position of clusters
-!                POS(1) = DRAND32()*BOXSIZE(1)+BOXBOUNDARY(1,1)
-!                POS(2) = DRAND32()*BOXSIZE(2)+BOXBOUNDARY(2,1)
-!                POS(3) = DRAND32()*InitBoxCfg%LayerThick(LAY) + Z0
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_POS = POS
-!
-!                !Give the cluster an type(layer) ID for the convenience of visualization
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Layer = LAY
-!
-!                !*** Initialize the size of the clusters
-!                NAtoms = RGAUSS0_WithCut(InitBoxCfg%NAINI, InitBoxCfg%NASDINI,InitBoxCfg%NACUT(1),InitBoxCfg%NACUT(2))
-!
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA = NAtoms*InitBoxCfg%CompositWeight
-!
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = Host_Boxes%m_GrainBoundary%GrainBelongsTo(POS,Host_Boxes%HBOXSIZE,Host_Boxes%BOXSIZE,Host_SimuCtrlParam)
-!
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu = p_ACTIVEFREE_STATU
-!
-!                TheDiffusorValue = Host_Boxes%m_DiffusorTypesMap%Get(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC))
-!
-!                !-- In Current application, the simple init distribution is only considered in free matrix, if you want to init the clusters in GB---
-!                !---you should init the distribution by external file---
-!                select case(TheDiffusorValue%ECRValueType_Free)
-!                    case(p_ECR_ByValue)
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = TheDiffusorValue%ECR_Free
-!                    case(p_ECR_ByBCluster)
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = DSQRT(sum(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA)/m_RNFACTOR)
-!                end select
-!
-!                select case(TheDiffusorValue%DiffusorValueType_Free)
-!                    case(p_DiffuseCoefficient_ByValue)
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
-!                    case(p_DiffuseCoefficient_ByArrhenius)
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
-!                    case(p_DiffuseCoefficient_ByBCluster)
-!                        ! Here we adopt a model that D=D0*(1/R)**Gama
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = m_FREESURDIFPRE*(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD**(-p_GAMMA))
-!                end select
-!
-!                Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC(p_ACTIVEFREE_STATU) = Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC(p_ACTIVEFREE_STATU) + 1
-!                Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Integral%NC(p_ACTIVEFREE_STATU) = Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Integral%NC(p_ACTIVEFREE_STATU) + 1
-!
-!                Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC0(p_ACTIVEFREE_STATU) = Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC0(p_ACTIVEFREE_STATU) + 1
-!                Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Integral%NC0(p_ACTIVEFREE_STATU) = Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Integral%NC0(p_ACTIVEFREE_STATU) + 1
-!
-!                Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) = Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) + 1
-!                Host_Boxes%m_BoxesInfo%SEExpdIndexBox(IBox,2) = Host_Boxes%m_BoxesInfo%SEExpdIndexBox(IBox,2) + 1
-!
-!            END DO
-!        END DO
-!
-!      END DO
+
+      if(Host_Boxes%NNodes .LE. 0) then
+         Host_Boxes%NNodes = InitBoxCfg%InitNNodes
+         call AllocateArray_Host(Host_Boxes%NodeSpace,InitBoxCfg%InitNNodes,"NodeSpace")
+         Host_Boxes%NodeSpace = InitBoxCfg%LayerThick
+      end if
+
+      if(Host_Boxes%CKind .LE. 0) then
+         Host_Boxes%CKind = InitBoxCfg%InitCKind
+         call Host_Boxes%m_ClustersInfo_CPU%AllocateClustersInfo_CPU(InitBoxCfg%InitCKind,InitBoxCfg%InitNNodes)
+
+         DO IKind = 1,InitBoxCfg%InitCKind
+            NAtoms = InitBoxCfg%CKind_Range_From + IKind - 1
+
+            Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Atoms(:)%m_NA = NAtoms*InitBoxCfg%CompositWeight
+
+            Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Statu = p_ACTIVEFREE_STATU
+
+            TheDiffusorValue = Host_Boxes%m_DiffusorTypesMap%Get(Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind))
+
+            !-- In Current application, the simple init distribution is only considered in free matrix, if you want to init the clusters in GB---
+            !---you should init the distribution by external file---
+            select case(TheDiffusorValue%ECRValueType_Free)
+                case(p_ECR_ByValue)
+                    Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_RAD = TheDiffusorValue%ECR_Free
+                case(p_ECR_ByBCluster)
+                    Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_RAD = DSQRT(sum(Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Atoms(:)%m_NA)/m_RNFACTOR)
+            end select
+
+            select case(TheDiffusorValue%DiffusorValueType_Free)
+                case(p_DiffuseCoefficient_ByValue)
+                    Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
+                case(p_DiffuseCoefficient_ByArrhenius)
+                    Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
+                case(p_DiffuseCoefficient_ByBCluster)
+                    ! Here we adopt a model that D=D0*(1/R)**Gama
+                    Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_DiffCoeff = m_FREESURDIFPRE*(Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_RAD**(-p_GAMMA))
+            end select
+
+         END DO
+      end if
+
+      DO I = 1,InitBoxCfg%InitCKind
+
+        NAtoms = RGAUSS0_WithCut(InitBoxCfg%NAINI, InitBoxCfg%NASDINI,InitBoxCfg%NACUT(1),InitBoxCfg%NACUT(2))
+
+        NAtoms = max(1,NAtoms)
+
+        !---Current , we only support one kind of element
+        Host_Boxes%m_ClustersInfo_CPU%Concentrate(NAtoms,:) = Host_Boxes%m_ClustersInfo_CPU%Concentrate(NAtoms,:) + InitBoxCfg%InitConcentrate*InitBoxCfg%PNCLayers/InitBoxCfg%InitCKind
+
+      END DO
 
       return
     end subroutine Init_Depth_Dis_LAY
 
     !**************************************************************
-    subroutine Init_Depth_Dis_SubBox(Host_Boxes,Host_SimuCtrlParam,InitBoxCfg)
-      !*** Purpose: To initialize the system (clusters distributed as the form of layer)
+    subroutine Init_Depth_Dis_Gauss(Host_Boxes,Host_SimuCtrlParam,InitBoxCfg)
+      !*** Purpose: To initialize the system (clusters distributed as the form of gauss in depth)
       ! Host_Boxes: the boxes information in host
       use RAND32_MODULE
       implicit none
@@ -1552,183 +1561,80 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
       type(SimulationCtrlParam)::Host_SimuCtrlParam
       type(InitBoxSimCfg)::InitBoxCfg
       !-----local variables---
-      integer::MultiBox
-      real(kind=KMCDF)::POS(3)
-      real(kind=KMCDF)::SUBBOXSIZE(3)
-      integer::IBox, II, IC
-      integer::SNC0
-      integer::I
+      integer::IKind
       integer::NAtoms
       type(DiffusorValue)::TheDiffusorValue
+      integer::I
+      integer::J
+      real(kind=KMCDF)::DepthPos
+      integer::NodeIndex
       !---Body---
-!      MultiBox = Host_SimuCtrlParam%MultiBox
-!
-!      DO I = 1,3
-!        SUBBOXSIZE(I) = InitBoxCfg%SUBBOXBOUNDARY(I,2) - InitBoxCfg%SUBBOXBOUNDARY(I,1)
-!      END DO
-!
-!      call Host_Boxes%ExpandClustersInfor_CPU(Host_SimuCtrlParam,InitBoxCfg%NClusters)
-!
-!      DO IBox = 1,MultiBox
-!
-!        SNC0 = InitBoxCfg%NClusters(IBox)
-!
-!        IC = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) - SNC0
-!
-!        DO II = 1, SNC0
-!
-!            IC = IC + 1
-!            !Initialize the position of clusters
-!            DO I = 1,3
-!                POS(I) = DRAND32()*SUBBOXSIZE(I) + InitBoxCfg%SUBBOXBOUNDARY(I,1)
-!            END DO
-!
-!            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_POS = POS
-!            !Give the cluster an type(layer) ID for the convenience of visualization
-!            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Layer = 1
-!
-!            NAtoms = RGAUSS0_WithCut(InitBoxCfg%NAINI, InitBoxCfg%NASDINI,InitBoxCfg%NACUT(1),InitBoxCfg%NACUT(2))
-!
-!            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA = NAtoms*InitBoxCfg%CompositWeight
-!
-!            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = Host_Boxes%m_GrainBoundary%GrainBelongsTo(POS,Host_Boxes%HBOXSIZE,Host_Boxes%BOXSIZE,Host_SimuCtrlParam)
-!
-!            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu = p_ACTIVEFREE_STATU
-!
-!            TheDiffusorValue = Host_Boxes%m_DiffusorTypesMap%Get(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC))
-!
-!            !-- In Current application, the simple init distribution is only considered in free matrix, if you want to init the clusters in GB---
-!            !---you should init the distribution by external file---
-!            select case(TheDiffusorValue%ECRValueType_Free)
-!                case(p_ECR_ByValue)
-!                    Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = TheDiffusorValue%ECR_Free
-!                case(p_ECR_ByBCluster)
-!                    Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = DSQRT(sum(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA)/m_RNFACTOR)
-!            end select
-!
-!            select case(TheDiffusorValue%DiffusorValueType_Free)
-!                case(p_DiffuseCoefficient_ByValue)
-!                    Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
-!                case(p_DiffuseCoefficient_ByArrhenius)
-!                    Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
-!                case(p_DiffuseCoefficient_ByBCluster)
-!                    ! Here we adopt a model that D=D0*(1/R)**Gama
-!                    Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = m_FREESURDIFPRE*(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD**(-p_GAMMA))
-!            end select
-!
-!            Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC(p_ACTIVEFREE_STATU) = Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC(p_ACTIVEFREE_STATU) + 1
-!            Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Integral%NC(p_ACTIVEFREE_STATU) = Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Integral%NC(p_ACTIVEFREE_STATU) + 1
-!
-!            Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC0(p_ACTIVEFREE_STATU) = Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC0(p_ACTIVEFREE_STATU) + 1
-!            Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Integral%NC0(p_ACTIVEFREE_STATU) = Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Integral%NC0(p_ACTIVEFREE_STATU) + 1
-!
-!            Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) = Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) + 1
-!            Host_Boxes%m_BoxesInfo%SEExpdIndexBox(IBox,2) = Host_Boxes%m_BoxesInfo%SEExpdIndexBox(IBox,2) + 1
-!        END DO
-!
-!      END DO
+
+      if(Host_Boxes%NNodes .LE. 0) then
+         Host_Boxes%NNodes = InitBoxCfg%InitNNodes
+         call AllocateArray_Host(Host_Boxes%NodeSpace,InitBoxCfg%InitNNodes,"NodeSpace")
+         Host_Boxes%NodeSpace = InitBoxCfg%LayerThick
+      end if
+
+      if(Host_Boxes%CKind .LE. 0) then
+         Host_Boxes%CKind = InitBoxCfg%InitCKind
+         call Host_Boxes%m_ClustersInfo_CPU%AllocateClustersInfo_CPU(InitBoxCfg%InitCKind,InitBoxCfg%InitNNodes)
+
+         DO IKind = 1,InitBoxCfg%InitCKind
+            NAtoms = InitBoxCfg%CKind_Range_From + IKind - 1
+
+            Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Atoms(:)%m_NA = NAtoms*InitBoxCfg%CompositWeight
+
+            Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Statu = p_ACTIVEFREE_STATU
+
+            TheDiffusorValue = Host_Boxes%m_DiffusorTypesMap%Get(Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind))
+
+            !-- In Current application, the simple init distribution is only considered in free matrix, if you want to init the clusters in GB---
+            !---you should init the distribution by external file---
+            select case(TheDiffusorValue%ECRValueType_Free)
+                case(p_ECR_ByValue)
+                    Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_RAD = TheDiffusorValue%ECR_Free
+                case(p_ECR_ByBCluster)
+                    Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_RAD = DSQRT(sum(Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Atoms(:)%m_NA)/m_RNFACTOR)
+            end select
+
+            select case(TheDiffusorValue%DiffusorValueType_Free)
+                case(p_DiffuseCoefficient_ByValue)
+                    Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
+                case(p_DiffuseCoefficient_ByArrhenius)
+                    Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
+                case(p_DiffuseCoefficient_ByBCluster)
+                    ! Here we adopt a model that D=D0*(1/R)**Gama
+                    Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_DiffCoeff = m_FREESURDIFPRE*(Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_RAD**(-p_GAMMA))
+            end select
+
+         END DO
+      end if
+
+      DO I = 1,InitBoxCfg%InitCKind
+
+        NAtoms = RGAUSS0_WithCut(InitBoxCfg%NAINI, InitBoxCfg%NASDINI,InitBoxCfg%NACUT(1),InitBoxCfg%NACUT(2))
+
+        NAtoms = max(1,NAtoms)
+
+        DO J = 1,InitBoxCfg%InitNNodes
+            DepthPos = RGAUSS0_WithCut(InitBoxCfg%DepthINI, InitBoxCfg%DepthSDINI,Host_Boxes%BOXBOUNDARY(3,1),Host_Boxes%BOXBOUNDARY(3,2))
+
+            DO NodeIndex = 1,InitBoxCfg%InitNNodes
+                if(DepthPos .LE. sum(InitBoxCfg%LayerThick(1:NodeIndex))) then
+                    exit
+                end if
+            END DO
+
+            !---Current , we only support one kind of element
+            Host_Boxes%m_ClustersInfo_CPU%Concentrate(NAtoms,NodeIndex) = Host_Boxes%m_ClustersInfo_CPU%Concentrate(NAtoms,NodeIndex) + InitBoxCfg%InitConcentrate/(InitBoxCfg%InitCKind*InitBoxCfg%InitNNodes)
+
+        END DO
+
+      END DO
+
 
       return
-    end subroutine Init_Depth_Dis_SubBox
-
-    !**************************************************************
-    subroutine Init_Depth_Dis_Gauss(Host_Boxes,Host_SimuCtrlParam,InitBoxCfg)
-        !*** Purpose: To initialize the system (clusters distributed as the form of gauss in depth)
-        ! Host_Boxes: the boxes information in host
-        use RAND32_MODULE
-        implicit none
-        !-------Dummy Vars------
-        type(SimulationBoxes)::Host_Boxes
-        type(SimulationCtrlParam)::Host_SimuCtrlParam
-        type(InitBoxSimCfg)::InitBoxCfg
-        !---local variables---
-        integer::MultiBox
-        real(kind=KMCDF)::POS(3)
-        real(kind=KMCDF)::SEP
-        real(kind=KMCDF)::BOXBOUNDARY(3,2)
-        real(kind=KMCDF)::BOXSIZE(3)
-        integer::IBox,II,IC
-        integer::SNC0
-        integer::NAtoms
-        type(DiffusorValue)::TheDiffusorValue
-        !---Body---
-!        MultiBox = Host_SimuCtrlParam%MultiBox
-!        BOXBOUNDARY = Host_Boxes%BOXBOUNDARY
-!        BOXSIZE = Host_Boxes%BOXSIZE
-!
-!        call Host_Boxes%ExpandClustersInfor_CPU(Host_SimuCtrlParam,InitBoxCfg%NClusters)
-!
-!        DO IBox = 1,MultiBox
-!
-!            SNC0 = InitBoxCfg%NClusters(IBox)
-!
-!            IC = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) - SNC0
-!
-!            DO II = 1, SNC0
-!
-!                IC = IC + 1
-!                !Initialize the position of clusters
-!                POS(1) = DRAND32()*BOXSIZE(1) + BOXBOUNDARY(1,1)
-!                POS(2) = DRAND32()*BOXSIZE(2) + BOXBOUNDARY(2,1)
-!                POS(3) = RGAUSS0_WithCut(InitBoxCfg%DepthINI, InitBoxCfg%DepthSDINI,BOXBOUNDARY(3,1),BOXBOUNDARY(3,2))
-!
-!                if(POS(3) .LT. BOXBOUNDARY(3,1)) then
-!                    POS(3) = BOXBOUNDARY(3,1)
-!                end if
-!
-!                if(POS(3) .GT. BOXBOUNDARY(3,2)) then
-!                    POS(3) = BOXBOUNDARY(3,2)
-!                end if
-!
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_POS = POS
-!
-!                !Give the cluster an type(layper) ID for the convenience of visualization
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Layer = 1
-!
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = Host_Boxes%m_GrainBoundary%GrainBelongsTo(POS,Host_Boxes%HBOXSIZE,Host_Boxes%BOXSIZE,Host_SimuCtrlParam)
-!
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu = p_ACTIVEFREE_STATU
-!
-!                !*** Initialize the size of the clusters
-!                NAtoms = RGAUSS0_WithCut(InitBoxCfg%NAINI, InitBoxCfg%NASDINI,InitBoxCfg%NACUT(1),InitBoxCfg%NACUT(2))
-!
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA = NAtoms*InitBoxCfg%CompositWeight
-!
-!                TheDiffusorValue = Host_Boxes%m_DiffusorTypesMap%Get(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC))
-!
-!                !-- In Current application, the simple init distribution is only considered in free matrix, if you want to init the clusters in GB---
-!                !---you should init the distribution by external file---
-!                select case(TheDiffusorValue%ECRValueType_Free)
-!                    case(p_ECR_ByValue)
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = TheDiffusorValue%ECR_Free
-!                    case(p_ECR_ByBCluster)
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = DSQRT(sum(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA)/m_RNFACTOR)
-!                end select
-!
-!                select case(TheDiffusorValue%DiffusorValueType_Free)
-!                    case(p_DiffuseCoefficient_ByValue)
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
-!                    case(p_DiffuseCoefficient_ByArrhenius)
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
-!                    case(p_DiffuseCoefficient_ByBCluster)
-!                        ! Here we adopt a model that D=D0*(1/R)**Gama
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = m_FREESURDIFPRE*(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD**(-p_GAMMA))
-!                end select
-!
-!
-!                Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC(p_ACTIVEFREE_STATU) = Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC(p_ACTIVEFREE_STATU) + 1
-!                Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Integral%NC(p_ACTIVEFREE_STATU) = Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Integral%NC(p_ACTIVEFREE_STATU) + 1
-!
-!                Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC0(p_ACTIVEFREE_STATU) = Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC0(p_ACTIVEFREE_STATU) + 1
-!                Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Integral%NC0(p_ACTIVEFREE_STATU) = Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Integral%NC0(p_ACTIVEFREE_STATU) + 1
-!
-!                Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) = Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) + 1
-!                Host_Boxes%m_BoxesInfo%SEExpdIndexBox(IBox,2) = Host_Boxes%m_BoxesInfo%SEExpdIndexBox(IBox,2) + 1
-!            END DO
-!
-!        END DO
-
-        return
    end subroutine Init_Depth_Dis_Gauss
 
 !    !*****************************************************************

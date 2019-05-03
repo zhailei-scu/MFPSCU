@@ -51,6 +51,8 @@ module MFLIB_TYPEDEF_ClustersInfo_CPU
             call AllocateArray_Host(this%ClustersKindArray,ClustersKinds,"ClustersKindArray")
 
             call AllocateArray_Host(this%Concentrate,ClustersKinds,NNodes,"Concentrate")
+
+            this%Concentrate = 0.D0
         end if
         return
     end subroutine Allocate_ClustersInfo_CPU
