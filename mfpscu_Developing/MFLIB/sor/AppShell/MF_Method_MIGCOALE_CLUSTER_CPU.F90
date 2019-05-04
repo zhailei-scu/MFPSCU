@@ -485,8 +485,6 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         LINE = 0
 
-        call InitBoxCfgList%Clean_InitBoxSimCfgList()
-
         INQUIRE(File=SimBoxes%IniConfig(1:LENTRIM(SimBoxes%IniConfig)),exist=existed)
 
         if(.not. existed) then
@@ -525,6 +523,9 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                         pause
                         stop
                     end if
+                    call InitBoxCfgList%Clean_InitBoxSimCfgList()
+                    InitBoxCfgList%ListCount = 1
+
                     InitBoxCfgList%TheValue%InitType = p_ClusterIniConfig_Simple
                     call ReadInitSimulationBoxesConfig_Simple(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE)
                 case("&FILEDISTSUBCTL")
@@ -533,6 +534,9 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                         pause
                         stop
                     end if
+                    call InitBoxCfgList%Clean_InitBoxSimCfgList()
+                    InitBoxCfgList%ListCount = 1
+
                     InitBoxCfgList%TheValue%InitType = p_ClusterIniConfig_SpecialDistFromFile
                     call ReadInitSimulationBoxesConfig_SpecialDistFromFile(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE)
                 case("&FUNCDISTSUBCTL")
@@ -541,6 +545,9 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                         pause
                         stop
                     end if
+                    call InitBoxCfgList%Clean_InitBoxSimCfgList()
+                    InitBoxCfgList%ListCount = 1
+
                     InitBoxCfgList%TheValue%InitType = p_ClusterIniConfig_SpecialDistFromExteFunc
                     call ReadInitSimulationBoxesConfig_SpecialDistFromExteFunc(hFile,SimBoxes,Host_SimuCtrlParam,InitBoxCfgList,LINE)
                 case default
@@ -824,6 +831,8 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                         call ReadInitBoxSimCfg_Simple_OneGroup(hFile,SimBoxes,Host_SimuCtrlParam,tempInitBoxSimCfg,LINE,*100)
                         call InitBoxCfgList%AppendOne_InintSimBoxCfg(tempInitBoxSimCfg)
                     end if
+
+                    IGroup = IGroup + 1
 
                 case default
                     write(*,*) "MFPSCUERROR: The Illegal flag: ",KEYWORD
@@ -1298,7 +1307,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                 CASE("&DEPTH_LAYER")
                     InitBoxCfg%InitDepthDistType = p_DEPT_DIS_Layer
 
-                    call EXTRACT_NUMB(STR,2,N,STRTMP)
+                    call EXTRACT_NUMB(STR,3,N,STRTMP)
                     if(N .LT. 2) then
                         write(*,*) "MFPSCUERROR: Too few parameters for the bubble depth distribution layer type"
                         write(*,*) "You should special: &DEPTH_LAYER The Layer from =  , end =   , THE CONCENTRATION DISTRIBUTION = "
@@ -1495,13 +1504,13 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
       integer::I
       !---Body---
 
-      if(Host_Boxes%NNodes .LE. 0) then
+      if(size(Host_Boxes%NodeSpace) .LE. 0) then
          Host_Boxes%NNodes = InitBoxCfg%InitNNodes
          call AllocateArray_Host(Host_Boxes%NodeSpace,InitBoxCfg%InitNNodes,"NodeSpace")
          Host_Boxes%NodeSpace = InitBoxCfg%LayerThick
       end if
 
-      if(Host_Boxes%CKind .LE. 0) then
+      if(size(Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray) .LE. 0 .or. size(Host_Boxes%m_ClustersInfo_CPU%Concentrate))  then
          Host_Boxes%CKind = InitBoxCfg%InitCKind
          call Host_Boxes%m_ClustersInfo_CPU%AllocateClustersInfo_CPU(InitBoxCfg%InitCKind,InitBoxCfg%InitNNodes)
 

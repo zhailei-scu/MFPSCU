@@ -858,6 +858,7 @@ module NUCLEATION_SPACEDIST
         Associate(ClustersKind=>Host_SimBoxes%m_ClustersInfo_CPU%ClustersKindArray,Concent=>Host_SimBoxes%m_ClustersInfo_CPU%Concentrate)
 
           DO INode = 1,NNodes
+
             NPOWER0Ave(INode) = Dumplicate*sum(Concent(1:CKind,INode))
 
             Temp = 0.D0
@@ -910,8 +911,6 @@ module NUCLEATION_SPACEDIST
         integer::NNodes
         integer::INode
         !---Body---
-
-
 
         NNodes = Host_SimBoxes%NNodes
 
