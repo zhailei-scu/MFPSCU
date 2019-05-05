@@ -29,8 +29,7 @@ module MIGCOALE_IMPLANTATION
 
 
     type,public::ImplantSection
-        integer::MemoryOccupyFactor = 10
-        integer::ExpandFactor = 10
+
         real(kind=KMCDF)::ImplantFlux = 0
 
         integer::ImplantConfigType = -1
@@ -50,8 +49,6 @@ module MIGCOALE_IMPLANTATION
         real(kind=KMCDF)::CompositWeight(p_ATOMS_GROUPS_NUMBER) = 0.D0
 
         integer::ImplantDepthDistType = -1
-
-        real(kind=KMCDF)::SUBBOXBOUNDARY(3,2) = 0.D0
 
         real(kind=KMCDF)::DepthINI = 0.D0
 
@@ -74,25 +71,12 @@ module MIGCOALE_IMPLANTATION
         procedure,non_overridable,public,pass::Putin_SRIM2003_OUTCFG_Distribution
         procedure,non_overridable,public,pass::Putin_OKMC_FORMAT18_Distribution
         procedure,non_overridable,public,pass::ReadImplantSection_SpecialDistFromExteFunc
-!        procedure,non_overridable,public,pass::ImplantClusters_FastStrategy
-!        procedure,non_overridable,public,pass::AdjustTimeStep_Implant
-!        procedure,non_overridable,private,pass::Cal_ImplantANDExpandSize
-!        procedure,non_overridable,private,pass::DoImplantTillVirtualBoundary_CPUTOGPU
-!        procedure,non_overridable,private,pass::DoImplantTillVirtualBoundary_CPU
-!        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_Simple
-!        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_Depth_LAY
-!        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_Depth_SubBox
-!        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_Depth_Gauss
-!        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_FromFile
-!        procedure,non_overridable,private,pass::FillVirtualBoundary_CPU_FromExteFunc
-!        procedure,non_overridable,private,pass::DoImplantTillVirtualBoundary_GPUTOCPU
-!        procedure,non_overridable,private,pass::DoImplantTillVirtualBoundary_GPU
-!        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_Simple
-!        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_Depth_LAY
-!        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_Depth_SubBox
-!        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_Depth_Gauss
-!        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_FromFile
-!        procedure,non_overridable,private,pass::FillVirtualBoundary_GPU_FromExteFunc
+        procedure,non_overridable,public,pass::Cal_ImplantClustersRate
+        procedure,non_overridable,private,pass::Cal_ImplantClustersRate_Simple
+        procedure,non_overridable,private,pass::Cal_ImplantClustersRate_Depth_LAY
+        procedure,non_overridable,private,pass::Cal_ImplantClustersRate_Depth_Gauss
+        procedure,non_overridable,private,pass::Cal_ImplantClustersRate_FromFile
+        procedure,non_overridable,private,pass::Cal_ImplantClustersRate_FromExteFunc
         procedure,non_overridable,public,pass::CopyImplantSectionFromOther
         procedure,non_overridable,public,pass::Clean=>Clean_ImplantSection
         Generic::ASSIGNMENT(=)=>CopyImplantSectionFromOther
@@ -109,6 +93,7 @@ module MIGCOALE_IMPLANTATION
         contains
         procedure,non_overridable,public,pass::Init=>Init_ImplantList
         procedure,non_overridable,private,pass::Load_ImplantList
+        procedure,non_overridable,private,pass::Check_ImplantList
         procedure,non_overridable,public,pass::AppendOneSection=>AppendOne_ImplantSection
         procedure,non_overridable,public,pass::Get_P=>GetImplantSection_P
         procedure,non_overridable,public,pass::Clean=>Clean_ImplantList
@@ -125,30 +110,18 @@ module MIGCOALE_IMPLANTATION
     private::Putin_SRIM2003_OUTCFG_Distribution
     private::Putin_OKMC_FORMAT18_Distribution
     private::ReadImplantSection_SpecialDistFromExteFunc
-!    private::ImplantClusters_FastStrategy
-!    private::AdjustTimeStep_Implant
-!    private::Cal_ImplantANDExpandSize
-!    private::DoImplantTillVirtualBoundary_CPUTOGPU
-!    private::DoImplantTillVirtualBoundary_CPU
-!    private::FillVirtualBoundary_CPU_Simple
-!    private::FillVirtualBoundary_CPU_Depth_LAY
-!    private::FillVirtualBoundary_CPU_Depth_SubBox
-!    private::FillVirtualBoundary_CPU_Depth_Gauss
-!    private::FillVirtualBoundary_CPU_FromFile
-!    private::FillVirtualBoundary_CPU_FromExteFunc
-!    private::DoImplantTillVirtualBoundary_GPUTOCPU
-!    private::DoImplantTillVirtualBoundary_GPU
-!    private::FillVirtualBoundary_GPU_Simple
-!    private::FillVirtualBoundary_GPU_Depth_LAY
-!    private::FillVirtualBoundary_GPU_Depth_SubBox
-!    private::FillVirtualBoundary_GPU_Depth_Gauss
-!    private::FillVirtualBoundary_GPU_FromFile
-!    private::FillVirtualBoundary_GPU_FromExteFunc
+    private::Cal_ImplantClustersRate
+    private::Cal_ImplantClustersRate_Simple
+    private::Cal_ImplantClustersRate_Depth_LAY
+    private::Cal_ImplantClustersRate_Depth_Gauss
+    private::Cal_ImplantClustersRate_FromFile
+    private::Cal_ImplantClustersRate_FromExteFunc
     private::CopyImplantSectionFromOther
     private::Clean_ImplantSection
     private::CleanImplantSection
     private::Init_ImplantList
     private::Load_ImplantList
+    private::Check_ImplantList
     private::AppendOne_ImplantSection
     private::GetImplantSection_P
     private::Clean_ImplantList
@@ -237,6 +210,8 @@ module MIGCOALE_IMPLANTATION
 
         END DO
 
+        call this%Check_ImplantList(Host_Boxes,Host_SimuCtrlParam)
+
         return
 
         100 write(*,*) "MFPSCUERROR: Fail to read the file: ",truePath
@@ -244,6 +219,38 @@ module MIGCOALE_IMPLANTATION
             pause
             stop
     end subroutine Load_ImplantList
+
+    !**********************************************************************
+    subroutine Check_ImplantList(this,SimBoxes,Host_SimuCtrlParam)
+        implicit none
+        !---Dummy Vars---
+        CLASS(ImplantList),target::this
+        type(SimulationBoxes)::SimBoxes
+        type(SimulationCtrlParam)::Host_SimuCtrlParam
+        !---Local Vars---
+        type(ImplantList),pointer::cursor=>null()
+        integer::ISection
+        !---Body---
+        cursor=>this
+
+        ISection = 0
+
+        DO While(associated(cursor))
+            ISection = ISection + 1
+
+            if(allocated(cursor%TheImplantSection%LayerThick)) then
+                if(sum(cursor%TheImplantSection%LayerThick) .GT. SimBoxes%BOXSIZE(3)) then
+                    write(*,*) "MFPSCUERROR: The implant depth is greater than the simulation box."
+                    write(*,*) "In section: ",ISection
+                    write(*,*) sum(cursor%TheImplantSection%LayerThick),SimBoxes%BOXSIZE(3)
+                    pause
+                    stop
+                end if
+            end if
+
+            cursor=>cursor%next
+        END DO
+    end subroutine
 
     !***********************************************************************
     subroutine AppendOne_ImplantSection(this,TheImplantSection)
@@ -454,34 +461,6 @@ module MIGCOALE_IMPLANTATION
                         stop
                     end if
                     this%ImplantFlux = this%ImplantFlux*(1.D0-ReflectRatio)
-
-                case("&FEXPAND")
-                    call EXTRACT_NUMB(STR,1,N,STRTMP)
-                    if(N .LT. 1) then
-                        write(*,*) "MFPSCUERROR: Too few parameters for the implantation expand factor ."
-                        write(*,*) "At Line :", LINE
-                        write(*,*) "You should special by the way: &FEXPAND The expand size factor = "
-                        pause
-                        stop
-                    end if
-                    this%ExpandFactor = ISTR(STRTMP(1))
-
-                case("&FMEMOCCUP")
-                    call EXTRACT_NUMB(STR,1,N,STRTMP)
-                    if(N .LT. 1) then
-                        write(*,*) "MFPSCUERROR: Too few parameters for the memory occupy factor."
-                        write(*,*) "At Line :", LINE
-                        write(*,*) "You should special by the way: &FMEMOCCUP TThe memory occupied factor ="
-                        pause
-                        stop
-                    end if
-                    this%MemoryOccupyFactor = ISTR(STRTMP(1))
-
-                    if(this%MemoryOccupyFactor .LE. 1) then
-                        write(*,*) "MFPSCUERROR: The MemoryOccupyFactor cannot less than 1"
-                        pause
-                        stop
-                    end if
 
                 case("&SIZESUBCTL","&DEPTHSUBCTL","&EXTFSUBCTL")
                     call this%ReadImplantSection(hFile,KEYWORD,SimBoxes,Host_SimuCtrlParam,LINE)
@@ -1069,31 +1048,6 @@ module MIGCOALE_IMPLANTATION
     end subroutine ReadImplantSection_SpecialDistFromExteFunc
 
     !***************************************************************
-    subroutine PrePareImplantSection(this,SimBoxes,Host_SimuCtrlParam)
-        !---Dummy Vars---
-        CLASS(ImplantSection)::this
-        type(SimulationBoxes)::SimBoxes
-        type(SimulationCtrlParam)::Host_SimuCtrlParam
-        !---Local Vars---
-        integer::hFile
-        character*256::STR
-        character*32::KEYWORD
-        integer::LINE
-        type(MigCoalClusterRecord)::tempRecord
-        real(kind=KMCDF)::TotalSampleRate
-        !---Body---
-
-
-
-        return
-        100 write(*,*) "MFPSCUERROR: Fail to load the implant distribution at file: ",this%ImplantCfgFileName
-            write(*,*) "At line: ",LINE
-            write(*,*) STR
-            pause
-            stop
-    end subroutine PrePareImplantSection
-
-    !***************************************************************
     subroutine ReadImplantClusterSizeDist_Simple(this,hFile,SimBoxes,LINE)
         implicit none
         !---Dummy Vars---
@@ -1154,37 +1108,21 @@ module MIGCOALE_IMPLANTATION
                         pause
                         stop
                     else
+                        if(NElements .GT. 1) then
+                            write(*,*) "MFPSCU Info: Currently, the program only support one element."
+                            write(*,*) "So the first element would be chosen"
+                        end if
+
                         DO I = 1,NElements
                             this%Elemets(I) = adjustl(trim(STRTMP(I)))
                             call UPCASE(this%Elemets(I))
                         END DO
                     end if
-
-                    call EXTRACT_NUMB(STR,p_ATOMS_GROUPS_NUMBER,N,STRTMP)
-                    if(N .ne. NElements) then
-                        write(*,*) "MFPSCUERROR: The elements weights number is not equal with the elements kinds which given."
-                        write(*,*) "The elements kinds number is :",NElements
-                        write(*,*) "But the weights number is :",N
-                        pause
-                        stop
-                    else
-                        this%CompositWeight = 0.D0
-
-                        DO I = 1,N
-                            TheIndex = SimBoxes%Atoms_list%FindIndexBySymbol(this%Elemets(I))
-                            this%CompositWeight(TheIndex) = DRSTR(STRTMP(I))
-                        END DO
-
-                        if(sum(this%CompositWeight) .LE. 0.D0) then
-                            write(*,*) "MFPSCUERROR: The sum of elements weights must great than 0 ."
-                            write(*,*) STR
-                            write(*,*) "At Line :",LINE
-                            pause
-                            stop
-                        end if
-
-                        this%CompositWeight = this%CompositWeight/sum(this%CompositWeight)
-                    end if
+                    ! Current, we only support one element
+                    this%CompositWeight = 0
+                    TheIndex = SimBoxes%Atoms_list%FindIndexBySymbol(this%Elemets(1))
+                    this%CompositWeight(TheIndex) = 1.D0
+                    this%CompositWeight = this%CompositWeight/sum(this%CompositWeight)
                 CASE default
                     write(*,*) "MFPSCUERROR: Illegal Symbol: ", KEYWORD
                     pause
@@ -1295,24 +1233,6 @@ module MIGCOALE_IMPLANTATION
                     end if
                     this%ClustersSampleRate = this%ClustersSampleRate/TotalSampleRate
 
-
-                CASE("&DEPTH_SUBBOX")
-
-                    this%ImplantDepthDistType = p_DEPT_DIS_BOX
-
-                    call EXTRACT_NUMB(STR,3,N,STRTMP)
-                    if(N .LT. 3) then
-                        write(*,*) "MFPSCUERROR: Too few parameters for the clusters depth distribution subbox type"
-                        write(*,*) "You shoud special: &DEPTH_SUBBOX THE SUBOX SHAPE IS THAT: X =, Y =, Z ="
-                        write(*,*) "At line: ",LINE
-                        pause
-                        stop
-                    end if
-                    DO I=1, 3
-                        this%SUBBOXBOUNDARY(I,1) = Host_SimBoxes%BOXBOUNDARY(I,1) - DRSTR(STRTMP(I))*C_NM2CM/2
-                        this%SUBBOXBOUNDARY(I,2) = Host_SimBoxes%BOXBOUNDARY(I,2) + DRSTR(STRTMP(I))*C_NM2CM/2
-                    END DO
-
                 CASE("&DEPTH_GAUSS")
 
                     this%ImplantDepthDistType = p_DEPT_DIS_GAS
@@ -1354,10 +1274,6 @@ module MIGCOALE_IMPLANTATION
         integer::I
         !---Body---
 
-        this%MemoryOccupyFactor = other%MemoryOccupyFactor
-
-        this%ExpandFactor = other%ExpandFactor
-
         this%ImplantFlux = other%ImplantFlux
 
         this%ImplantConfigType =other%ImplantConfigType
@@ -1380,24 +1296,28 @@ module MIGCOALE_IMPLANTATION
 
         this%ImplantDepthDistType = other%ImplantDepthDistType
 
-        this%SUBBOXBOUNDARY = other%SUBBOXBOUNDARY
-
         this%DepthINI = other%DepthINI
 
         this%DepthSDINI = other%DepthSDINI
 
         call DeAllocateArray_Host(this%LayerThick,"LayerThick")
-        call AllocateArray_Host(this%LayerThick,size(other%LayerThick),"LayerThick")
-        this%LayerThick = other%LayerThick
+        if(allocated(other%LayerThick)) then
+            call AllocateArray_Host(this%LayerThick,size(other%LayerThick),"LayerThick")
+            this%LayerThick = other%LayerThick
+        end if
 
         !---The assignment(=) had been override
         call DeAllocateArray_Host(this%ClustersSample,"ClustersSample")
-        call AllocateArray_Host(this%ClustersSample,size(other%ClustersSample,dim=1),size(other%ClustersSample,dim=2),"ClustersSample")
-        this%ClustersSample = other%ClustersSample
+        if(allocated(other%ClustersSample)) then
+            call AllocateArray_Host(this%ClustersSample,size(other%ClustersSample,dim=1),size(other%ClustersSample,dim=2),"ClustersSample")
+            this%ClustersSample = other%ClustersSample
+        end if
 
         call DeAllocateArray_Host(this%ClustersSampleRate,"ClustersSampleRate")
-        call AllocateArray_Host(this%ClustersSampleRate,size(other%ClustersSampleRate,dim=1),size(other%ClustersSampleRate,dim=2),"ClustersSampleRate")
-        this%ClustersSampleRate = other%ClustersSampleRate
+        if(allocated(other%ClustersSampleRate)) then
+            call AllocateArray_Host(this%ClustersSampleRate,size(other%ClustersSampleRate,dim=1),size(other%ClustersSampleRate,dim=2),"ClustersSampleRate")
+            this%ClustersSampleRate = other%ClustersSampleRate
+        end if
 
         return
     end subroutine CopyImplantSectionFromOther
@@ -1408,8 +1328,7 @@ module MIGCOALE_IMPLANTATION
         !---Dummy Vars---
         CLASS(ImplantSection)::this
         !---Body---
-        this%MemoryOccupyFactor = 100
-        this%ExpandFactor = 10
+
         this%ImplantFlux = 0
 
         this%ImplantConfigType = -1
@@ -1429,8 +1348,6 @@ module MIGCOALE_IMPLANTATION
         this%CompositWeight = 0.D0
 
         this%ImplantDepthDistType = -1
-
-        this%SUBBOXBOUNDARY = 0.D0
 
         this%DepthINI = 0.D0
 
@@ -1457,1021 +1374,334 @@ module MIGCOALE_IMPLANTATION
     end subroutine CleanImplantSection
 
 
-!    !*********************************************************************
-!    subroutine ImplantClusters_FastStrategy(this,Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,Dev_MigCoaleGVars,TheMigCoaleStatInfoWrap,Record,TSTEP)
-!        use RAND32_MODULE
-!        implicit none
-!        !---Dummy Vars---
-!        CLASS(ImplantSection)::this
-!        type(SimulationBoxes)::Host_Boxes
-!        type(SimulationCtrlParam)::Host_SimuCtrlParam
-!        type(SimulationBoxes_GPU)::Dev_Boxes
-!        type(MigCoale_GVarsDev)::Dev_MigCoaleGVars
-!        type(MigCoaleStatInfoWrap)::TheMigCoaleStatInfoWrap
-!        type(MigCoalClusterRecord)::Record
-!        real(kind=KMCDF)::TSTEP
-!        !---Local Vars---
-!        integer::err
-!        integer::MultiBox
-!        integer::IBox
-!        integer::ImplantNumEachBox_Ceiling
-!        logical::NeedAddVirtualRange
-!        logical::NeedAddExpdRange
-!        integer::NewAllocateNCEachBox
-!        integer::NewTotalSize
-!        real(kind=KMCDF)::tempTSTEP
-!        integer::tempImplantNumEachBox
-!        integer::NSIZE
-!        integer::ImplantNumEachBox
-!        integer::TotalImplantNum
-!        !integer::NCUsed
-!        !integer::NCAct
-!        !logical::SweepOut
-!        !---Body---
-!
-!        TotalImplantNum = 0
-!
-!        NeedAddVirtualRange = .false.
-!
-!        NeedAddExpdRange = .false.
-!
-!        MultiBox = Host_SimuCtrlParam%MultiBox
-!
-!        call this%AdjustTimeStep_Implant(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,TheMigCoaleStatInfoWrap,Record,TSTEP,ImplantNumEachBox_Ceiling)
-!
-!        DO IBox = 1,MultiBox
-!            if((Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) + ImplantNumEachBox_Ceiling) .GT. Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2)) then
-!                NeedAddVirtualRange = .true.
-!                exit
-!            end if
-!        END DO
-!
-!        if(NeedAddVirtualRange .eq. .true.) then
-!
-!            call Dev_Boxes%GetBoxesBasicStatistic_AllStatu_GPU(Host_Boxes,Host_SimuCtrlParam)
-!            call Record%RecordNC_ForSweepOut(MultiBox,Host_Boxes%m_BoxesBasicStatistic)
-!
-!            call Dev_Boxes%SweepUnActiveMemory_GPUToCPU(Host_Boxes,Host_SimuCtrlParam)
-!
-!            call Dev_Boxes%GetBoxesBasicStatistic_AllStatu_GPU(Host_Boxes,Host_SimuCtrlParam)
-!
-!            if(this%Cal_ImplantANDExpandSize(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,Record,TSTEP,ImplantNumEachBox_Ceiling,NewAllocateNCEachBox) .eq. .false.) then
-!                write(*,*) "MCPSCUInfo: There are no enough memory to do the future implant job, so the time step is deduced."
-!            end if
-!
-!            write(*,*) "NewAllocateNCEachBox",NewAllocateNCEachBox
-!
-!            if(NewAllocateNCEachBox .GT. 0) then ! need to allocate new memory for new added cluster
-!
-!                write(*,*) ".....Add virtual range...."
-!
-!                call Dev_Boxes%ExpandClustersInfo_GPUToCPU_EqualNum(Host_Boxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
-!
-!                if(Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(MultiBox,2) .GT. 0) then
-!                    NewTotalSize = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(MultiBox,2) - Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(1,1) + 1
-!                else
-!                    NewTotalSize = 0
-!                end if
-!
-!                call Dev_MigCoaleGVars%dm_MigCoale_RandDev%ReSizeWalkRandNum(NewTotalSize)
-!                call Dev_MigCoaleGVars%dm_MigCoale_RandDev%ReSizeImplantRandNum(MultiBox*NewAllocateNCEachBox)
-!
-!                call this%DoImplantTillVirtualBoundary_CPUTOGPU(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,NewAllocateNCEachBox)
-!
-!                call GetBoxesMigCoaleStat_Virtual_GPU(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,TheMigCoaleStatInfoWrap%m_MigCoaleStatisticInfo_Virtual,Record)
-!
-!                DO IBox = 1,MultiBox
-!                    write(*,*) "The virtual range for box ",IBox, " is ",Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2)
-!                END DO
-!
-!            end if
-!
-!            DO IBox = 1,MultiBox
-!                Host_Boxes%m_BoxesInfo%SEExpdIndexBox(IBox,2) = min(Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) + ImplantNumEachBox_Ceiling*this%ExpandFactor,Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2))
-!            END DO
-!            Dev_Boxes%dm_SEExpdIndexBox = Host_Boxes%m_BoxesInfo%SEExpdIndexBox
-!
-!            call GetBoxesMigCoaleStat_Expd_GPU(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,TheMigCoaleStatInfoWrap%m_MigCoaleStatisticInfo_Expd,Record)
-!
-!            if(Host_SimuCtrlParam%TUpdateStatisFlag .eq. mp_UpdateStatisFlag_ByIntervalSteps) then
-!                call Record%SetLastUpdateStatisTime(Record%GetSimuSteps() + 1.D0)
-!            else if(Host_SimuCtrlParam%TUpdateStatisFlag .eq. mp_UpdateStatisFlag_ByIntervalRealTime) then
-!                call Record%SetLastUpdateStatisTime(Record%GetSimuTimes() + TSTEP)
-!            end if
-!
-!            call Cal_Neighbor_List_GPU(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,Record,IfDirectly=.true.,RMAX= &
-!                                      max(TheMigCoaleStatInfoWrap%m_MigCoaleStatisticInfo_Expd%statistic_IntegralBox%RMAX(p_ACTIVEFREE_STATU), &
-!                                          TheMigCoaleStatInfoWrap%m_MigCoaleStatisticInfo_Expd%statistic_IntegralBox%RMAX(p_ACTIVEINGB_STATU)))
-!
-!        else
-!
-!            DO IBox = 1,MultiBox
-!                if((Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) + ImplantNumEachBox_Ceiling) .GT. Host_Boxes%m_BoxesInfo%SEExpdIndexBox(IBox,2)) then
-!                    NeedAddExpdRange = .true.
-!                    exit
-!                end if
-!            END DO
-!
-!            if(NeedAddExpdRange .eq. .true.) then
-!
-!                write(*,*) ".....Add expand range...."
-!
-!                DO IBox = 1,MultiBox
-!                    Host_Boxes%m_BoxesInfo%SEExpdIndexBox(IBox,2) = min(Host_Boxes%m_BoxesInfo%SEExpdIndexBox(IBox,2) + ImplantNumEachBox_Ceiling*this%ExpandFactor,Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2))
-!
-!                    !if(Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) .GT. 0) then
-!                    !    NCUsed = Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) - Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,1) + 1
-!                    !else
-!                    !    NCUsed = 0
-!                    !end if
-!
-!                    !NCAct = Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC(p_ACTIVEFREE_STATU) + Host_Boxes%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC(p_ACTIVEINGB_STATU)
-!
-!                    !if(NCUsed .GT. this%SweepOutFactor*NCAct) then
-!                    !    SweepOut = .true.
-!                    !end if
-!
-!                    write(*,*) "The expanded range for box ",IBox, " is ",Host_Boxes%m_BoxesInfo%SEExpdIndexBox(IBox,2)
-!                END DO
-!                Dev_Boxes%dm_SEExpdIndexBox = Host_Boxes%m_BoxesInfo%SEExpdIndexBox
-!
-!                call GetBoxesMigCoaleStat_Expd_GPU(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,TheMigCoaleStatInfoWrap%m_MigCoaleStatisticInfo_Expd,Record)
-!
-!                !if(SweepOut) then
-!                    !write(*,*) "...Sweep out inactive cluster memory...."
-!
-!                    !call Dev_Boxes%SweepUnActiveMemory_GPUToCPU(Host_Boxes,Host_SimuCtrlParam)
-!
-!                !end if
-!
-!                if(Host_SimuCtrlParam%TUpdateStatisFlag .eq. mp_UpdateStatisFlag_ByIntervalSteps) then
-!                    call Record%SetLastUpdateStatisTime(Record%GetSimuSteps() + 1.D0)
-!                else if(Host_SimuCtrlParam%TUpdateStatisFlag .eq. mp_UpdateStatisFlag_ByIntervalRealTime) then
-!                    call Record%SetLastUpdateStatisTime(Record%GetSimuTimes() + TSTEP)
-!                end if
-!
-!                call Cal_Neighbor_List_GPU(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,Record,IfDirectly=.true.,RMAX= &
-!                                            max(TheMigCoaleStatInfoWrap%m_MigCoaleStatisticInfo_Expd%statistic_IntegralBox%RMAX(p_ACTIVEFREE_STATU), &
-!                                                TheMigCoaleStatInfoWrap%m_MigCoaleStatisticInfo_Expd%statistic_IntegralBox%RMAX(p_ACTIVEINGB_STATU)))
-!
-!            end if
-!
-!        end if
-!
-!
-!        DO IBox = 1,MultiBox
-!
-!            ImplantNumEachBox = floor(Host_Boxes%BOXSIZE(1)*Host_Boxes%BOXSIZE(2)*this%ImplantFlux*TSTEP)
-!
-!            if(DRAND32() .LE. (Host_Boxes%BOXSIZE(1)*Host_Boxes%BOXSIZE(2)*this%ImplantFlux*TSTEP - ImplantNumEachBox)) then
-!                ImplantNumEachBox = ImplantNumEachBox + 1
-!            end if
-!
-!            Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) =  Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) + ImplantNumEachBox
-!
-!            if(Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) .GT. Host_Boxes%m_BoxesInfo%SEExpdIndexBox(IBox,2)) then
-!                write(*,*) "MFPSCUERROR: The expand size for box ,",IBox," is not enough!"
-!                write(*,*) "Implant number is: ",ImplantNumEachBox
-!                write(*,*) "End of the used clusters index is, ",Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2)
-!                write(*,*) "End of the expd clusters index is, ",Host_Boxes%m_BoxesInfo%SEExpdIndexBox(IBox,2)
-!                pause
-!                stop
-!            end if
-!
-!            if(Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) .GT. Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2)) then
-!                write(*,*) "MFPSCUERROR: The virtual size for box ,",IBox," is not enough!"
-!                write(*,*) "Implant number is: ",ImplantNumEachBox
-!                write(*,*) "End of the used clusters index is, ",Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2)
-!                write(*,*) "End of the virtual clusters index is, ",Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2)
-!                pause
-!                stop
-!            end if
-!
-!            TotalImplantNum = TotalImplantNum + ImplantNumEachBox
-!        END DO
-!
-!        Dev_Boxes%dm_SEUsedIndexBox = Host_Boxes%m_BoxesInfo%SEUsedIndexBox
-!
-!        call Record%AddImplantedEntitiesNum(TotalImplantNum)
-!
-!        return
-!    end subroutine ImplantClusters_FastStrategy
-!
-!    !*********************************************
-!    subroutine AdjustTimeStep_Implant(this,Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,TheMigCoaleStatInfoWrap,Record,TSTEP,ImplantNumEachBox_Ceiling)
-!        implicit none
-!        !---Dummy Vars---
-!        CLASS(ImplantSection)::this
-!        type(SimulationBoxes)::Host_Boxes
-!        type(SimulationCtrlParam)::Host_SimuCtrlParam
-!        type(SimulationBoxes_GPU)::Dev_Boxes
-!        type(MigCoaleStatInfoWrap)::TheMigCoaleStatInfoWrap
-!        type(MigCoalClusterRecord)::Record
-!        real(kind=KMCDF)::TSTEP
-!        integer::ImplantNumEachBox_Ceiling
-!        !---Local Vars---
-!        integer::ImplantNumEachBox
-!        real(kind=KMCDF)::VerifyTime
-!        !---Body---
-!
-!        DO While(.true.)
-!
-!            ImplantNumEachBox_Ceiling = ceiling(Host_Boxes%BOXSIZE(1)*Host_Boxes%BOXSIZE(2)*this%ImplantFlux*TSTEP)
-!
-!            VerifyTime = Cal_VerifyTime_Implant(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,TheMigCoaleStatInfoWrap%m_MigCoaleStatisticInfo_Virtual,Record,ImplantNumEachBox_Ceiling)
-!
-!            if(VerifyTime .LT. TSTEP) then
-!                TSTEP = TSTEP*0.95
-!                cycle
-!            else
-!                exit
-!            end if
-!        END DO
-!
-!        return
-!    end subroutine AdjustTimeStep_Implant
-!
-!    !*********************************************
-!    function Cal_ImplantANDExpandSize(this,Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,Record,TSTEP,ImplantNumEachBox_Ceiling,NewAllocateNCEachBox) result(TheStatu)
-!        implicit none
-!        !---Dummy Vars---
-!        CLASS(ImplantSection)::this
-!        type(SimulationBoxes)::Host_Boxes
-!        type(SimulationCtrlParam)::Host_SimuCtrlParam
-!        type(SimulationBoxes_GPU)::Dev_Boxes
-!        type(MigCoalClusterRecord)::Record
-!        real(kind=KMCDF), intent(inout)::TSTEP
-!        integer, intent(inout)::ImplantNumEachBox_Ceiling
-!        integer, intent(inout)::NewAllocateNCEachBox
-!        logical, intent(inout)::TheStatu
-!        !---Local Vars---
-!        integer::err
-!        real(kind=KMCDF)::newSimulatedTime
-!        integer::MultiBox
-!        integer::IBox
-!        integer(kind=cuda_count_kind)::FreeMemSize,TotalMemSize
-!        integer::FreeMemSize2NCEachBox
-!        integer::TotalMemSize2NCEachBox
-!        integer::AllocatedFreeNCEachBox
-!        integer::newFreeNCEachBox
-!        integer::PreAllocatedNCEachBox
-!        integer::PreFreeNCEachBox
-!        integer::RestoreImplantNumEachBox
-!        real::ImplantPersistTime
-!        integer,dimension(:),allocatable::NCFree
-!        !---Body---
-!
-!        RestoreImplantNumEachBox = ImplantNumEachBox_Ceiling
-!
-!        FreeMemSize2NCEachBox = 0
-!        TotalMemSize2NCEachBox = 0
-!        NewAllocateNCEachBox = 0
-!
-!        MultiBox = Host_SimuCtrlParam%MultiBox
-!
-!        ImplantPersistTime = Record%GetSimuTimes() - Record%GetStartImplantTime()
-!
-!        call AllocateArray_Host(NCFree,MultiBox,"NCFree")
-!
-!        DO IBox=1,MultiBox
-!            PreAllocatedNCEachBox = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) - Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,1) + 1
-!            if(PreAllocatedNCEachBox .LE. 0) then
-!                PreAllocatedNCEachBox = 0
-!            end if
-!
-!            PreFreeNCEachBox = Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) - Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,1) + 1
-!            if(PreFreeNCEachBox .LE. 0) then
-!                PreFreeNCEachBox = 0
-!            end if
-!
-!            NCFree(IBox) = PreAllocatedNCEachBox - PreFreeNCEachBox
-!
-!            if(NCFree(IBox) .LE. 0) then
-!                NCFree(IBox) = 0
-!            end if
-!        END DO
-!        AllocatedFreeNCEachBox = minval(NCFree)
-!
-!        err = cudaMemGetInfo(FreeMemSize,TotalMemSize)
-!
-!        !The 8*3 is for the random walking random number
-!        if(Host_SimuCtrlParam%FreeDiffusion .eq. .false.) then
-!            FreeMemSize2NCEachBox  = (FreeMemSize/(Dev_Boxes%dm_ClusterInfo_GPU%GetMemConsumOneClusterInfo(Host_SimuCtrlParam%MAXNEIGHBORNUM) + 8*3))/MultiBox
-!            TotalMemSize2NCEachBox = (TotalMemSize/(Dev_Boxes%dm_ClusterInfo_GPU%GetMemConsumOneClusterInfo(Host_SimuCtrlParam%MAXNEIGHBORNUM)+ 8*3))/MultiBox
-!        else
-!            FreeMemSize2NCEachBox  = (FreeMemSize/(Dev_Boxes%dm_ClusterInfo_GPU%GetMemConsumOneClusterInfo(0) + 8*3))/MultiBox
-!            TotalMemSize2NCEachBox = (TotalMemSize/(Dev_Boxes%dm_ClusterInfo_GPU%GetMemConsumOneClusterInfo(0)+ 8*3))/MultiBox
-!        end if
-!
-!        DO while(.true.)
-!
-!            NewAllocateNCEachBox = 0
-!
-!            newFreeNCEachBox = AllocatedFreeNCEachBox
-!
-!            if(newFreeNCEachBox .GE. ImplantNumEachBox_Ceiling*this%ExpandFactor) then
-!                exit
-!            end if
-!
-!            NewAllocateNCEachBox = min(FreeMemSize2NCEachBox,TotalMemSize2NCEachBox/this%MemoryOccupyFactor)
-!
-!            newFreeNCEachBox = AllocatedFreeNCEachBox + NewAllocateNCEachBox
-!
-!            if(newFreeNCEachBox .LT. ImplantNumEachBox_Ceiling*this%ExpandFactor .or. (FreeMemSize2NCEachBox - NewAllocateNCEachBox) .LE. 0) then
-!                TSTEP = TSTEP/2.D0
-!                ImplantNumEachBox_Ceiling = ceiling(Host_Boxes%BOXSIZE(1)*Host_Boxes%BOXSIZE(2)*this%ImplantFlux*TSTEP)
-!            else
-!                exit
-!            end if
-!
-!            if(ImplantNumEachBox_Ceiling .LE. 0) then
-!                exit
-!            end if
-!        END DO
-!
-!        if(RestoreImplantNumEachBox .GT. 0 .AND. ImplantNumEachBox_Ceiling .LE. 0) then
-!            TheStatu = .false.
-!        else
-!            TheStatu = .true.
-!        end if
-!
-!        call DeAllocateArray_Host(NCFree,"NCFree")
-!
-!        return
-!    end function Cal_ImplantANDExpandSize
-!
-!    !*************************************************************
-!    subroutine DoImplantTillVirtualBoundary_CPU(this,Host_Boxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
-!        implicit none
-!        !---Dummy Vars---
-!        CLASS(ImplantSection)::this
-!        type(SimulationBoxes)::Host_Boxes
-!        type(SimulationCtrlParam)::Host_SimuCtrlParam
-!        integer,intent(in)::NewAllocateNCEachBox
-!        !---Body---
-!        select case(this%ImplantConfigType)
-!            case(p_ImplantConfig_Simple)
-!                call this%FillVirtualBoundary_CPU_Simple(Host_Boxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
-!            case(p_ImplantConfig_SpecialDistFromFile)
-!                call this%FillVirtualBoundary_CPU_FromFile(Host_Boxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
-!            case(p_ImplantConfig_SpecialDistFromExteFunc)
-!                call this%FillVirtualBoundary_CPU_FromExteFunc(Host_Boxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
-!            case default
-!                write(*,*) "MFPSCUERROR: Unknown strategy for the implantation configuration:",this%ImplantConfigType
-!                pause
-!                stop
-!        end select
-!        return
-!    end subroutine DoImplantTillVirtualBoundary_CPU
-!
-!    !*************************************************************
-!    subroutine FillVirtualBoundary_CPU_Simple(this,SimBoxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
-!        !---Dummy Vars---
-!        CLASS(ImplantSection)::this
-!        type(SimulationBoxes)::SimBoxes
-!        type(SimulationCtrlParam)::Host_SimuCtrlParam
-!        integer,intent(in)::NewAllocateNCEachBox
-!        !---Body--
-!        select case(this%ImplantDepthDistType)
-!            case(p_DEPT_DIS_Layer)
-!                call this%FillVirtualBoundary_CPU_Depth_LAY(SimBoxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
-!            case(p_DEPT_DIS_BOX)
-!                call this%FillVirtualBoundary_CPU_Depth_SubBox(SimBoxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
-!            case(p_DEPT_DIS_GAS)
-!                call this%FillVirtualBoundary_CPU_Depth_Gauss(SimBoxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
-!            case default
-!                write(*,*) "MFPSCUERROR : Unknown way to Unknown strategy for the simple implantation configuration: ",this%ImplantDepthDistType
-!                pause
-!                stop
-!        end select
-!
-!        return
-!    end subroutine FillVirtualBoundary_CPU_Simple
-!
-!    !*************************************************************
-!    subroutine FillVirtualBoundary_CPU_FromFile(this,Host_Boxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
-!        use RAND32_MODULE
-!        implicit none
-!        !---Dummy Vars---
-!        CLASS(ImplantSection)::this
-!        type(SimulationBoxes)::Host_Boxes
-!        type(SimulationCtrlParam)::Host_SimuCtrlParam
-!        integer,intent(in)::NewAllocateNCEachBox
-!        !---Local Vars---
-!        integer::MultiBox
-!        integer::IBox
-!        integer::IC
-!        integer::ICFROM
-!        integer::ICTO
-!        type(DiffusorValue)::TheDiffusorValue
-!        integer::NC
-!        integer::NCUsed
-!        real(kind=KMCDF)::POS(3)
-!        integer::MaxGroups
-!        real(kind=KMCDF)::tempRand
-!        real(kind=KMCDF)::GroupRateTemp
-!        integer::ILayer
-!        integer::IGroup
-!        logical::exitFlag
-!        integer::LayerNum
-!        !---Body---
-!        MultiBox = Host_SimuCtrlParam%MultiBox
-!
-!        LayerNum = size(this%LayerThick)
-!
-!        DO IBox = 1,MultiBox
-!
-!            if(Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) .LE. 0) then
-!                NCUsed = 0
-!            else
-!                NCUsed = Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) - Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,1) + 1
-!            end if
-!
-!            if(Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) .LE. 0) then
-!                NC = 0
-!            else
-!                NC = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) - Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,1) + 1
-!            end if
-!
-!            if((NC - NCUsed) .LT. NewAllocateNCEachBox) then
-!                write(*,*) "MFPSCUERROR: The allocated  memory space are to implant the clusters"
-!                write(*,*) "For box :",IBox
-!                write(*,*) "The free of allocated allocated  memory space is: ",NC - NCUsed
-!                write(*,*) "The waiting to be implanted clusters number is:",NewAllocateNCEachBox
-!                pause
-!                stop
-!            end if
-!
-!            ICFROM = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) - NewAllocateNCEachBox + 1
-!            ICTO = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2)
-!
-!            if(NewAllocateNCEachBox .LE. 0) then
-!                cycle
-!            end if
-!
-!            if(ICFROM .LT. Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2)) then
-!                write(*,*) "MFPSCUERROR: The allocated  memory space are too small to implant the clusters"
-!                write(*,*) "For box :",IBox
-!                write(*,*) "It would occupy other free clusters for id: ",ICFROM
-!                pause
-!                stop
-!            end if
-!
-!            if(size(this%ClustersSample) .LE. 0) then
-!                write(*,*) "MFPSCUERROR: The number of sample clusters is less than 1: "
-!                write(*,*) "There would be no clusters to be implanted from the sample distribution."
-!                pause
-!                stop
-!            end if
-!
-!            MaxGroups = size(this%ClustersSampleRate,dim=2)
-!
-!            DO IC = ICFROM,ICTO
-!
-!                tempRand = DRAND32()
-!
-!                GroupRateTemp = 0.D0
-!
-!                exitFlag = .false.
-!                DO ILayer = 1,LayerNum
-!
-!                    if(exitFlag .eq. .true.) then
-!                        exit
-!                    end if
-!
-!                     DO IGroup = 1,MaxGroups
-!                        GroupRateTemp = GroupRateTemp + this%ClustersSampleRate(ILayer,IGroup)
-!                        if(GroupRateTemp .GE. tempRand) then
-!                            !---The assignment(=) had been override
-!                            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms = this%ClustersSample(ILayer,IGroup)%m_Atoms
-!
-!                            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Layer = ILayer
-!
-!                            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu = this%ClustersSample(ILayer,IGroup)%m_Statu
-!
-!                            POS(1) = DRAND32()*Host_Boxes%BOXSIZE(1) + Host_Boxes%BOXBOUNDARY(1,1)
-!                            POS(2) = DRAND32()*Host_Boxes%BOXSIZE(2) + Host_Boxes%BOXBOUNDARY(2,1)
-!                            POS(3) = DRAND32()*this%LayerThick(ILayer) + sum(this%LayerThick(1:ILayer-1)) + Host_Boxes%BOXBOUNDARY(3,1)
-!                            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_POS = POS
-!
-!                            if(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD .GT. 0.D0) then
-!                                write(*,*) "MFPSCUERROR: the implant position had been occupied in memory",IC
-!                                pause
-!                            end if
-!
-!                            TheDiffusorValue = Host_Boxes%m_DiffusorTypesMap%Get(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC))
-!
-!                            if(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu .eq. p_ACTIVEFREE_STATU) then
-!                                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = Host_Boxes%m_GrainBoundary%GrainBelongsTo(POS,Host_Boxes%HBOXSIZE,Host_Boxes%BOXSIZE,Host_SimuCtrlParam)
-!
-!                                select case(TheDiffusorValue%ECRValueType_Free)
-!                                    case(p_ECR_ByValue)
-!                                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = TheDiffusorValue%ECR_Free
-!                                    case(p_ECR_ByBCluster)
-!                                        ! Convert the number of atoms to radius
-!                                        ! Ref. Modelling Simul. Mater. Sci. Eng.16(2008)055003
-!                                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = DSQRT(sum(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA)/m_RNFACTOR)
-!                                end select
-!
-!                                select case(TheDiffusorValue%DiffusorValueType_Free)
-!                                    case(p_DiffuseCoefficient_ByValue)
-!                                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
-!                                    case(p_DiffuseCoefficient_ByArrhenius)
-!                                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
-!                                    case(p_DiffuseCoefficient_ByBCluster)
-!                                        ! Here we adopt a model that D=D0*(1/R)**Gama
-!                                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = m_FREESURDIFPRE*(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD**(-p_GAMMA))
-!                                end select
-!
-!                            else if(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu .eq. p_ACTIVEINGB_STATU) then
-!
-!                                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = this%ClustersSample(ILayer,IGroup)%m_GrainID(1)
-!
-!                                if(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) .GT. Host_Boxes%m_GrainBoundary%GrainNum) then
-!                                    write(*,*) "MFPSCUERROR: The grain number is greater than the seeds number in system."
-!                                    write(*,*) Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1)
-!                                    pause
-!                                    stop
-!                                end if
-!
-!                                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) = this%ClustersSample(ILayer,IGroup)%m_GrainID(2)
-!
-!                                if(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2) .GT. Host_Boxes%m_GrainBoundary%GrainNum) then
-!                                    write(*,*) "MFPSCUERROR: The grain number is greater than the seeds number in system."
-!                                    write(*,*) Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(2)
-!                                    pause
-!                                    stop
-!                                end if
-!
-!                                select case(TheDiffusorValue%ECRValueType_InGB)
-!                                    case(p_ECR_ByValue)
-!                                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = TheDiffusorValue%ECR_InGB
-!                                    case(p_ECR_ByBCluster)
-!                                        ! Convert the number of atoms to radius
-!                                        ! Ref. Modelling Simul. Mater. Sci. Eng.16(2008)055003
-!                                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = DSQRT(sum(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA)/m_RNFACTOR)
-!                                end select
-!
-!                                select case(TheDiffusorValue%DiffusorValueType_InGB)
-!                                    case(p_DiffuseCoefficient_ByValue)
-!                                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_InGB_Value
-!                                    case(p_DiffuseCoefficient_ByArrhenius)
-!                                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%PreFactor_InGB*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_InGB/Host_SimuCtrlParam%TKB)
-!                                    case(p_DiffuseCoefficient_ByBCluster)
-!                                        ! Here we adopt a model that D=D0*(1/R)**Gama
-!                                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = m_GBSURDIFPRE*(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD**(-p_GAMMA))
-!                                end select
-!                            end if
-!
-!                            exitFlag = .true.
-!
-!                            exit
-!
-!                        end if
-!
-!                    END DO
-!                END DO
-!
-!            END DO
-!
-!        END DO
-!
-!        return
-!    end subroutine FillVirtualBoundary_CPU_FromFile
-!
-!    !*************************************************************
-!    subroutine FillVirtualBoundary_CPU_FromExteFunc(this,Host_Boxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
-!        implicit none
-!        !---Dummy Vars---
-!        CLASS(ImplantSection)::this
-!        type(SimulationBoxes)::Host_Boxes
-!        type(SimulationCtrlParam)::Host_SimuCtrlParam
-!        integer,intent(in)::NewAllocateNCEachBox
-!        !---Body---
-!
-!    end subroutine FillVirtualBoundary_CPU_FromExteFunc
-!
-!
-!    !*************************************************************
-!    subroutine DoImplantTillVirtualBoundary_CPUTOGPU(this,Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,NewAllocateNCEachBox)
-!        implicit none
-!        !---Dummy Vars---
-!        CLASS(ImplantSection)::this
-!        type(SimulationBoxes)::Host_Boxes
-!        type(SimulationCtrlParam)::Host_SimuCtrlParam
-!        type(SimulationBoxes_GPU)::Dev_Boxes
-!        integer,intent(in)::NewAllocateNCEachBox
-!        !---Local Vars---
-!        integer::MultiBox
-!        integer::NSIZE
-!        !---Body---
-!        MultiBox = Host_SimuCtrlParam%MultiBox
-!
-!        call this%DoImplantTillVirtualBoundary_CPU(Host_Boxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
-!
-!        if(Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(MultiBox,2) .GT. 0) then
-!            NSIZE = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(MultiBox,2) - Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(1,1) + 1
-!        else
-!            NSIZE = 0
-!        end if
-!
-!        if(NSIZE .ne. size(Dev_Boxes%dm_ClusterInfo_GPU%dm_Clusters)) then
-!
-!            call Dev_Boxes%dm_ClusterInfo_GPU%ReleaseClustersInfo_GPU()
-!
-!            if(Host_SimuCtrlParam%FreeDiffusion .eq. .false.) then
-!                call Dev_Boxes%dm_ClusterInfo_GPU%AllocateClustersInfo_GPU(NSIZE,Host_SimuCtrlParam%MAXNEIGHBORNUM)
-!            else
-!                call Dev_Boxes%dm_ClusterInfo_GPU%AllocateClustersInfo_GPU(NSIZE,0)
-!            end if
-!        end if
-!
-!        call Dev_Boxes%dm_ClusterInfo_GPU%CopyInFromHost(Host_Boxes%m_ClustersInfo_CPU,NSIZE,IfCpyNL=.false.)
-!
-!        return
-!    end subroutine DoImplantTillVirtualBoundary_CPUTOGPU
-!
-!    !**************************************************************
-!    subroutine FillVirtualBoundary_CPU_Depth_LAY(this,Host_Boxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
-!      !*** Purpose: To initialize the system (clusters distributed as the form of layer)
-!      ! Host_Boxes: the boxes information in host
-!      use RAND32_MODULE
-!      implicit none
-!      !---Dummy Vars---
-!      CLASS(ImplantSection)::this
-!      type(SimulationBoxes)::Host_Boxes
-!      type(SimulationCtrlParam)::Host_SimuCtrlParam
-!      integer,intent(in)::NewAllocateNCEachBox
-!      !-----local variables---
-!      integer::MultiBox
-!      real(kind=KMCDF)::POS(3)
-!      integer::IBox
-!      integer::NC
-!      integer::NCUsed
-!      integer::IC
-!      integer::ICFROM
-!      integer::ICTO
-!      integer::MaxGroups
-!      real(kind=KMCDF)::tempRand
-!      real(kind=KMCDF)::GroupRateTemp
-!      integer::ILayer
-!      integer::IGroup
-!      integer::IElement
-!      integer::NAtoms
-!      type(DiffusorValue)::TheDiffusorValue
-!      logical::exitFlag
-!      integer::LayerNum
-!      !---Body---
-!      MultiBox = Host_SimuCtrlParam%MultiBox
-!
-!      LayerNum = size(this%LayerThick)
-!
-!      DO IBox = 1,MultiBox
-!
-!        if(Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) .LE. 0) then
-!            NCUsed = 0
-!        else
-!            NCUsed = Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) - Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,1) + 1
-!        end if
-!
-!        if(Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) .LE. 0) then
-!            NC = 0
-!        else
-!            NC = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) - Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,1) + 1
-!        end if
-!
-!        if((NC - NCUsed) .LT. NewAllocateNCEachBox) then
-!            write(*,*) "MFPSCUERROR: The allocated  memory space are to implant the clusters"
-!            write(*,*) "For box :",IBox
-!            write(*,*) "The free of allocated allocated  memory space is: ",NC - NCUsed
-!            write(*,*) "The waiting to be implanted clusters number is:",NewAllocateNCEachBox
-!            pause
-!            stop
-!        end if
-!
-!        ICFROM = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) - NewAllocateNCEachBox + 1
-!        ICTO = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2)
-!
-!        if(ICFROM .LT. Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2)) then
-!            write(*,*) "MFPSCUERROR: The allocated  memory space are too small to implant the clusters"
-!            write(*,*) "For box :",IBox
-!            write(*,*) "It would occupy other free clusters for id: ",IC
-!            pause
-!            stop
-!        end if
-!
-!        MaxGroups = size(this%ClustersSampleRate,dim=2)
-!
-!        DO IC=ICFROM,ICTO
-!
-!            tempRand = DRAND32()
-!
-!            GroupRateTemp = 0.D0
-!
-!            exitFlag = .false.
-!            DO ILayer = 1,LayerNum
-!                if(exitFlag .eq. .true.) then
-!                    exit
-!                end if
-!
-!                DO IGroup = 1,MaxGroups
-!                    GroupRateTemp = GroupRateTemp + this%ClustersSampleRate(ILayer,IGroup)
-!                    if(GroupRateTemp .GE. tempRand) then
-!
-!                        !*** Initialize the size of the clusters
-!                        NAtoms = RGAUSS0_WithCut(this%NAINI, this%NASDINI,this%NACUT(1),this%NACUT(2))
-!
-!                        DO IElement = 1,p_ATOMS_GROUPS_NUMBER
-!                            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(IElement)%m_NA = floor(NAtoms*this%CompositWeight(IElement)+0.5D0)
-!                            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(IElement)%m_ID = IElement
-!                        END DO
-!
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu = p_ACTIVEFREE_STATU
-!
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Layer = ILayer
-!
-!                        POS(1) = DRAND32()*Host_Boxes%BOXSIZE(1) + Host_Boxes%BOXBOUNDARY(1,1)
-!                        POS(2) = DRAND32()*Host_Boxes%BOXSIZE(2) + Host_Boxes%BOXBOUNDARY(2,1)
-!                        POS(3) = DRAND32()*this%LayerThick(ILayer) + sum(this%LayerThick(1:ILayer-1)) + Host_Boxes%BOXBOUNDARY(3,1)
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_POS = POS
-!
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = Host_Boxes%m_GrainBoundary%GrainBelongsTo(POS,Host_Boxes%HBOXSIZE,Host_Boxes%BOXSIZE,Host_SimuCtrlParam)
-!
-!                        TheDiffusorValue = Host_Boxes%m_DiffusorTypesMap%Get(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC))
-!
-!                        !-- In Current application, the simple implant distribution is only considered in free matrix, if you want to init the clusters in GB---
-!                        !---you should init the distribution by external file---
-!                        select case(TheDiffusorValue%ECRValueType_Free)
-!                            case(p_ECR_ByValue)
-!                                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = TheDiffusorValue%ECR_Free
-!                            case(p_ECR_ByBCluster)
-!                                ! Convert the number of atoms to radius
-!                                ! Ref. Modelling Simul. Mater. Sci. Eng.16(2008)055003
-!                                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = DSQRT(sum(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA)/m_RNFACTOR)
-!                        end select
-!
-!                        select case(TheDiffusorValue%DiffusorValueType_Free)
-!                            case(p_DiffuseCoefficient_ByValue)
-!                                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
-!                            case(p_DiffuseCoefficient_ByArrhenius)
-!                                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
-!                            case(p_DiffuseCoefficient_ByBCluster)
-!                                    ! Here we adopt a model that D=D0*(1/R)**Gama
-!                                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = m_FREESURDIFPRE*(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD**(-p_GAMMA))
-!                        end select
-!
-!                        exitFlag = .true.
-!                        exit
-!
-!                    end if
-!                END DO
-!            END DO
-!
-!        END DO
-!
-!      END DO
-!
-!      return
-!    end subroutine FillVirtualBoundary_CPU_Depth_LAY
-!
-!    !**************************************************************
-!    subroutine FillVirtualBoundary_CPU_Depth_SubBox(this,Host_Boxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
-!      !*** Purpose: To initialize the system (clusters distributed as the form of layer)
-!      ! Host_Boxes: the boxes information in host
-!      use RAND32_MODULE
-!      implicit none
-!      !---Dummy Vars---
-!      CLASS(ImplantSection)::this
-!      type(SimulationBoxes)::Host_Boxes
-!      type(SimulationCtrlParam)::Host_SimuCtrlParam
-!      integer,intent(in)::NewAllocateNCEachBox
-!      !-----local variables---
-!      integer::MultiBox
-!      real(kind=KMCDF)::POS(3)
-!      real(kind=KMCDF)::SUBBOXSIZE(3)
-!      integer::IBox, II, IC
-!      integer::I
-!      integer::NC
-!      integer::NCUsed
-!      integer::NAtoms
-!      integer::IElement
-!      type(DiffusorValue)::TheDiffusorValue
-!      !---Body---
-!      MultiBox = Host_SimuCtrlParam%MultiBox
-!
-!      DO I = 1,3
-!        SUBBOXSIZE(I) = this%SUBBOXBOUNDARY(I,2) - this%SUBBOXBOUNDARY(I,1)
-!      END DO
-!
-!      DO IBox = 1,MultiBox
-!
-!        if(Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) .LE. 0) then
-!            NCUsed = 0
-!        else
-!            NCUsed = Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) - Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,1) + 1
-!        end if
-!
-!        if(Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) .LE. 0) then
-!            NC = 0
-!        else
-!            NC = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) - Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,1) + 1
-!        end if
-!
-!        if((NC - NCUsed) .LT. NewAllocateNCEachBox) then
-!            write(*,*) "MFPSCUERROR: The allocated  memory space are to implant the clusters"
-!            write(*,*) "For box :",IBox
-!            write(*,*) "The free of allocated allocated  memory space is: ",NC - NCUsed
-!            write(*,*) "The waiting to be implanted clusters number is:",NewAllocateNCEachBox
-!            pause
-!            stop
-!        end if
-!
-!        IC = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) - NewAllocateNCEachBox
-!
-!        if(IC .LT. Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2)) then
-!            write(*,*) "MFPSCUERROR: The allocated  memory space are too small to implant the clusters"
-!            write(*,*) "For box :",IBox
-!            write(*,*) "It would occupy other free clusters for id: ",IC
-!            pause
-!            stop
-!        end if
-!
-!        DO II = 1, NewAllocateNCEachBox
-!
-!            IC = IC + 1
-!            !Initialize the position of clusters
-!            DO I = 1,3
-!                POS(I) = DRAND32()*SUBBOXSIZE(I) + this%SUBBOXBOUNDARY(I,1)
-!            END DO
-!
-!            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_POS = POS
-!            !Give the cluster an type(layer) ID for the convenience of visualization
-!            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Layer = 1
-!
-!            NAtoms = RGAUSS0_WithCut(this%NAINI, this%NASDINI,this%NACUT(1),this%NACUT(2))
-!
-!            DO IElement = 1,p_ATOMS_GROUPS_NUMBER
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(IElement)%m_NA = floor(NAtoms*this%CompositWeight(IElement)+0.5D0)
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(IElement)%m_ID = IElement
-!            END DO
-!
-!            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = Host_Boxes%m_GrainBoundary%GrainBelongsTo(POS,Host_Boxes%HBOXSIZE,Host_Boxes%BOXSIZE,Host_SimuCtrlParam)
-!
-!            Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu = p_ACTIVEFREE_STATU
-!
-!            TheDiffusorValue = Host_Boxes%m_DiffusorTypesMap%Get(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC))
-!
-!            !-- In Current application, the simple implant distribution is only considered in free matrix, if you want to init the clusters in GB---
-!            !---you should init the distribution by external file---
-!            select case(TheDiffusorValue%ECRValueType_Free)
-!                case(p_ECR_ByValue)
-!                    Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = TheDiffusorValue%ECR_Free
-!                case(p_ECR_ByBCluster)
-!                    ! Convert the number of atoms to radius
-!                    ! Ref. Modelling Simul. Mater. Sci. Eng.16(2008)055003
-!                    Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = DSQRT(sum(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA)/m_RNFACTOR)
-!             end select
-!
-!            select case(TheDiffusorValue%DiffusorValueType_Free)
-!                case(p_DiffuseCoefficient_ByValue)
-!                    Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
-!                case(p_DiffuseCoefficient_ByArrhenius)
-!                    Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
-!                case(p_DiffuseCoefficient_ByBCluster)
-!                    ! Here we adopt a model that D=D0*(1/R)**Gama
-!                    Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = m_FREESURDIFPRE*(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD**(-p_GAMMA))
-!            end select
-!
-!        END DO
-!
-!      END DO
-!
-!      return
-!    end subroutine FillVirtualBoundary_CPU_Depth_SubBox
-!
-!    !**************************************************************
-!    subroutine FillVirtualBoundary_CPU_Depth_Gauss(this,Host_Boxes,Host_SimuCtrlParam,NewAllocateNCEachBox)
-!        !*** Purpose: To initialize the system (clusters distributed as the form of gauss in depth)
-!        ! Host_Boxes: the boxes information in host
-!        use RAND32_MODULE
-!        implicit none
-!        !-------Dummy Vars------
-!        CLASS(ImplantSection)::this
-!        type(SimulationBoxes)::Host_Boxes
-!        type(SimulationCtrlParam)::Host_SimuCtrlParam
-!        integer,intent(in)::NewAllocateNCEachBox
-!        !---local variables---
-!        integer::MultiBox
-!        real(kind=KMCDF)::POS(3)
-!        real(kind=KMCDF)::SEP
-!        real(kind=KMCDF)::BOXBOUNDARY(3,2)
-!        real(kind=KMCDF)::BOXSIZE(3)
-!        integer::IBox,II,IC
-!        integer::NAtoms
-!        integer::NC
-!        integer::NCUsed
-!        integer::IElement
-!        type(DiffusorValue)::TheDiffusorValue
-!        !---Body---
-!        MultiBox = Host_SimuCtrlParam%MultiBox
-!        BOXBOUNDARY = Host_Boxes%BOXBOUNDARY
-!        BOXSIZE = Host_Boxes%BOXSIZE
-!
-!        DO IBox = 1,MultiBox
-!
-!            if(Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) .LE. 0) then
-!                NCUsed = 0
-!            else
-!                NCUsed = Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2) - Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,1) + 1
-!            end if
-!
-!            if(Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) .LE. 0) then
-!                NC = 0
-!            else
-!                NC = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) - Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,1) + 1
-!            end if
-!
-!            if((NC - NCUsed) .LT. NewAllocateNCEachBox) then
-!                write(*,*) "MFPSCUERROR: The allocated  memory space are to implant the clusters"
-!                write(*,*) "For box :",IBox
-!                write(*,*) "The free of allocated allocated  memory space is: ",NC - NCUsed
-!                write(*,*) "The waiting to be implanted clusters number is:",NewAllocateNCEachBox
-!                pause
-!                stop
-!            end if
-!
-!            IC = Host_Boxes%m_BoxesInfo%SEVirtualIndexBox(IBox,2) - NewAllocateNCEachBox
-!
-!            if(IC .LT. Host_Boxes%m_BoxesInfo%SEUsedIndexBox(IBox,2)) then
-!                write(*,*) "MFPSCUERROR: The allocated  memory space are too small to implant the clusters"
-!                write(*,*) "For box :",IBox
-!                write(*,*) "It would occupy other free clusters for id: ",IC
-!                pause
-!                stop
-!            end if
-!
-!            DO II = 1, NewAllocateNCEachBox
-!
-!                IC = IC + 1
-!                !Initialize the position of clusters
-!                POS(1) = DRAND32()*BOXSIZE(1) + BOXBOUNDARY(1,1)
-!                POS(2) = DRAND32()*BOXSIZE(2) + BOXBOUNDARY(2,1)
-!                POS(3) = RGAUSS0_WithCut(this%DepthINI, this%DepthSDINI,BOXBOUNDARY(3,1),BOXBOUNDARY(3,2))
-!
-!                if(POS(3) .LT. BOXBOUNDARY(3,1)) then
-!                    POS(3) = BOXBOUNDARY(3,1)
-!                end if
-!
-!                if(POS(3) .GT. BOXBOUNDARY(3,2)) then
-!                    POS(3) = BOXBOUNDARY(3,2)
-!                end if
-!
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_POS = POS
-!
-!                !Give the cluster an type(layper) ID for the convenience of visualization
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Layer = 1
-!
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID(1) = Host_Boxes%m_GrainBoundary%GrainBelongsTo(POS,Host_Boxes%HBOXSIZE,Host_Boxes%BOXSIZE,Host_SimuCtrlParam)
-!
-!                Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu = p_ACTIVEFREE_STATU
-!
-!                !*** Initialize the size of the clusters
-!                NAtoms = RGAUSS0_WithCut(this%NAINI, this%NASDINI,this%NACUT(1),this%NACUT(2))
-!
-!                DO IElement = 1,p_ATOMS_GROUPS_NUMBER
-!                    Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(IElement)%m_NA = floor(NAtoms*this%CompositWeight(IElement)+0.5D0)
-!                    Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(IElement)%m_ID = IElement
-!                END DO
-!
-!                TheDiffusorValue = Host_Boxes%m_DiffusorTypesMap%Get(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC))
-!
-!                !-- In Current application, the simple implant distribution is only considered in free matrix, if you want to init the clusters in GB---
-!                !---you should init the distribution by external file---
-!                select case(TheDiffusorValue%ECRValueType_Free)
-!                    case(p_ECR_ByValue)
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = TheDiffusorValue%ECR_Free
-!                    case(p_ECR_ByBCluster)
-!                        ! Convert the number of atoms to radius
-!                        ! Ref. Modelling Simul. Mater. Sci. Eng.16(2008)055003
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD = DSQRT(sum(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(:)%m_NA)/m_RNFACTOR)
-!                end select
-!
-!                select case(TheDiffusorValue%DiffusorValueType_Free)
-!                    case(p_DiffuseCoefficient_ByValue)
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
-!                    case(p_DiffuseCoefficient_ByArrhenius)
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
-!                    case(p_DiffuseCoefficient_ByBCluster)
-!                        ! Here we adopt a model that D=D0*(1/R)**Gama
-!                        Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_DiffCoeff = m_FREESURDIFPRE*(Host_Boxes%m_ClustersInfo_CPU%m_Clusters(IC)%m_RAD**(-p_GAMMA))
-!                end select
-!
-!            END DO
-!
-!        END DO
-!
-!        return
-!    end subroutine FillVirtualBoundary_CPU_Depth_Gauss
+    !*********************************************************************
+    subroutine Cal_ImplantClustersRate(this,Host_Boxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,ImplantRate)
+        use RAND32_MODULE
+        implicit none
+        !---Dummy Vars---
+        CLASS(ImplantSection)::this
+        type(SimulationBoxes)::Host_Boxes
+        type(SimulationCtrlParam)::Host_SimuCtrlParam
+        type(MigCoaleStatInfoWrap)::TheMigCoaleStatInfoWrap
+        type(MigCoalClusterRecord)::Record
+        real(kind=KMCDF),dimension(:,:),allocatable::ImplantRate
+        !---Local Vars---
+
+        select case(this%ImplantConfigType)
+            case(p_ImplantConfig_Simple)
+                call this%Cal_ImplantClustersRate_Simple(Host_Boxes,Host_SimuCtrlParam,ImplantRate)
+            case(p_ImplantConfig_SpecialDistFromFile)
+                call this%Cal_ImplantClustersRate_FromFile(Host_Boxes,Host_SimuCtrlParam,ImplantRate)
+            case(p_ImplantConfig_SpecialDistFromExteFunc)
+                call this%Cal_ImplantClustersRate_FromExteFunc(Host_Boxes,Host_SimuCtrlParam,ImplantRate)
+            case default
+                write(*,*) "MFPSCUERROR: Unknown strategy for the implantation configuration:",this%ImplantConfigType
+                pause
+                stop
+        end select
+
+
+        return
+    end subroutine Cal_ImplantClustersRate
+
+    !*************************************************************
+    subroutine Cal_ImplantClustersRate_Simple(this,SimBoxes,Host_SimuCtrlParam,ImplantRate)
+        !---Dummy Vars---
+        CLASS(ImplantSection)::this
+        type(SimulationBoxes)::SimBoxes
+        type(SimulationCtrlParam)::Host_SimuCtrlParam
+        real(kind=KMCDF),dimension(:,:),allocatable::ImplantRate
+        !---Body--
+        select case(this%ImplantDepthDistType)
+            case(p_DEPT_DIS_Layer)
+                call this%Cal_ImplantClustersRate_Depth_LAY(SimBoxes,Host_SimuCtrlParam,ImplantRate)
+            case(p_DEPT_DIS_GAS)
+                call this%Cal_ImplantClustersRate_Depth_Gauss(SimBoxes,Host_SimuCtrlParam,ImplantRate)
+            case default
+                write(*,*) "MFPSCUERROR : Unknown way to Unknown strategy for the simple implantation configuration: ",this%ImplantDepthDistType
+                pause
+                stop
+        end select
+
+        return
+    end subroutine Cal_ImplantClustersRate_Simple
+
+    !*************************************************************
+    subroutine Cal_ImplantClustersRate_FromFile(this,Host_Boxes,Host_SimuCtrlParam,ImplantRate)
+        use RAND32_MODULE
+        implicit none
+        !---Dummy Vars---
+        CLASS(ImplantSection)::this
+        type(SimulationBoxes)::Host_Boxes
+        type(SimulationCtrlParam)::Host_SimuCtrlParam
+        real(kind=KMCDF),dimension(:,:),allocatable::ImplantRate
+        !-----local variables---
+        integer::MaxGroups
+        integer::ILayer
+        integer::JLayer
+        integer::LayerStart
+        integer::IGroup
+        integer::IElement
+        integer::LayerNum
+        integer::ClusterIndex
+        real(kind=KMCDF)::AccumThick
+        real(kind=KMCDF)::AccumThickTemp
+        real(kind=KMCDF)::AccumThick_Implant
+        integer::OccupyLayer_Start
+        integer::OccupyLayer_End
+        real(kind=KMCDF)::TotalInterval
+        real(kind=KMCDF)::Percent
+        !---Body---
+        AccumThick = 0.D0
+
+        AccumThick_Implant = 0.D0
+
+        ImplantRate = 0.D0
+
+        LayerStart = 1
+
+        LayerNum = size(this%LayerThick)
+
+        MaxGroups = size(this%ClustersSampleRate,dim=2)
+
+        DO ILayer = 1,LayerNum
+
+            AccumThick_Implant = AccumThick_Implant + this%LayerThick(ILayer)
+
+            DO JLayer = LayerStart,Host_Boxes%NNodes
+                AccumThick = AccumThick + Host_Boxes%NodeSpace(JLayer)
+
+                if(AccumThick .GE. AccumThick_Implant) then
+                    OccupyLayer_End = JLayer
+                    LayerStart = JLayer + 1
+                    exit
+                end if
+            END DO
+
+            AccumThickTemp = AccumThick
+
+            DO JLayer = OccupyLayer_End,1,-1
+
+                OccupyLayer_Start = JLayer
+
+                AccumThickTemp = AccumThickTemp - Host_Boxes%NodeSpace(JLayer)
+
+                if(AccumThickTemp .LE. AccumThick_Implant) then
+                    exit
+                end if
+            END DO
+
+            AccumThickTemp = AccumThick
+
+            DO JLayer = OccupyLayer_End,OccupyLayer_Start,-1
+
+                if(JLayer .eq. OccupyLayer_Start) then
+                    Percent = (AccumThickTemp - (AccumThick_Implant - this%LayerThick(ILayer)) )/this%LayerThick(ILayer)
+                else if(JLayer .eq. OccupyLayer_End) then
+                    AccumThickTemp = AccumThickTemp - Host_Boxes%NodeSpace(JLayer)
+                    Percent = (AccumThick_Implant - AccumThickTemp)/this%LayerThick(ILayer)
+                else
+                    AccumThickTemp = AccumThickTemp - Host_Boxes%NodeSpace(JLayer)
+                    Percent = Host_Boxes%NodeSpace(JLayer)/this%LayerThick(ILayer)
+                end if
+
+                DO IGroup = 1,MaxGroups
+
+                    ClusterIndex = Host_Boxes%m_ClustersInfo_CPU%GetKindIndexByCluster(this%ClustersSample(ILayer,IGroup))
+
+                    ImplantRate(JLayer,ClusterIndex) = ImplantRate(JLayer,ClusterIndex) + Percent*this%ImplantFlux*this%ClustersSampleRate(ILayer,IGroup)
+                END DO
+
+            END DO
+
+        END DO
+
+        return
+    end subroutine Cal_ImplantClustersRate_FromFile
+
+    !*************************************************************
+    subroutine Cal_ImplantClustersRate_FromExteFunc(this,Host_Boxes,Host_SimuCtrlParam,ImplantRate)
+        implicit none
+        !---Dummy Vars---
+        CLASS(ImplantSection)::this
+        type(SimulationBoxes)::Host_Boxes
+        type(SimulationCtrlParam)::Host_SimuCtrlParam
+        real(kind=KMCDF),dimension(:,:),allocatable::ImplantRate
+        !---Body---
+
+    end subroutine Cal_ImplantClustersRate_FromExteFunc
+
+
+    !**************************************************************
+    subroutine Cal_ImplantClustersRate_Depth_LAY(this,Host_Boxes,Host_SimuCtrlParam,ImplantRate)
+      !*** Purpose: To initialize the system (clusters distributed as the form of layer)
+      ! Host_Boxes: the boxes information in host
+      use RAND32_MODULE
+      implicit none
+      !---Dummy Vars---
+      CLASS(ImplantSection)::this
+      type(SimulationBoxes)::Host_Boxes
+      type(SimulationCtrlParam)::Host_SimuCtrlParam
+      real(kind=KMCDF),dimension(:,:),allocatable::ImplantRate
+      !-----local variables---
+      integer::NAtoms
+      integer::MaxGroups
+      integer::ILayer
+      integer::JLayer
+      integer::LayerStart
+      integer::IGroup
+      integer::IElement
+      integer::LayerNum
+      integer::ClusterIndex
+      real(kind=KMCDF)::AccumThick
+      real(kind=KMCDF)::AccumThickTemp
+      real(kind=KMCDF)::AccumThick_Implant
+      integer::OccupyLayer_Start
+      integer::OccupyLayer_End
+      type(ACluster)::TheCluster
+      real(kind=KMCDF)::TotalInterval
+      real(kind=KMCDF)::Percent
+      !---Body---
+      AccumThick = 0.D0
+
+      AccumThick_Implant = 0.D0
+
+      ImplantRate = 0.D0
+
+      LayerStart = 1
+
+      LayerNum = size(this%LayerThick)
+
+      MaxGroups = size(this%ClustersSampleRate,dim=2)
+
+      DO ILayer = 1,LayerNum
+
+         AccumThick_Implant = AccumThick_Implant + this%LayerThick(ILayer)
+
+         DO JLayer = LayerStart,Host_Boxes%NNodes
+            AccumThick = AccumThick + Host_Boxes%NodeSpace(JLayer)
+
+            if(AccumThick .GE. AccumThick_Implant) then
+                OccupyLayer_End = JLayer
+                LayerStart = JLayer + 1
+                exit
+            end if
+         END DO
+
+         AccumThickTemp = AccumThick
+
+         DO JLayer = OccupyLayer_End,1,-1
+
+            OccupyLayer_Start = JLayer
+
+            AccumThickTemp = AccumThickTemp - Host_Boxes%NodeSpace(JLayer)
+
+            if(AccumThickTemp .LE. AccumThick_Implant) then
+                exit
+            end if
+         END DO
+
+         AccumThickTemp = AccumThick
+
+         DO JLayer = OccupyLayer_End,OccupyLayer_Start,-1
+
+            if(JLayer .eq. OccupyLayer_Start) then
+                Percent = (AccumThickTemp - (AccumThick_Implant - this%LayerThick(ILayer)) )/this%LayerThick(ILayer)
+            else if(JLayer .eq. OccupyLayer_End) then
+                AccumThickTemp = AccumThickTemp - Host_Boxes%NodeSpace(JLayer)
+                Percent = (AccumThick_Implant - AccumThickTemp)/this%LayerThick(ILayer)
+            else
+                AccumThickTemp = AccumThickTemp - Host_Boxes%NodeSpace(JLayer)
+                Percent = Host_Boxes%NodeSpace(JLayer)/this%LayerThick(ILayer)
+            end if
+
+            DO IGroup = 1,MaxGroups
+                !*** Initialize the size of the clusters
+                NAtoms = RGAUSS0_WithCut(this%NAINI, this%NASDINI,this%NACUT(1),this%NACUT(2))
+
+                DO IElement = 1,p_ATOMS_GROUPS_NUMBER
+                    TheCluster%m_Atoms(IElement)%m_NA = floor(NAtoms*this%CompositWeight(IElement)+0.5D0)
+                    TheCluster%m_Atoms(IElement)%m_ID = IElement
+                END DO
+
+                ClusterIndex = Host_Boxes%m_ClustersInfo_CPU%GetKindIndexByCluster(TheCluster)
+
+                ImplantRate(JLayer,ClusterIndex) = ImplantRate(JLayer,ClusterIndex) + Percent*this%ImplantFlux*this%ClustersSampleRate(ILayer,IGroup)
+            END DO
+
+         END DO
+
+      END DO
+
+      return
+    end subroutine Cal_ImplantClustersRate_Depth_LAY
+
+
+    !**************************************************************
+    subroutine Cal_ImplantClustersRate_Depth_Gauss(this,Host_Boxes,Host_SimuCtrlParam,ImplantRate)
+        !*** Purpose: To initialize the system (clusters distributed as the form of gauss in depth)
+        ! Host_Boxes: the boxes information in host
+        use RAND32_MODULE
+        implicit none
+        !---Dummy Vars---
+        CLASS(ImplantSection)::this
+        type(SimulationBoxes)::Host_Boxes
+        type(SimulationCtrlParam)::Host_SimuCtrlParam
+        real(kind=KMCDF),dimension(:,:),allocatable::ImplantRate
+        !-----local variables---
+        integer::NAtoms
+        integer::MaxGroups
+        integer::IGroup
+        integer::IElement
+        integer::ClusterIndex
+        type(ACluster)::TheCluster
+        real(kind=KMCDF)::Depth
+        integer::SampleTimeEachLayer
+        integer::ISample
+        integer::INode
+        real(kind=KMCDF)::AccumThick
+        integer::TrueLayer
+        !---Body---
+
+        SampleTimeEachLayer = 100
+
+        ImplantRate = 0.D0
+
+        MaxGroups = 1
+
+        DO ISample = 1,SampleTimeEachLayer*Host_Boxes%NNodes
+
+            AccumThick = 0.D0
+
+            Depth = RGAUSS0_WithCut(this%DepthINI, this%DepthSDINI,Host_Boxes%BOXBOUNDARY(3,1),Host_Boxes%BOXBOUNDARY(3,2))
+
+            DO INode = 1,Host_Boxes%NNodes
+                AccumThick = AccumThick + Host_Boxes%NodeSpace(INode)
+
+                if(AccumThick .GE. Depth) then
+                    TrueLayer = INode
+                    exit
+                end if
+            END DO
+
+            DO IGroup = 1,MaxGroups
+                !*** Initialize the size of the clusters
+                NAtoms = RGAUSS0_WithCut(this%NAINI, this%NASDINI,this%NACUT(1),this%NACUT(2))
+
+                DO IElement = 1,p_ATOMS_GROUPS_NUMBER
+                    TheCluster%m_Atoms(IElement)%m_NA = floor(NAtoms*this%CompositWeight(IElement)+0.5D0)
+                    TheCluster%m_Atoms(IElement)%m_ID = IElement
+                END DO
+
+                ClusterIndex = Host_Boxes%m_ClustersInfo_CPU%GetKindIndexByCluster(TheCluster)
+
+                ImplantRate(TrueLayer,ClusterIndex) = ImplantRate(TrueLayer,ClusterIndex) + this%ImplantFlux/(SampleTimeEachLayer*MaxGroups)
+            END DO
+
+        END DO
+
+        return
+    end subroutine Cal_ImplantClustersRate_Depth_Gauss
 !
 !
 !    !*************************************************************

@@ -1,5 +1,6 @@
 module NUCLEATION_SPACEDIST
     use MFLIB_GLOBAL
+    use MIGCOALE_IMPLANTATION
     use MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     use MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
     use MIGCOALE_ADDONDATA_HOST
@@ -80,17 +81,20 @@ module NUCLEATION_SPACEDIST
 
         open(Unit=m_StatisticFile,file=fileName(1:len_trim(fileName)))
 
-        write(m_StatisticFile,FMT="(15(A15,1x))") "Step","Time","TStep","ImplantedNum","NPOWER0Ave","NPOWER1DIV2Ave","NPOWER1Ave","NPOWER3DIV2Ave","N1","N2","N3","Rave(nm)"
+        write(m_StatisticFile,FMT="(15(A15,1x))") "Step","Time","TStep","NPOWER0Ave","NPOWER1DIV2Ave","NPOWER1Ave","NPOWER3DIV2Ave","N1","N2","N3","Rave(nm)"
 
         return
     end subroutine InitSimu_SpaceDist
 
     !***************************************************
-    subroutine NucleationSimu_SpaceDist_Old(Host_SimBoxes,Host_SimuCtrlParam)
+    subroutine NucleationSimu_SpaceDist_Old(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
         implicit none
         !---Dummy Vars---
         type(SimulationBoxes)::Host_SimBoxes
         type(SimulationCtrlParam),target::Host_SimuCtrlParam
+        type(MigCoaleStatInfoWrap)::TheMigCoaleStatInfoWrap
+        type(MigCoalClusterRecord)::Record
+        type(ImplantSection)::TheImplantSection
         !---Local Vars---
         integer::CKind
         integer::IKind
@@ -109,8 +113,7 @@ module NUCLEATION_SPACEDIST
         real(kind=KMCDF),dimension(:),allocatable::N2
         real(kind=KMCDF),dimension(:),allocatable::N3
         real(kind=KMCDF),dimension(:),allocatable::Rave
-        real(kind=KMCDF),dimension(:),allocatable::NewAddedAtoms
-        real(kind=KMCDF),dimension(:),allocatable::ImplantedNum
+        real(kind=KMCDF),dimension(:,:),allocatable::ImplantedRate
         real(kind=KMCDF),dimension(:),allocatable::FSurfAccum
         real(kind=KMCDF),dimension(:),allocatable::FOutAccum
         real(kind=KMCDF),dimension(:),allocatable::CSurfAccum
@@ -139,17 +142,15 @@ module NUCLEATION_SPACEDIST
         CKind = Host_SimBoxes%CKind
         NNodes = Host_SimBoxes%NNodes
 
-        allocate(tempNBPV(CKind,NNodes))
+        allocate(tempNBPV(NNodes,CKind))
 
-        allocate(tempNBPVChangeRate(CKind,NNodes))
+        allocate(tempNBPVChangeRate(NNodes,CKind))
 
         allocate(NPOWER0Ave(NNodes),NPOWER1DIV2Ave(NNodes),NPOWER1Ave(NNodes),NPOWER3DIV2Ave(NNodes))
 
         allocate(N1(NNodes),N2(NNodes),N3(NNodes),Rave(NNodes))
 
-        allocate(NewAddedAtoms(NNodes))
-
-        allocate(ImplantedNum(NNodes))
+        allocate(ImplantedRate(NNodes,CKind))
 
         allocate(FSurfAccum(NNodes))
 
@@ -172,8 +173,6 @@ module NUCLEATION_SPACEDIST
         TTIME = 0.D0
 
         TSTEP = 0.01
-
-        ImplantedNum = 0.D0
 
         FSurfAccum = 0.D0
 
@@ -199,8 +198,6 @@ module NUCLEATION_SPACEDIST
 
             minTimeStep = 1.D32
 
-            NewAddedAtoms = 0.D0
-
             FSurfEachStep = 0.D0
 
             FOutEachStep = 0.D0
@@ -209,18 +206,18 @@ module NUCLEATION_SPACEDIST
 
             COutEachStep = 0.D0
 
+            ImplantedRate = 0.D0
+
+            call TheImplantSection%Cal_ImplantClustersRate(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,ImplantedRate)
+
             DO INode = 1,NNodes
 
                 DO IKind = 1,CKind
 
-                    !if(IKind .eq. 1 .AND. startAnnealing .eq. .false.) then
-                    !    NewAddedAtoms = TSTEP*m_Flux
-                    !    Concent(IKind,INode)(IKind,INode) = Concent(IKind,INode) + NewAddedAtoms
-                    !end if
 
                     DO JKind = IKind,CKind
 
-                        deta = Dumplicate*Concent(IKind,INode)*Concent(JKind,INode)* &
+                        deta = Dumplicate*Concent(INode,IKind)*Concent(INode,JKind)* &
                                (ClustersKind(IKind)%m_RAD + ClustersKind(JKind)%m_RAD)* &
                                (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(JKind)%m_DiffCoeff)
 
@@ -228,15 +225,15 @@ module NUCLEATION_SPACEDIST
 
                             Factor = 0.5D0
 
-                            tempNBPVChangeRate(IKind,INode) =  tempNBPVChangeRate(IKind,INode) - deta
+                            tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
 
                         else
 
                             Factor = 1.D0
 
-                            tempNBPVChangeRate(IKind,INode) =  tempNBPVChangeRate(IKind,INode) - deta
+                            tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
 
-                            tempNBPVChangeRate(JKind,INode) =  tempNBPVChangeRate(JKind,INode) - deta
+                            tempNBPVChangeRate(INode,JKind) =  tempNBPVChangeRate(INode,JKind) - deta
 
                         end if
 
@@ -246,7 +243,7 @@ module NUCLEATION_SPACEDIST
                             AtomuNumbObject = sum(ClustersKind(JKind)%m_Atoms(:)%m_NA)
                             AtomuNumbProductor = sum(ClustersKind(IKind+JKind)%m_Atoms(:)%m_NA)
 
-                            tempNBPVChangeRate(IKind + JKind,INode) = tempNBPVChangeRate(IKind + JKind,INode) + &
+                            tempNBPVChangeRate(INode,IKind + JKind) = tempNBPVChangeRate(INode,IKind + JKind) + &
                                                                       Factor*deta*(AtomuNumbSubject+AtomuNumbObject)/AtomuNumbProductor
                         end if
 
@@ -265,8 +262,8 @@ module NUCLEATION_SPACEDIST
 
             DO IKind = 1,CKind
                 DO INode = 1,NNodes
-                    if(tempNBPV(IKind,INode) .LT. 0) then
-                        tempTimeStep = Concent(IKind,INode)/dabs(tempNBPVChangeRate(IKind,INode))
+                    if(tempNBPV(INode,IKind) .LT. 0) then
+                        tempTimeStep = Concent(INode,IKind)/dabs(tempNBPVChangeRate(INode,IKind))
                         if(tempTimeStep .LE. minTimeStep) then
                             minTimeStep = tempTimeStep
                         end if
@@ -295,7 +292,7 @@ module NUCLEATION_SPACEDIST
                         MatA(INode) = 0.D0
                         MatB(INode) = NodeSpace(INode)/TSTEP + (DiffGradient1 + DiffGradient2)
                         MatC(INode) = -DiffGradient2
-                        MatD(INode) = Concent(IKind,INode)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(IKind,INode)*TSTEP
+                        MatD(INode) = Concent(INode,IKind)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
                     else if(INode .eq. NNodes) then  ! Low surface
                         !For surface, the Dirichlet boundary condition is applied
                         DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
@@ -303,40 +300,30 @@ module NUCLEATION_SPACEDIST
                         MatA(INode) = -DiffGradient1
                         MatB(INode) = NodeSpace(INode)/TSTEP + (DiffGradient1 + DiffGradient2)
                         MatC(INode) = 0.D0
-                        MatD(INode) = Concent(IKind,INode)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(IKind,INode)*TSTEP
+                        MatD(INode) = Concent(INode,IKind)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
                     else
                         DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
                         DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
                         MatA(INode) = -DiffGradient1
                         MatB(INode) = NodeSpace(INode)/TSTEP + (DiffGradient1 + DiffGradient2)
                         MatC(INode) = -DiffGradient2
-                        MatD(INode) = Concent(IKind,INode)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(IKind,INode)*TSTEP
+                        MatD(INode) = Concent(INode,IKind)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
                     end if
-
-!                    if(IKind .eq. 1) then
-!                        DO IImplantLayer = 1,m_ImplantLayerNum
-!                            if(sum(m_ImplantSpaceDist(1:IImplantLayer)) .GT. (INode-1)*m_NodeSpace .AND.  &
-!                                sum(m_ImplantSpaceDist(1:IImplantLayer)) .LE. INode*m_NodeSpace) then
-!                                    MatD(INode) = MatD(INode) + TSTEP*m_Flux*m_ImplantDist(IImplantLayer)
-!                                    NewAddedAtoms(IImplantLayer) = TSTEP*m_Flux*m_ImplantDist(IImplantLayer)
-!                            end if
-!                        END DO
-!                    end if
 
                 END DO
 
                 call SolveTridag(IKind,MatA,MatB,MatC,MatD,Concent,NNodes,MatW,MatH)
 
                 DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(NNodes)
-                FOutEachStep(IKind) = DiffGradient2*Concent(IKind,NNodes)
-                COutEachStep(IKind) = DiffGradient2*Concent(IKind,NNodes)*TSTEP/NodeSpace(NNodes)
+                FOutEachStep(IKind) = DiffGradient2*Concent(NNodes,IKind)
+                COutEachStep(IKind) = DiffGradient2*Concent(NNodes,IKind)*TSTEP/NodeSpace(NNodes)
                 FOutAccum(IKind) = FOutAccum(IKind) + FOutEachStep(IKind)
                 COutAccum(IKind) = COutAccum(IKind) + COutEachStep(IKind)
 
 
                 DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(1)
-                FSurfEachStep(IKind) = DiffGradient1*Concent(IKind,1)
-                CSurfEachStep(IKind) = DiffGradient1*Concent(IKind,1)*TSTEP/NodeSpace(1)
+                FSurfEachStep(IKind) = DiffGradient1*Concent(1,IKind)
+                CSurfEachStep(IKind) = DiffGradient1*Concent(1,IKind)*TSTEP/NodeSpace(1)
                 FSurfAccum(IKind) = FSurfAccum(IKind) + FSurfEachStep(IKind)
                 CSurfAccum(IKind) = CSurfAccum(IKind) + CSurfEachStep(IKind)
 
@@ -347,7 +334,7 @@ module NUCLEATION_SPACEDIST
                     write(*,fmt="(A50,1x,1ES14.6)") "Out flux from up surface in current step",FSurfEachStep(IKind)
                     write(*,fmt="(A50,1x,1ES14.6)") "Out concentrate from up surface in current step",CSurfEachStep(IKind)
                     DO INode = 1,NNodes
-                        write(*,fmt="(A10,1x,I10,1x,A15,1x,1ES14.6)") "INode",INode,"Concent(1,INode)",Concent(1,INode)
+                        write(*,fmt="(A10,1x,I10,1x,A15,1x,1ES14.6)") "INode",INode,"Concent(INode,1)",Concent(INode,1)
                     END DO
                     write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out flux from lower surface",FOutAccum(IKind)
                     write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out concentrate from lower surface",COutAccum(IKind)
@@ -355,9 +342,9 @@ module NUCLEATION_SPACEDIST
                     write(*,fmt="(A50,1x,1ES14.6)") "Out concentrate from lower surface in current step",COutEachStep(IKind)
 
                     write(*,*) "----------------------------------------"
-                    write(*,*) "sum(Concent(1,:))",sum(Concent(1,:))
-                    write(*,*) "sum(Concent(1,:)) + CSurfAccum(1) + COutAccum(1)",sum(Concent(1,:)) + CSurfAccum(1) + COutAccum(1)
-                    write(*,*) "(sum(Concent(1,:)) + CSurfAccum(1) + COutAccum(1))/ConCentrat0",(ConCentrat0 - (sum(Concent(1,:)) + CSurfAccum(1) + COutAccum(1)))/ConCentrat0
+                    write(*,*) "sum(Concent(:,1))",sum(Concent(:,1))
+                    write(*,*) "sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)",sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)
+                    write(*,*) "(sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1))/ConCentrat0",(ConCentrat0 - (sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)))/ConCentrat0
                     write(*,*) "----------------------------------------"
                 end if
 
@@ -367,31 +354,29 @@ module NUCLEATION_SPACEDIST
             TTIME = TTIME + TSTEP
             ITIME = ITIME + 1
 
-            ImplantedNum = ImplantedNum + NewAddedAtoms
-
             if(mod(ITIME,1) .eq. 0) then
 
                 call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
 
-                call Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,ITIME,TTIME,TSTEP,sum(ImplantedNum),NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
+                call Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,ITIME,TTIME,TSTEP,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
             end if
 
             !if(Concent(CKind) .GT. 1.D-10) then
-            if(DSQRT(dble(sum(ClustersKind(CKind)%m_Atoms(:)%m_NA)))*sum(Concent(CKind,1:NNodes)) .GT. &
+            if(DSQRT(dble(sum(ClustersKind(CKind)%m_Atoms(:)%m_NA)))*sum(Concent(1:NNodes,CKind)) .GT. &
                sum(NPOWER1DIV2Ave)*Host_SimuCtrlParam%DumplicateFactor) then
 
                 DO INode = 1,NNodes
 
                     DO I = 1,(CKind -1)/2 + 1
                         if(2*I .LE. CKind) then
-                            Concent(I,INode) = (Concent(2*I-1,INode)*sum(ClustersKind(2*I-1)%m_Atoms(:)%m_NA)+Concent(2*I,INode)*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA)) &
+                            Concent(INode,I) = (Concent(INode,2*I-1)*sum(ClustersKind(2*I-1)%m_Atoms(:)%m_NA)+Concent(INode,2*I)*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA)) &
                                                /(2.D0*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA))
                         else
-                            Concent(I,INode) = Concent(2*I - 1,INode)
+                            Concent(INode,I) = Concent(INode,2*I - 1)
                         end if
                     END DO
 
-                    Concent((CKind -1)/2+2:CKind,INode) = 0.D0
+                    Concent(INode,(CKind -1)/2+2:CKind) = 0.D0
 
                     DO I = 1,(CKind -1)/2 + 1
                         if(2*I .LE. CKind) then
@@ -440,11 +425,14 @@ module NUCLEATION_SPACEDIST
     end subroutine NucleationSimu_SpaceDist_Old
 
     !***************************************************
-    subroutine NucleationSimu_SpaceDist(Host_SimBoxes,Host_SimuCtrlParam)
+    subroutine NucleationSimu_SpaceDist(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
         implicit none
         !---Dummy Vars---
         type(SimulationBoxes)::Host_SimBoxes
         type(SimulationCtrlParam),target::Host_SimuCtrlParam
+        type(MigCoaleStatInfoWrap)::TheMigCoaleStatInfoWrap
+        type(MigCoalClusterRecord)::Record
+        type(ImplantSection)::TheImplantSection
         !---Local Vars---
         integer::CKind
         integer::IKind
@@ -463,8 +451,7 @@ module NUCLEATION_SPACEDIST
         real(kind=KMCDF),dimension(:),allocatable::N2
         real(kind=KMCDF),dimension(:),allocatable::N3
         real(kind=KMCDF),dimension(:),allocatable::Rave
-        real(kind=KMCDF),dimension(:),allocatable::NewAddedAtoms
-        real(kind=KMCDF),dimension(:),allocatable::ImplantedNum
+        real(kind=KMCDF),dimension(:,:),allocatable::ImplantedRate
         real(kind=KMCDF),dimension(:),allocatable::FSurfAccum
         real(kind=KMCDF),dimension(:),allocatable::FOutAccum
         real(kind=KMCDF),dimension(:),allocatable::CSurfAccum
@@ -494,17 +481,13 @@ module NUCLEATION_SPACEDIST
 
         NNodes = Host_SimBoxes%NNodes
 
-        allocate(tempNBPV(CKind,NNodes))
+        allocate(tempNBPV(NNodes,CKind))
 
-        allocate(tempNBPVChangeRate(CKind,NNodes))
+        allocate(tempNBPVChangeRate(NNodes,CKind))
 
         allocate(NPOWER0Ave(NNodes),NPOWER1DIV2Ave(NNodes),NPOWER1Ave(NNodes),NPOWER3DIV2Ave(NNodes))
 
         allocate(N1(NNodes),N2(NNodes),N3(NNodes),Rave(NNodes))
-
-        allocate(NewAddedAtoms(NNodes))
-
-        allocate(ImplantedNum(NNodes))
 
         allocate(FSurfAccum(NNodes))
 
@@ -527,8 +510,6 @@ module NUCLEATION_SPACEDIST
         TTIME = 0.D0
 
         TSTEP = 0.01
-
-        ImplantedNum = 0.D0
 
         FSurfAccum = 0.D0
 
@@ -554,8 +535,6 @@ module NUCLEATION_SPACEDIST
 
             minTimeStep = 1.D32
 
-            NewAddedAtoms = 0.D0
-
             FSurfEachStep = 0.D0
 
             FOutEachStep = 0.D0
@@ -564,18 +543,17 @@ module NUCLEATION_SPACEDIST
 
             COutEachStep = 0.D0
 
+            ImplantedRate = 0.D0
+
+            call TheImplantSection%Cal_ImplantClustersRate(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,ImplantedRate)
+
             DO INode = 1,NNodes
 
                 DO IKind = 1,CKind
 
-                    !if(IKind .eq. 1 .AND. startAnnealing .eq. .false.) then
-                    !    NewAddedAtoms = TSTEP*m_Flux
-                    !    Concent(IKind,INode) = Concent(IKind,INode) + NewAddedAtoms
-                    !end if
-
                     DO JKind = IKind,CKind
 
-                        deta = Dumplicate*Concent(IKind,INode)*Concent(JKind,INode)* &
+                        deta = Dumplicate*Concent(INode,IKind)*Concent(INode,JKind)* &
                                (ClustersKind(IKind)%m_RAD + ClustersKind(JKind)%m_RAD)* &
                                (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(JKind)%m_DiffCoeff)
 
@@ -583,15 +561,15 @@ module NUCLEATION_SPACEDIST
 
                             Factor = 0.5D0
 
-                            tempNBPVChangeRate(IKind,INode) =  tempNBPVChangeRate(IKind,INode) - deta
+                            tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
 
                         else
 
                             Factor = 1.D0
 
-                            tempNBPVChangeRate(IKind,INode) =  tempNBPVChangeRate(IKind,INode) - deta
+                            tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
 
-                            tempNBPVChangeRate(JKind,INode) =  tempNBPVChangeRate(JKind,INode) - deta
+                            tempNBPVChangeRate(INode,JKind) =  tempNBPVChangeRate(INode,JKind) - deta
 
                         end if
 
@@ -600,7 +578,7 @@ module NUCLEATION_SPACEDIST
                             AtomuNumbObject = sum(ClustersKind(JKind)%m_Atoms(:)%m_NA)
                             AtomuNumbProductor = sum(ClustersKind(IKind+JKind)%m_Atoms(:)%m_NA)
 
-                            tempNBPVChangeRate(IKind + JKind,INode) = tempNBPVChangeRate(IKind + JKind,INode) + &
+                            tempNBPVChangeRate(INode,IKind + JKind) = tempNBPVChangeRate(INode,IKind + JKind) + &
                                                                       Factor*deta*(AtomuNumbSubject+AtomuNumbObject)/AtomuNumbProductor
                         end if
 
@@ -619,8 +597,8 @@ module NUCLEATION_SPACEDIST
 
             DO IKind = 1,CKind
                 DO INode = 1,NNodes
-                    if(tempNBPV(IKind,INode) .LT. 0) then
-                        tempTimeStep = Concent(IKind,INode)/dabs(tempNBPVChangeRate(IKind,INode))
+                    if(tempNBPV(INode,IKind) .LT. 0) then
+                        tempTimeStep = Concent(INode,IKind)/dabs(tempNBPVChangeRate(INode,IKind))
                         if(tempTimeStep .LE. minTimeStep) then
                             minTimeStep = tempTimeStep
                         end if
@@ -647,56 +625,46 @@ module NUCLEATION_SPACEDIST
                         DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
 
                         MatA(INode) = 0.D0
-                        MatB(INode) = (NodeSpace(INode)/TSTEP - (DiffGradient1 + DiffGradient2))*Concent(IKind,INode)
-                        MatC(INode) = DiffGradient2*Concent(IKind,INode+1)
-                        MatD(INode) = tempNBPVChangeRate(IKind,INode)*TSTEP
+                        MatB(INode) = (NodeSpace(INode)/TSTEP - (DiffGradient1 + DiffGradient2))*Concent(INode,IKind)
+                        MatC(INode) = DiffGradient2*Concent(INode+1,IKind)
+                        MatD(INode) = tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
                     else if(INode .eq. NNodes) then  ! Low surface
                         !For surface, the Dirichlet boundary condition is applied
                         DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
                         DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
-                        MatA(INode) = DiffGradient1*Concent(IKind,INode-1)
-                        MatB(INode) = (NodeSpace(INode)/TSTEP - (DiffGradient1 + DiffGradient2))*Concent(IKind,INode)
+                        MatA(INode) = DiffGradient1*Concent(INode-1,IKind)
+                        MatB(INode) = (NodeSpace(INode)/TSTEP - (DiffGradient1 + DiffGradient2))*Concent(INode,IKind)
                         MatC(INode) = 0.D0
-                        MatD(INode) = tempNBPVChangeRate(IKind,INode)*TSTEP
+                        MatD(INode) = tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
                     else
                         DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
                         DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
-                        MatA(INode) = DiffGradient1*Concent(IKind,INode-1)
-                        MatB(INode) = (NodeSpace(INode)/TSTEP - (DiffGradient1 + DiffGradient2))*Concent(IKind,INode)
-                        MatC(INode) = DiffGradient2*Concent(IKind,INode+1)
-                        MatD(INode) = tempNBPVChangeRate(IKind,INode)*TSTEP
+                        MatA(INode) = DiffGradient1*Concent(INode-1,IKind)
+                        MatB(INode) = (NodeSpace(INode)/TSTEP - (DiffGradient1 + DiffGradient2))*Concent(INode,IKind)
+                        MatC(INode) = DiffGradient2*Concent(INode+1,IKind)
+                        MatD(INode) = tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
                     end if
-
-!                    if(IKind .eq. 1) then
-!                        DO IImplantLayer = 1,m_ImplantLayerNum
-!                            if(sum(m_ImplantSpaceDist(1:IImplantLayer)) .GT. (INode-1)*m_NodeSpace .AND.  &
-!                                sum(m_ImplantSpaceDist(1:IImplantLayer)) .LE. INode*m_NodeSpace) then
-!                                    MatD(INode) = MatD(INode) + m_NodeSpace*TSTEP*m_Flux*m_ImplantDist(IImplantLayer)
-!                                    NewAddedAtoms(IImplantLayer) = TSTEP*m_Flux*m_ImplantDist(IImplantLayer)
-!                            end if
-!                        END DO
-!                    end if
 
                 END DO
 
 !                call SolveTridag(IKind,MatA,MatB,MatC,MatD,Concent,NNodes,MatW,MatH)
 
                 DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(NNodes)
-                FOutEachStep(IKind) = DiffGradient2*Concent(IKind,NNodes)
-                COutEachStep(IKind) = DiffGradient2*Concent(IKind,NNodes)*TSTEP/NodeSpace(NNodes)
+                FOutEachStep(IKind) = DiffGradient2*Concent(NNodes,IKind)
+                COutEachStep(IKind) = DiffGradient2*Concent(NNodes,IKind)*TSTEP/NodeSpace(NNodes)
                 FOutAccum(IKind) = FOutAccum(IKind) + FOutEachStep(IKind)
                 COutAccum(IKind) = COutAccum(IKind) + COutEachStep(IKind)
 
 
                 DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(1)
-                FSurfEachStep(IKind) = DiffGradient1*Concent(IKind,1)
-                CSurfEachStep(IKind) = DiffGradient1*Concent(IKind,1)*TSTEP/NodeSpace(1)
+                FSurfEachStep(IKind) = DiffGradient1*Concent(1,IKind)
+                CSurfEachStep(IKind) = DiffGradient1*Concent(1,IKind)*TSTEP/NodeSpace(1)
                 FSurfAccum(IKind) = FSurfAccum(IKind) + FSurfEachStep(IKind)
                 CSurfAccum(IKind) = CSurfAccum(IKind) + CSurfEachStep(IKind)
 
 
                 DO INode = 1,NNodes
-                    Concent(IKind,INode) = (MatA(INode) + MatB(INode) + MatC(INode) + MatD(INode))*TSTEP/NodeSpace(INode)
+                    Concent(INode,IKind) = (MatA(INode) + MatB(INode) + MatC(INode) + MatD(INode))*TSTEP/NodeSpace(INode)
                 END DO
 
 
@@ -707,7 +675,7 @@ module NUCLEATION_SPACEDIST
                     write(*,fmt="(A50,1x,1ES14.6)") "Out flux from up surface in current step",FSurfEachStep(IKind)
                     write(*,fmt="(A50,1x,1ES14.6)") "Out concentrate from up surface in current step",CSurfEachStep(IKind)
                     DO INode = 1,NNodes
-                        write(*,fmt="(A10,1x,I10,1x,A15,1x,1ES14.6)") "INode",INode,"Concent(1,INode)",Concent(1,INode)
+                        write(*,fmt="(A10,1x,I10,1x,A15,1x,1ES14.6)") "INode",INode,"Concent(INode,1)",Concent(INode,1)
                     END DO
                     write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out flux from lower surface",FOutAccum(IKind)
                     write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out concentrate from lower surface",COutAccum(IKind)
@@ -715,9 +683,9 @@ module NUCLEATION_SPACEDIST
                     write(*,fmt="(A50,1x,1ES14.6)") "Out concentrate from lower surface in current step",COutEachStep(IKind)
 
                     write(*,*) "----------------------------------------"
-                    write(*,*) "sum(Concent(1,:))",sum(Concent(1,:))
-                    write(*,*) "sum(Concent(1,:)) + CSurfAccum(1) + COutAccum(1)",sum(Concent(1,:)) + CSurfAccum(1) + COutAccum(1)
-                    write(*,*) "(sum(Concent(1,:)) + CSurfAccum(1) + COutAccum(1))/ConCentrat0",(ConCentrat0 - (sum(Concent(1,:)) + CSurfAccum(1) + COutAccum(1)))/ConCentrat0
+                    write(*,*) "sum(Concent(:,1))",sum(Concent(:,1))
+                    write(*,*) "sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)",sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)
+                    write(*,*) "(sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1))/ConCentrat0",(ConCentrat0 - (sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)))/ConCentrat0
                     write(*,*) "----------------------------------------"
                 end if
 
@@ -727,31 +695,29 @@ module NUCLEATION_SPACEDIST
             TTIME = TTIME + TSTEP
             ITIME = ITIME + 1
 
-            ImplantedNum = ImplantedNum + NewAddedAtoms
-
             if(mod(ITIME,1) .eq. 0) then
 
                 call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
 
-                call Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,ITIME,TTIME,TSTEP,sum(ImplantedNum),NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
+                call Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,ITIME,TTIME,TSTEP,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
             end if
 
             !if(Concent(CKind) .GT. 1.D-10) then
-            if(DSQRT(dble(sum(ClustersKind(CKind)%m_Atoms(:)%m_NA)))*sum(Concent(CKind,1:NNodes)) .GT. &
+            if(DSQRT(dble(sum(ClustersKind(CKind)%m_Atoms(:)%m_NA)))*sum(Concent(1:NNodes,CKind)) .GT. &
                sum(NPOWER1DIV2Ave)*Host_SimuCtrlParam%DumplicateFactor) then
 
                 DO INode = 1,NNodes
 
                     DO I = 1,(CKind -1)/2 + 1
                         if(2*I .LE. CKind) then
-                            Concent(I,INode) = (Concent(2*I-1,INode)*sum(ClustersKind(2*I-1)%m_Atoms(:)%m_NA)+Concent(2*I,INode)*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA)) &
+                            Concent(INode,I) = (Concent(INode,2*I-1)*sum(ClustersKind(2*I-1)%m_Atoms(:)%m_NA)+Concent(INode,2*I)*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA)) &
                                                /(2.D0*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA))
                         else
-                            Concent(I,INode) = Concent(2*I - 1,INode)
+                            Concent(INode,I) = Concent(INode,2*I - 1)
                         end if
                     END DO
 
-                    Concent((CKind -1)/2+2:CKind,INode) = 0.D0
+                    Concent(INode,(CKind -1)/2+2:CKind) = 0.D0
 
                     DO I = 1,(CKind -1)/2 + 1
                         if(2*I .LE. CKind) then
@@ -824,10 +790,10 @@ module NUCLEATION_SPACEDIST
             w(I) = MatrixB(I) - MatrixC(I)*MatrixA(I)/w(I-1)
             h(I) = (MatrixD(I) - MatrixA(I)*h(I-1))/w(I)
         END DO
-        Solver(IKind,MatrixSize) = h(MatrixSize)
+        Solver(MatrixSize,IKind) = h(MatrixSize)
 
         DO I = MatrixSize-1,1,-1
-            Solver(IKind,I) = h(I) - MatrixC(I)*Solver(IKind,I+1)/w(I)
+            Solver(I,IKind) = h(I) - MatrixC(I)*Solver(I+1,IKind)/w(I)
         END DO
 
 
@@ -859,23 +825,23 @@ module NUCLEATION_SPACEDIST
 
           DO INode = 1,NNodes
 
-            NPOWER0Ave(INode) = Dumplicate*sum(Concent(1:CKind,INode))
+            NPOWER0Ave(INode) = Dumplicate*sum(Concent(INode,1:CKind))
 
             Temp = 0.D0
             DO I = 1,CKind
-                Temp = Temp + (sum(ClustersKind(I)%m_Atoms(:)%m_NA)**(0.5D0))*Concent(I,INode)
+                Temp = Temp + (sum(ClustersKind(I)%m_Atoms(:)%m_NA)**(0.5D0))*Concent(INode,I)
             END DO
             NPOWER1DIV2Ave(INode) = Dumplicate*Temp
 
             Temp = 0.D0
             DO I = 1,CKind
-                Temp = Temp + sum(ClustersKind(I)%m_Atoms(:)%m_NA)*Concent(I,INode)
+                Temp = Temp + sum(ClustersKind(I)%m_Atoms(:)%m_NA)*Concent(INode,I)
             END DO
             NPOWER1Ave(INode) = Dumplicate*Temp
 
             Temp = 0.D0
             DO I = 1,CKind
-                Temp = Temp + (sum(ClustersKind(I)%m_Atoms(:)%m_NA)**(1.5D0))*Concent(I,INode)
+                Temp = Temp + (sum(ClustersKind(I)%m_Atoms(:)%m_NA)**(1.5D0))*Concent(INode,I)
             END DO
             NPOWER3DIV2Ave(INode) = Dumplicate*Temp
           END DO
@@ -885,7 +851,7 @@ module NUCLEATION_SPACEDIST
     end subroutine
 
     !---------------------------------------------
-    subroutine Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,Step,TTime,TStep,ImplantedNum,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
+    subroutine Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,Step,TTime,TStep,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
         implicit none
         !---Dummy Vars---
         type(SimulationBoxes)::Host_SimBoxes
@@ -893,7 +859,6 @@ module NUCLEATION_SPACEDIST
         integer,intent(in)::Step
         real(kind=KMCDF),intent(in)::TTime
         real(kind=KMCDF),intent(in)::TStep
-        real(kind=KMCDF),intent(in)::ImplantedNum
         real(kind=KMCDF),dimension(:),allocatable::NPOWER0Ave
         real(kind=KMCDF),dimension(:),allocatable::NPOWER1DIV2Ave
         real(kind=KMCDF),dimension(:),allocatable::NPOWER1Ave
@@ -937,12 +902,12 @@ module NUCLEATION_SPACEDIST
           END DO
 
 
-          write(6,FMT="(15(A15,1x))") "Step","Time","TStep","ImplantedNum","NPOWER0Ave","NPOWER1DIV2Ave","NPOWER1Ave","NPOWER3DIV2Ave","N1","N2","N3","Rave(nm)"
+          write(6,FMT="(15(A15,1x))") "Step","Time","TStep","NPOWER0Ave","NPOWER1DIV2Ave","NPOWER1Ave","NPOWER3DIV2Ave","N1","N2","N3","Rave(nm)"
 
-          write(6,FMT="(I15,1x,15(E15.5,1x))") Step,TTime,TStep,ImplantedNum,sum(NPOWER0Ave)/NNodes,sum(NPOWER1DIV2Ave)/NNodes,sum(NPOWER1Ave)/NNodes,sum(NPOWER3DIV2Ave)/NNodes, &
+          write(6,FMT="(I15,1x,15(E15.5,1x))") Step,TTime,TStep,sum(NPOWER0Ave)/NNodes,sum(NPOWER1DIV2Ave)/NNodes,sum(NPOWER1Ave)/NNodes,sum(NPOWER3DIV2Ave)/NNodes, &
                                              sum(N1)/NNodes,sum(N2)/NNodes,sum(N3)/NNodes,sum(Rave)*C_CM2NM/NNodes
 
-          write(m_StatisticFile,FMT="(I15,1x,15(E15.5,1x))") Step,TTime,TStep,ImplantedNum,sum(NPOWER0Ave)/NNodes,sum(NPOWER1DIV2Ave)/NNodes,sum(NPOWER1Ave)/NNodes,sum(NPOWER3DIV2Ave)/NNodes, &
+          write(m_StatisticFile,FMT="(I15,1x,15(E15.5,1x))") Step,TTime,TStep,sum(NPOWER0Ave)/NNodes,sum(NPOWER1DIV2Ave)/NNodes,sum(NPOWER1Ave)/NNodes,sum(NPOWER3DIV2Ave)/NNodes, &
                                              sum(N1)/NNodes,sum(N2)/NNodes,sum(N3)/NNodes,sum(Rave)*C_CM2NM/NNodes
 
           Flush(m_StatisticFile)
@@ -967,9 +932,9 @@ module NUCLEATION_SPACEDIST
 
           DO I = 1,CKind
               write(hFile,FMT="(15(E15.5))") sum(ClustersKind(I)%m_Atoms(:)%m_NA),                              &
-                                             sum(Concent(I,1:NNodes))/NNodes,                                   &
+                                             sum(Concent(1:NNodes,I))/NNodes,                                   &
                                              sum(ClustersKind(I)%m_Atoms(:)%m_NA)*TTime**(-dble(2)/dble(5)),    &
-                                             (sum(Concent(I,1:NNodes))/NNodes)/(TTime**(-dble(4)/dble(5)))
+                                             (sum(Concent(1:NNodes,I))/NNodes)/(TTime**(-dble(4)/dble(5)))
           END DO
 
           close(hFile)

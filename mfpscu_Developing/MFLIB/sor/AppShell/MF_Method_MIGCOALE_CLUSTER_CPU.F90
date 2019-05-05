@@ -179,7 +179,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         call InitSimu_SpaceDist(Host_SimBoxes,Host_SimuCtrlParam)
 
-        call NucleationSimu_SpaceDist(Host_SimBoxes,Host_SimuCtrlParam)
+        call NucleationSimu_SpaceDist(Host_SimBoxes,Host_SimuCtrlParam,TheImplantSection)
 
 
 !        Associate(Host_ClustesInfo=>Host_Boxes%m_ClustersInfo_CPU,Dev_ClustesInfo=>Dev_Boxes%dm_ClusterInfo_GPU, &
@@ -1209,10 +1209,12 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                         write(*,*) "which is great than the max permitted elements kinds :",p_ATOMS_GROUPS_NUMBER
                         pause
                         stop
-                    else if(NElements .GT. 1) then
-                        write(*,*) "MFPSCU Info: Currently, the program only support one element."
-                        write(*,*) "So the first element would be chosen"
                     else
+                        if(NElements .GT. 1) then
+                            write(*,*) "MFPSCU Info: Currently, the program only support one element."
+                            write(*,*) "So the first element would be chosen"
+                        end if
+
                         DO I = 1,NElements
                             InitBoxCfg%Elemets(I) = adjustl(trim(STRTMP(I)))
                             call UPCASE(InitBoxCfg%Elemets(I))
@@ -1510,9 +1512,9 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
          Host_Boxes%NodeSpace = InitBoxCfg%LayerThick
       end if
 
-      if(size(Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray) .LE. 0 .or. size(Host_Boxes%m_ClustersInfo_CPU%Concentrate))  then
+      if(size(Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray) .LE. 0 .or. size(Host_Boxes%m_ClustersInfo_CPU%Concentrate) .LE. 0)  then
          Host_Boxes%CKind = InitBoxCfg%InitCKind
-         call Host_Boxes%m_ClustersInfo_CPU%AllocateClustersInfo_CPU(InitBoxCfg%InitCKind,InitBoxCfg%InitNNodes)
+         call Host_Boxes%m_ClustersInfo_CPU%AllocateClustersInfo_CPU(InitBoxCfg%InitNNodes,InitBoxCfg%InitCKind)
 
          DO IKind = 1,InitBoxCfg%InitCKind
             NAtoms = InitBoxCfg%CKind_Range_From + IKind - 1
@@ -1552,7 +1554,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         NAtoms = max(1,NAtoms)
 
         !---Current , we only support one kind of element
-        Host_Boxes%m_ClustersInfo_CPU%Concentrate(NAtoms,:) = Host_Boxes%m_ClustersInfo_CPU%Concentrate(NAtoms,:) + InitBoxCfg%InitConcentrate*InitBoxCfg%PNCLayers/InitBoxCfg%InitCKind
+        Host_Boxes%m_ClustersInfo_CPU%Concentrate(:,NAtoms) = Host_Boxes%m_ClustersInfo_CPU%Concentrate(:,NAtoms) + InitBoxCfg%InitConcentrate*InitBoxCfg%PNCLayers/InitBoxCfg%InitCKind
 
       END DO
 
@@ -1579,15 +1581,15 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
       integer::NodeIndex
       !---Body---
 
-      if(Host_Boxes%NNodes .LE. 0) then
+      if(size(Host_Boxes%NodeSpace) .LE. 0) then
          Host_Boxes%NNodes = InitBoxCfg%InitNNodes
          call AllocateArray_Host(Host_Boxes%NodeSpace,InitBoxCfg%InitNNodes,"NodeSpace")
          Host_Boxes%NodeSpace = InitBoxCfg%LayerThick
       end if
 
-      if(Host_Boxes%CKind .LE. 0) then
+      if(size(Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray) .LE. 0 .or. size(Host_Boxes%m_ClustersInfo_CPU%Concentrate) .LE. 0)  then
          Host_Boxes%CKind = InitBoxCfg%InitCKind
-         call Host_Boxes%m_ClustersInfo_CPU%AllocateClustersInfo_CPU(InitBoxCfg%InitCKind,InitBoxCfg%InitNNodes)
+         call Host_Boxes%m_ClustersInfo_CPU%AllocateClustersInfo_CPU(InitBoxCfg%InitNNodes,InitBoxCfg%InitCKind)
 
          DO IKind = 1,InitBoxCfg%InitCKind
             NAtoms = InitBoxCfg%CKind_Range_From + IKind - 1
@@ -1636,7 +1638,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
             END DO
 
             !---Current , we only support one kind of element
-            Host_Boxes%m_ClustersInfo_CPU%Concentrate(NAtoms,NodeIndex) = Host_Boxes%m_ClustersInfo_CPU%Concentrate(NAtoms,NodeIndex) + InitBoxCfg%InitConcentrate/(InitBoxCfg%InitCKind*InitBoxCfg%InitNNodes)
+            Host_Boxes%m_ClustersInfo_CPU%Concentrate(NodeIndex,NAtoms) = Host_Boxes%m_ClustersInfo_CPU%Concentrate(NodeIndex,NAtoms) + InitBoxCfg%InitConcentrate/(InitBoxCfg%InitCKind*InitBoxCfg%InitNNodes)
 
         END DO
 
