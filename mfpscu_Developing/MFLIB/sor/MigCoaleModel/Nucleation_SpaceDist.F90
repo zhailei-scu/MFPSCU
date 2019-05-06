@@ -78,7 +78,7 @@ module NUCLEATION_SPACEDIST
     end subroutine InitSimu_SpaceDist
 
     !***************************************************
-    subroutine NucleationSimu_SpaceDist_Old(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
+    subroutine NucleationSimu_SpaceDist_Balance(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
         implicit none
         !---Dummy Vars---
         type(SimulationBoxes)::Host_SimBoxes
@@ -413,10 +413,10 @@ module NUCLEATION_SPACEDIST
           END DO
         END Associate
 
-    end subroutine NucleationSimu_SpaceDist_Old
+    end subroutine NucleationSimu_SpaceDist_Balance
 
     !***************************************************
-    subroutine NucleationSimu_SpaceDist(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
+    subroutine NucleationSimu_SpaceDist_Transient(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
         implicit none
         !---Dummy Vars---
         type(SimulationBoxes)::Host_SimBoxes
@@ -519,12 +519,6 @@ module NUCLEATION_SPACEDIST
         Associate(ClustersKind=>Host_SimBoxes%m_ClustersInfo_CPU%ClustersKindArray,Concent=>Host_SimBoxes%m_ClustersInfo_CPU%Concentrate,NodeSpace=>Host_SimBoxes%NodeSpace)
 
           ConCentrat0 = sum(Concent)
-
-
-          write(*,*) "************************************"
-          write(*,*) Concent
-          write(*,*) "***************************************"
-
 
           DO While(.true.)
 
@@ -766,7 +760,7 @@ module NUCLEATION_SPACEDIST
           END DO
         END Associate
 
-    end subroutine NucleationSimu_SpaceDist
+    end subroutine NucleationSimu_SpaceDist_Transient
 
     !----------------------------------------------------------------------
     subroutine SolveTridag(IKind,MatrixA,MatrixB,MatrixC,MatrixD,Solver,MatrixSize,w,h)

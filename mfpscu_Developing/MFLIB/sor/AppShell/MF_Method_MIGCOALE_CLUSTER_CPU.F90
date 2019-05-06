@@ -179,7 +179,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         call InitSimu_SpaceDist(Host_SimBoxes,Host_SimuCtrlParam)
 
-        call NucleationSimu_SpaceDist(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
+        call NucleationSimu_SpaceDist_Balance(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
 
 
 !        Associate(Host_ClustesInfo=>Host_Boxes%m_ClustersInfo_CPU,Dev_ClustesInfo=>Dev_Boxes%dm_ClusterInfo_GPU, &
