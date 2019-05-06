@@ -179,7 +179,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         call InitSimu_SpaceDist(Host_SimBoxes,Host_SimuCtrlParam)
 
-        call NucleationSimu_SpaceDist(Host_SimBoxes,Host_SimuCtrlParam,TheImplantSection)
+        call NucleationSimu_SpaceDist(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
 
 
 !        Associate(Host_ClustesInfo=>Host_Boxes%m_ClustersInfo_CPU,Dev_ClustesInfo=>Dev_Boxes%dm_ClusterInfo_GPU, &
@@ -1504,6 +1504,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
       integer::NAtoms
       type(DiffusorValue)::TheDiffusorValue
       integer::I
+      integer::IElement
       !---Body---
 
       if(size(Host_Boxes%NodeSpace) .LE. 0) then
@@ -1519,7 +1520,10 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
          DO IKind = 1,InitBoxCfg%InitCKind
             NAtoms = InitBoxCfg%CKind_Range_From + IKind - 1
 
-            Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Atoms(:)%m_NA = NAtoms*InitBoxCfg%CompositWeight
+            DO IElement = 1,p_ATOMS_GROUPS_NUMBER
+                Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Atoms(IElement)%m_NA = NAtoms*InitBoxCfg%CompositWeight(IElement)
+                Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Atoms(IElement)%m_ID = IElement
+            END DO
 
             Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Statu = p_ACTIVEFREE_STATU
 
@@ -1579,6 +1583,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
       integer::J
       real(kind=KMCDF)::DepthPos
       integer::NodeIndex
+      integer::IElement
       !---Body---
 
       if(size(Host_Boxes%NodeSpace) .LE. 0) then
@@ -1594,7 +1599,10 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
          DO IKind = 1,InitBoxCfg%InitCKind
             NAtoms = InitBoxCfg%CKind_Range_From + IKind - 1
 
-            Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Atoms(:)%m_NA = NAtoms*InitBoxCfg%CompositWeight
+            DO IElement = 1,p_ATOMS_GROUPS_NUMBER
+                Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Atoms(IElement)%m_NA = NAtoms*InitBoxCfg%CompositWeight(IElement)
+                Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Atoms(IElement)%m_ID = IElement
+            END DO
 
             Host_Boxes%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Statu = p_ACTIVEFREE_STATU
 

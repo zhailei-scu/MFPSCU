@@ -485,6 +485,8 @@ module NUCLEATION_SPACEDIST
 
         allocate(tempNBPVChangeRate(NNodes,CKind))
 
+        allocate(ImplantedRate(NNodes,CKind))
+
         allocate(NPOWER0Ave(NNodes),NPOWER1DIV2Ave(NNodes),NPOWER1Ave(NNodes),NPOWER3DIV2Ave(NNodes))
 
         allocate(N1(NNodes),N2(NNodes),N3(NNodes),Rave(NNodes))
