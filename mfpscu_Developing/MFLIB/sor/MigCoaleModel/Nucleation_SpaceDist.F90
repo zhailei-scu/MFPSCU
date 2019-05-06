@@ -15,9 +15,6 @@ module NUCLEATION_SPACEDIST
     real(kind=KMCDF),dimension(:),allocatable::MatW
     real(kind=KMCDF),dimension(:),allocatable::MatH
 
-    real(kind=KMCDF),dimension(:),allocatable::m_ImplantDist
-    integer::m_ImplantLayerNum = 1
-
     integer::Dumplicate = 1
 
     integer::m_StatisticFile
@@ -67,12 +64,6 @@ module NUCLEATION_SPACEDIST
             deallocate(MatH)
         end if
         allocate(MatH(NNodes))
-
-        if(allocated(m_ImplantDist)) then
-            deallocate(m_ImplantDist)
-        end if
-        allocate(m_ImplantDist(m_ImplantLayerNum))
-        m_ImplantDist = 1.D0/m_ImplantLayerNum
 
 
         call AvailableIOUnit(m_StatisticFile)
@@ -529,6 +520,12 @@ module NUCLEATION_SPACEDIST
 
           ConCentrat0 = sum(Concent)
 
+
+          write(*,*) "************************************"
+          write(*,*) Concent
+          write(*,*) "***************************************"
+
+
           DO While(.true.)
 
             adjustlTime = .false.
@@ -612,6 +609,10 @@ module NUCLEATION_SPACEDIST
             if(adjustlTime .eq. .true.) then
                 TSTEP = minTimeStep
             end if
+
+            write(*,*) "************************************"
+            write(*,*) ImplantedRate(1:NNodes,1)
+            write(*,*) "************************************"
 
             DO IKind = 1,CKind
 

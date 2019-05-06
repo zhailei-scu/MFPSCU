@@ -39,15 +39,15 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         integer::InitDepthDistType = -1
 
-        real(kind=KMCDF)::InitConcentrate = 0.D0
-
         real(kind=KMCDF),dimension(:),allocatable::LayerThick
 
-        real(kind=KMCDF),dimension(:),allocatable::PNCLayers
+        real(kind=KMCDF),dimension(:),allocatable::InitConcent
 
-        real(kind=KMCDF)::DepthINI = 0.D0
+        real(kind=KMCDF)::CentralConcentrate = 0.D0
 
-        real(kind=KMCDF)::DepthSDINI = 0.D0
+        integer::DepthINILayer = 0
+
+        integer::DepthSDINILayer = 0
 
         contains
         procedure,non_overridable,public,pass::CopyInitBoxSimCfgFromOther
@@ -291,19 +291,19 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         this%InitDepthDistType = other%InitDepthDistType
 
-        this%InitConcentrate = other%InitConcentrate
+        this%CentralConcentrate = other%CentralConcentrate
 
-        this%DepthINI = other%DepthINI
+        this%DepthINILayer = other%DepthINILayer
 
-        this%DepthSDINI = other%DepthSDINI
+        this%DepthSDINILayer = other%DepthSDINILayer
 
         call DeAllocateArray_Host(this%LayerThick,"LayerThick")
         call AllocateArray_Host(this%LayerThick,size(other%LayerThick),"LayerThick")
         this%LayerThick = other%LayerThick
 
-        call DeAllocateArray_Host(this%PNCLayers,"PNCLayers")
-        call AllocateArray_Host(this%PNCLayers,size(other%PNCLayers),"PNCLayers")
-        this%PNCLayers = other%PNCLayers
+        call DeAllocateArray_Host(this%InitConcent,"InitConcent")
+        call AllocateArray_Host(this%InitConcent,size(other%InitConcent),"InitConcent")
+        this%InitConcent = other%InitConcent
 
         return
     end subroutine CopyInitBoxSimCfgFromOther
@@ -337,15 +337,15 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         this%InitDepthDistType = -1
 
-        this%InitConcentrate = 0.D0
-
         call DeAllocateArray_Host(this%LayerThick,"LayerThick")
 
-        call DeAllocateArray_Host(this%PNCLayers,"PNCLayers")
+        call DeAllocateArray_Host(this%InitConcent,"InitConcent")
 
-        this%DepthINI = 0.D0
+        this%CentralConcentrate = 0.D0
 
-        this%DepthSDINI = 0.D0
+        this%DepthINILayer = 0
+
+        this%DepthSDINILayer = 0
 
         return
     end subroutine
@@ -1277,13 +1277,13 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         character*256::STR
         character*32::KEYWORD
         character*32::STRTMP(10)
+        character*32,allocatable,dimension(:)::STRNUMB
         integer::N
         integer::LayerStart
         integer::LayerEnd
         integer::LayerNum
         integer::I
         real(kind=KMCDF)::TotalLayerThick
-        real(kind=KMCDF)::TotalPNC
         !---Body---
 
         DO While(.true.)
@@ -1296,16 +1296,6 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
             SELECT CASE(KEYWORD(1:LENTRIM(KEYWORD)))
                 CASE("&ENDSUBCTL")
                     exit
-                CASE("&CONCENTRATE")
-                    call EXTRACT_NUMB(STR,1,N,STRTMP)
-                    if(N .LT. 1) then
-                        write(*,*) "MFPSCUERROR: Too few parameters for concentration setting"
-                        write(*,*) "You should special: '&CONCENTRATE THE INITIAL CONCENTRATE OF ENTRIES =   ! (1/(cm^3))'"
-                        pause
-                        stop
-                    end if
-                    InitBoxCfg%InitConcentrate = DRSTR(STRTMP(1))
-
                 CASE("&DEPTH_LAYER")
                     InitBoxCfg%InitDepthDistType = p_DEPT_DIS_Layer
 
@@ -1349,12 +1339,18 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                         stop
                     end if
 
-                    call AllocateArray_Host(InitBoxCfg%PNCLayers,InitBoxCfg%InitNNodes,"PNCLayers")
-                    InitBoxCfg%PNCLayers = 0.D0
+                    call AllocateArray_Host(InitBoxCfg%InitConcent,InitBoxCfg%InitNNodes,"InitConcent")
+                    InitBoxCfg%InitConcent = 0.D0
 
                     if(N .eq. 3) then
-                        InitBoxCfg%PNCLayers = DRSTR(STRTMP(3))
+                        DO I = LayerStart,LayerEnd
+                            InitBoxCfg%InitConcent(I) = DRSTR(STRTMP(3))
+                        END DO
                     else if(N .GT. 3) then
+                        Allocate(STRNUMB(LayerNum))
+
+                        call EXTRACT_NUMB(STR,LayerNum,N,STRNUMB)
+
                         if((N-2) .LT. LayerNum) then
                             write(*,*) "MFPSCUERROR: If you special the initial concentrates for layers(nodes) one by one,"
                             write(*,*) "You should give each of them."
@@ -1362,33 +1358,27 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
                             stop
                         end if
 
+
                         DO I = LayerStart,LayerEnd
-                            InitBoxCfg%PNCLayers(I) = DRSTR(STRTMP(I - LayerStart + 1 + 2))
+                            InitBoxCfg%InitConcent(I) = DRSTR(STRNUMB(I - LayerStart + 1 + 2))
                         END DO
                     end if
-
-                    TotalPNC = sum(InitBoxCfg%PNCLayers)
-                    if(TotalPNC .LE. 0) then
-                        write(*,*) "MFPSCUERROR: The total percent cannot less than 0"
-                        pause
-                        stop
-                    end if
-                    InitBoxCfg%PNCLayers = InitBoxCfg%PNCLayers/TotalPNC
 
                 CASE("&DEPTH_GAUSS")
 
                     InitBoxCfg%InitDepthDistType = p_DEPT_DIS_GAS
 
-                    call EXTRACT_NUMB(STR,2,N,STRTMP)
-                    if(N .LT. 2) then
+                    call EXTRACT_NUMB(STR,3,N,STRTMP)
+                    if(N .LT. 3) then
                         write(*,*) "MFPSCUERROR: Too few parameters for the bubble depth distribution gauss type"
-                        write(*,*) "You shoud special: &DEPTH_GAUSS THE GAUSS DISTRIBUTION CENTRAL = , THE HALF WIDTH = "
+                        write(*,*) "You should special: &DEPTH_GAUSS THE GAUSS DISTRIBUTION CENTRAL = , THE HALF WIDTH = , The central concentrate = "
                         write(*,*) "At line: ",LINE
                         pause
                         stop
                     end if
-                    InitBoxCfg%DepthINI = DRSTR(STRTMP(1))*C_NM2CM
-                    InitBoxCfg%DepthSDINI = DRSTR(STRTMP(2))*C_NM2CM
+                    InitBoxCfg%DepthINILayer = ISTR(STRTMP(1))
+                    InitBoxCfg%DepthSDINILayer = ISTR(STRTMP(2))
+                    InitBoxCfg%CentralConcentrate = DRSTR(STRTMP(3))
                 CASE default
                     write(*,*) "MFPSCUERROR: Illegal Symbol: ", KEYWORD
                     pause
@@ -1396,6 +1386,10 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
             END SELECT
 
         END DO
+
+        if(allocated(STRNUMB)) then
+            DeAllocate(STRNUMB)
+        end if
 
         return
         100 return 1
@@ -1558,7 +1552,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         NAtoms = max(1,NAtoms)
 
         !---Current , we only support one kind of element
-        Host_Boxes%m_ClustersInfo_CPU%Concentrate(:,NAtoms) = Host_Boxes%m_ClustersInfo_CPU%Concentrate(:,NAtoms) + InitBoxCfg%InitConcentrate*InitBoxCfg%PNCLayers/InitBoxCfg%InitCKind
+        Host_Boxes%m_ClustersInfo_CPU%Concentrate(:,NAtoms) = Host_Boxes%m_ClustersInfo_CPU%Concentrate(:,NAtoms) + InitBoxCfg%InitConcent/InitBoxCfg%InitCKind
 
       END DO
 
@@ -1636,19 +1630,28 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         NAtoms = max(1,NAtoms)
 
-        DO J = 1,InitBoxCfg%InitNNodes
-            DepthPos = RGAUSS0_WithCut(InitBoxCfg%DepthINI, InitBoxCfg%DepthSDINI,Host_Boxes%BOXBOUNDARY(3,1),Host_Boxes%BOXBOUNDARY(3,2))
-
-            DO NodeIndex = 1,InitBoxCfg%InitNNodes
-                if(DepthPos .LE. sum(InitBoxCfg%LayerThick(1:NodeIndex))) then
-                    exit
-                end if
-            END DO
+        if(InitBoxCfg%DepthSDINILayer .eq. 0) then
+            Host_Boxes%m_ClustersInfo_CPU%Concentrate(InitBoxCfg%DepthSDINILayer,NAtoms) = Host_Boxes%m_ClustersInfo_CPU%Concentrate(InitBoxCfg%DepthSDINILayer,NAtoms) + &
+                                                                                            InitBoxCfg%CentralConcentrate/InitBoxCfg%InitCKind
+        else
+            DO J = 1,InitBoxCfg%InitNNodes
+!            DepthPos = RGAUSS0_WithCut(InitBoxCfg%DepthINI, InitBoxCfg%DepthSDINI,Host_Boxes%BOXBOUNDARY(3,1),Host_Boxes%BOXBOUNDARY(3,2))
+!
+!            DO NodeIndex = 1,InitBoxCfg%InitNNodes
+!                if(DepthPos .LE. sum(InitBoxCfg%LayerThick(1:NodeIndex))) then
+!                    exit
+!                end if
+!            END DO
 
             !---Current , we only support one kind of element
-            Host_Boxes%m_ClustersInfo_CPU%Concentrate(NodeIndex,NAtoms) = Host_Boxes%m_ClustersInfo_CPU%Concentrate(NodeIndex,NAtoms) + InitBoxCfg%InitConcentrate/(InitBoxCfg%InitCKind*InitBoxCfg%InitNNodes)
+            !Host_Boxes%m_ClustersInfo_CPU%Concentrate(NodeIndex,NAtoms) = Host_Boxes%m_ClustersInfo_CPU%Concentrate(NodeIndex,NAtoms) + InitBoxCfg%CentralConcentrate/(InitBoxCfg%InitCKind*InitBoxCfg%InitNNodes)
 
-        END DO
+                Host_Boxes%m_ClustersInfo_CPU%Concentrate(J,NAtoms) = Host_Boxes%m_ClustersInfo_CPU%Concentrate(J,NAtoms) + &
+                                                                      InitBoxCfg%CentralConcentrate*exp(dble(-((J - InitBoxCfg%DepthSDINILayer)**2)/(2*InitBoxCfg%DepthSDINILayer**2)))/InitBoxCfg%InitCKind
+
+            END DO
+
+        end if
 
       END DO
 

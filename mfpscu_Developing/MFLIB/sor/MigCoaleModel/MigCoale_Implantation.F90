@@ -1437,6 +1437,7 @@ module MIGCOALE_IMPLANTATION
         real(kind=KMCDF),dimension(:,:),allocatable::ImplantRate
         !-----local variables---
         integer::MaxGroups
+        integer::INode
         integer::ILayer
         integer::JLayer
         integer::LayerStart
@@ -1471,9 +1472,11 @@ module MIGCOALE_IMPLANTATION
             DO JLayer = LayerStart,Host_Boxes%NNodes
                 AccumThick = AccumThick + Host_Boxes%NodeSpace(JLayer)
 
+                OccupyLayer_End = JLayer
+
+                LayerStart = JLayer + 1
+
                 if(AccumThick .GE. AccumThick_Implant) then
-                    OccupyLayer_End = JLayer
-                    LayerStart = JLayer + 1
                     exit
                 end if
             END DO
@@ -1497,9 +1500,13 @@ module MIGCOALE_IMPLANTATION
 
                 if(JLayer .eq. OccupyLayer_Start) then
                     Percent = (AccumThickTemp - (AccumThick_Implant - this%LayerThick(ILayer)) )/this%LayerThick(ILayer)
+
+                    Percent = min(Percent,1.D0)
                 else if(JLayer .eq. OccupyLayer_End) then
                     AccumThickTemp = AccumThickTemp - Host_Boxes%NodeSpace(JLayer)
                     Percent = (AccumThick_Implant - AccumThickTemp)/this%LayerThick(ILayer)
+
+                    Percent = min(Percent,1.D0)
                 else
                     AccumThickTemp = AccumThickTemp - Host_Boxes%NodeSpace(JLayer)
                     Percent = Host_Boxes%NodeSpace(JLayer)/this%LayerThick(ILayer)
@@ -1514,6 +1521,10 @@ module MIGCOALE_IMPLANTATION
 
             END DO
 
+        END DO
+
+        DO INode = 1,Host_Boxes%NNodes
+           ImplantRate(INode,:) = ImplantRate(INode,:)/Host_Boxes%NodeSpace(INode)
         END DO
 
         return
@@ -1546,6 +1557,7 @@ module MIGCOALE_IMPLANTATION
       !-----local variables---
       integer::NAtoms
       integer::MaxGroups
+      integer::INode
       integer::ILayer
       integer::JLayer
       integer::LayerStart
@@ -1562,6 +1574,7 @@ module MIGCOALE_IMPLANTATION
       real(kind=KMCDF)::TotalInterval
       real(kind=KMCDF)::Percent
       !---Body---
+
       AccumThick = 0.D0
 
       AccumThick_Implant = 0.D0
@@ -1581,9 +1594,11 @@ module MIGCOALE_IMPLANTATION
          DO JLayer = LayerStart,Host_Boxes%NNodes
             AccumThick = AccumThick + Host_Boxes%NodeSpace(JLayer)
 
+            OccupyLayer_End = JLayer
+
+            LayerStart = JLayer + 1
+
             if(AccumThick .GE. AccumThick_Implant) then
-                OccupyLayer_End = JLayer
-                LayerStart = JLayer + 1
                 exit
             end if
          END DO
@@ -1607,9 +1622,13 @@ module MIGCOALE_IMPLANTATION
 
             if(JLayer .eq. OccupyLayer_Start) then
                 Percent = (AccumThickTemp - (AccumThick_Implant - this%LayerThick(ILayer)) )/this%LayerThick(ILayer)
+
+                Percent = min(Percent,1.D0)
             else if(JLayer .eq. OccupyLayer_End) then
                 AccumThickTemp = AccumThickTemp - Host_Boxes%NodeSpace(JLayer)
                 Percent = (AccumThick_Implant - AccumThickTemp)/this%LayerThick(ILayer)
+
+                Percent = min(Percent,1.D0)
             else
                 AccumThickTemp = AccumThickTemp - Host_Boxes%NodeSpace(JLayer)
                 Percent = Host_Boxes%NodeSpace(JLayer)/this%LayerThick(ILayer)
@@ -1631,6 +1650,10 @@ module MIGCOALE_IMPLANTATION
 
          END DO
 
+      END DO
+
+      DO INode = 1,Host_Boxes%NNodes
+         ImplantRate(INode,:) = ImplantRate(INode,:)/Host_Boxes%NodeSpace(INode)
       END DO
 
       return
@@ -1698,6 +1721,10 @@ module MIGCOALE_IMPLANTATION
                 ImplantRate(TrueLayer,ClusterIndex) = ImplantRate(TrueLayer,ClusterIndex) + this%ImplantFlux/(SampleTimeEachLayer*MaxGroups)
             END DO
 
+        END DO
+
+        DO INode = 1,Host_Boxes%NNodes
+           ImplantRate(INode,:) = ImplantRate(INode,:)/Host_Boxes%NodeSpace(INode)
         END DO
 
         return
