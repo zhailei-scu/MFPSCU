@@ -128,7 +128,7 @@
     &ENDSUBCTL
 
     &IMPLANTSUBCTL
-        &IMPLANTID The used implantation group in current time section = 3
+        &IMPLANTID The used implantation group in current time section = 2
     &ENDSUBCTL
     
     &TIMESUBCTL

@@ -17,8 +17,9 @@ module NUCLEATION_SPACEDIST
 
     integer::Dumplicate = 1
 
-    integer::m_StatisticFile
     integer::LastOutPutConifgIndex = 0
+
+    integer::m_StatisticFile
     contains
 
     subroutine InitSimu_SpaceDist(Host_Boxes,Host_SimuCtrlParam)
@@ -79,6 +80,7 @@ module NUCLEATION_SPACEDIST
 
     !***************************************************
     subroutine NucleationSimu_SpaceDist_Balance(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
+        use RAND32_MODULE
         implicit none
         !---Dummy Vars---
         type(SimulationBoxes)::Host_SimBoxes
@@ -90,9 +92,7 @@ module NUCLEATION_SPACEDIST
         integer::CKind
         integer::IKind
         integer::JKind
-        integer::ITIME
         real(kind=KMCDF)::TSTEP
-        real(kind=KMCDF)::TTIME
         real(kind=KMCDF)::deta
         real(kind=KMCDF),dimension(:,:),allocatable::tempNBPV
         real(kind=KMCDF),dimension(:,:),allocatable::tempNBPVChangeRate
@@ -129,6 +129,8 @@ module NUCLEATION_SPACEDIST
         integer::AtomuNumbObject
         integer::AtomuNumbProductor
         real(kind=KMCDF)::ConCentrat0
+        type(ReactionValue)::TheReactionValue
+        real(kind=KMCDF)::ReactionCoeff
         !---Body---
         CKind = Host_SimBoxes%CKind
         NNodes = Host_SimBoxes%NNodes
@@ -159,10 +161,6 @@ module NUCLEATION_SPACEDIST
 
         allocate(COutEachStep(NNodes))
 
-        ITIME = 0
-
-        TTIME = 0.D0
-
         TSTEP = 0.01
 
         FSurfAccum = 0.D0
@@ -182,6 +180,8 @@ module NUCLEATION_SPACEDIST
           ConCentrat0 = sum(Concent)
 
           DO While(.true.)
+
+            call Record%IncreaseOneSimuStep()
 
             adjustlTime = .false.
 
@@ -205,37 +205,50 @@ module NUCLEATION_SPACEDIST
 
                 DO IKind = 1,CKind
 
-
                     DO JKind = IKind,CKind
 
-                        deta = Dumplicate*Concent(INode,IKind)*Concent(INode,JKind)* &
-                               (ClustersKind(IKind)%m_RAD + ClustersKind(JKind)%m_RAD)* &
-                               (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(JKind)%m_DiffCoeff)
+                        TheReactionValue = Host_SimBoxes%m_ReactionsMap%get(ClustersKind(IKind),ClustersKind(JKind))
 
-                        if(IKind .eq. JKind) then
+                        ReactionCoeff = 0.D0
+                        select case(TheReactionValue%ReactionCoefficientType)
+                            case(p_ReactionCoefficient_ByValue)
+                                ReactionCoeff = TheReactionValue%ReactionCoefficient_Value
+                            case(p_ReactionCoefficient_ByArrhenius)
+                                ReactionCoeff = TheReactionValue%PreFactor*exp(-C_EV2ERG*TheReactionValue%ActEnergy/Host_SimuCtrlParam%TKB)
+                        end select
 
-                            Factor = 0.5D0
+                        if(ReactionCoeff .GE. DRAND32()) then
 
-                            tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
+                            deta = Dumplicate*Concent(INode,IKind)*Concent(INode,JKind)* &
+                                    (ClustersKind(IKind)%m_RAD + ClustersKind(JKind)%m_RAD)* &
+                                    (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(JKind)%m_DiffCoeff)
 
-                        else
+                            if(IKind .eq. JKind) then
 
-                            Factor = 1.D0
+                                Factor = 0.5D0
 
-                            tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
+                                tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
 
-                            tempNBPVChangeRate(INode,JKind) =  tempNBPVChangeRate(INode,JKind) - deta
+                            else
 
-                        end if
+                                Factor = 1.D0
 
-                        if((IKind + JKind) .LE. CKind) then
+                                tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
 
-                            AtomuNumbSubject = sum(ClustersKind(IKind)%m_Atoms(:)%m_NA)
-                            AtomuNumbObject = sum(ClustersKind(JKind)%m_Atoms(:)%m_NA)
-                            AtomuNumbProductor = sum(ClustersKind(IKind+JKind)%m_Atoms(:)%m_NA)
+                                tempNBPVChangeRate(INode,JKind) =  tempNBPVChangeRate(INode,JKind) - deta
 
-                            tempNBPVChangeRate(INode,IKind + JKind) = tempNBPVChangeRate(INode,IKind + JKind) + &
-                                                                      Factor*deta*(AtomuNumbSubject+AtomuNumbObject)/AtomuNumbProductor
+                            end if
+
+                            if((IKind + JKind) .LE. CKind) then
+
+                                AtomuNumbSubject = sum(ClustersKind(IKind)%m_Atoms(:)%m_NA)
+                                AtomuNumbObject = sum(ClustersKind(JKind)%m_Atoms(:)%m_NA)
+                                AtomuNumbProductor = sum(ClustersKind(IKind+JKind)%m_Atoms(:)%m_NA)
+
+                                tempNBPVChangeRate(INode,IKind + JKind) = tempNBPVChangeRate(INode,IKind + JKind) + &
+                                                                            Factor*deta*(AtomuNumbSubject+AtomuNumbObject)/AtomuNumbProductor
+                            end if
+
                         end if
 
                     END DO
@@ -311,7 +324,6 @@ module NUCLEATION_SPACEDIST
                 FOutAccum(IKind) = FOutAccum(IKind) + FOutEachStep(IKind)
                 COutAccum(IKind) = COutAccum(IKind) + COutEachStep(IKind)
 
-
                 DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(1)
                 FSurfEachStep(IKind) = DiffGradient1*Concent(1,IKind)
                 CSurfEachStep(IKind) = DiffGradient1*Concent(1,IKind)*TSTEP/NodeSpace(1)
@@ -320,17 +332,17 @@ module NUCLEATION_SPACEDIST
 
                 if(IKind .eq. 1) then
 
-                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out flux from up surface",FSurfAccum(IKind)
-                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out concentrate from up surface",CSurfAccum(IKind)
-                    write(*,fmt="(A50,1x,1ES14.6)") "Out flux from up surface in current step",FSurfEachStep(IKind)
-                    write(*,fmt="(A50,1x,1ES14.6)") "Out concentrate from up surface in current step",CSurfEachStep(IKind)
+                    write(*,*) "Accumulated out flux from up surface",FSurfAccum(IKind)
+                    write(*,*) "Accumulated out concentrate from up surface",CSurfAccum(IKind)
+                    write(*,*) "Out flux from up surface in current step",FSurfEachStep(IKind)
+                    write(*,*) "Out concentrate from up surface in current step",CSurfEachStep(IKind)
                     DO INode = 1,NNodes
-                        write(*,fmt="(A10,1x,I10,1x,A15,1x,1ES14.6)") "INode",INode,"Concent(INode,1)",Concent(INode,1)
+                        write(*,*) "INode",INode,"Concent(INode,1)",Concent(INode,1)
                     END DO
-                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out flux from lower surface",FOutAccum(IKind)
-                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out concentrate from lower surface",COutAccum(IKind)
-                    write(*,fmt="(A50,1x,1ES14.6)") "Out flux from lower surface in current step",FOutEachStep(IKind)
-                    write(*,fmt="(A50,1x,1ES14.6)") "Out concentrate from lower surface in current step",COutEachStep(IKind)
+                    write(*,*) "Accumulated out flux from lower surface",FOutAccum(IKind)
+                    write(*,*) "Accumulated out concentrate from lower surface",COutAccum(IKind)
+                    write(*,*) "Out flux from lower surface in current step",FOutEachStep(IKind)
+                    write(*,*) "Out concentrate from lower surface in current step",COutEachStep(IKind)
 
                     write(*,*) "----------------------------------------"
                     write(*,*) "sum(Concent(:,1))",sum(Concent(:,1))
@@ -342,14 +354,15 @@ module NUCLEATION_SPACEDIST
 
             END DO
 
-            TTIME = TTIME + TSTEP
-            ITIME = ITIME + 1
+            call Record%AddSimuTimes(TSTEP)
 
-            if(mod(ITIME,1) .eq. 0) then
+            call OutPutCurrent(Host_SimBoxes,Host_SimuCtrlParam,Record)
 
-                call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
+            if(mod(Record%GetSimuSteps(),1) .eq. 0) then
 
-                call Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,ITIME,TTIME,TSTEP,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
+                !call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
+
+                !call Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,ITIME,TTIME,TSTEP,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
             end if
 
             !if(Concent(CKind) .GT. 1.D-10) then
@@ -405,8 +418,7 @@ module NUCLEATION_SPACEDIST
                 write(*,*) "Dumplicate",Dumplicate
             end if
 
-
-            if(TTIME .GT. Host_SimuCtrlParam%TermTValue) then
+            if(Record%GetSimuTimes() .GT. Host_SimuCtrlParam%TermTValue) then
                 exit
             end if
 
@@ -417,6 +429,7 @@ module NUCLEATION_SPACEDIST
 
     !***************************************************
     subroutine NucleationSimu_SpaceDist_Transient(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
+        use RAND32_MODULE
         implicit none
         !---Dummy Vars---
         type(SimulationBoxes)::Host_SimBoxes
@@ -428,9 +441,7 @@ module NUCLEATION_SPACEDIST
         integer::CKind
         integer::IKind
         integer::JKind
-        integer::ITIME
         real(kind=KMCDF)::TSTEP
-        real(kind=KMCDF)::TTIME
         real(kind=KMCDF)::deta
         real(kind=KMCDF),dimension(:,:),allocatable::tempNBPV
         real(kind=KMCDF),dimension(:,:),allocatable::tempNBPVChangeRate
@@ -467,6 +478,8 @@ module NUCLEATION_SPACEDIST
         integer::AtomuNumbObject
         integer::AtomuNumbProductor
         real(kind=KMCDF)::ConCentrat0
+        real(kind=KMCDF)::ReactionCoeff
+        type(ReactionValue)::TheReactionValue
         !---Body---
         CKind = Host_SimBoxes%CKind
 
@@ -498,10 +511,6 @@ module NUCLEATION_SPACEDIST
 
         allocate(COutEachStep(NNodes))
 
-        ITIME = 0
-
-        TTIME = 0.D0
-
         TSTEP = 0.01
 
         FSurfAccum = 0.D0
@@ -521,6 +530,8 @@ module NUCLEATION_SPACEDIST
           ConCentrat0 = sum(Concent)
 
           DO While(.true.)
+
+            call Record%IncreaseOneSimuStep()
 
             adjustlTime = .false.
 
@@ -546,33 +557,48 @@ module NUCLEATION_SPACEDIST
 
                     DO JKind = IKind,CKind
 
-                        deta = Dumplicate*Concent(INode,IKind)*Concent(INode,JKind)* &
-                               (ClustersKind(IKind)%m_RAD + ClustersKind(JKind)%m_RAD)* &
-                               (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(JKind)%m_DiffCoeff)
+                        TheReactionValue = Host_SimBoxes%m_ReactionsMap%get(ClustersKind(IKind),ClustersKind(JKind))
 
-                        if(IKind .eq. JKind) then
+                        ReactionCoeff = 0.D0
+                        select case(TheReactionValue%ReactionCoefficientType)
+                            case(p_ReactionCoefficient_ByValue)
+                                ReactionCoeff = TheReactionValue%ReactionCoefficient_Value
+                            case(p_ReactionCoefficient_ByArrhenius)
+                                ReactionCoeff = TheReactionValue%PreFactor*exp(-C_EV2ERG*TheReactionValue%ActEnergy/Host_SimuCtrlParam%TKB)
+                        end select
 
-                            Factor = 0.5D0
+                        if(ReactionCoeff .GE. DRAND32()) then
 
-                            tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
 
-                        else
+                            deta = Dumplicate*Concent(INode,IKind)*Concent(INode,JKind)* &
+                                    (ClustersKind(IKind)%m_RAD + ClustersKind(JKind)%m_RAD)* &
+                                    (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(JKind)%m_DiffCoeff)
 
-                            Factor = 1.D0
+                            if(IKind .eq. JKind) then
 
-                            tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
+                                Factor = 0.5D0
 
-                            tempNBPVChangeRate(INode,JKind) =  tempNBPVChangeRate(INode,JKind) - deta
+                                tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
 
-                        end if
+                            else
 
-                        if((IKind + JKind) .LE. CKind) then
-                            AtomuNumbSubject = sum(ClustersKind(IKind)%m_Atoms(:)%m_NA)
-                            AtomuNumbObject = sum(ClustersKind(JKind)%m_Atoms(:)%m_NA)
-                            AtomuNumbProductor = sum(ClustersKind(IKind+JKind)%m_Atoms(:)%m_NA)
+                                Factor = 1.D0
 
-                            tempNBPVChangeRate(INode,IKind + JKind) = tempNBPVChangeRate(INode,IKind + JKind) + &
-                                                                      Factor*deta*(AtomuNumbSubject+AtomuNumbObject)/AtomuNumbProductor
+                                tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
+
+                                tempNBPVChangeRate(INode,JKind) =  tempNBPVChangeRate(INode,JKind) - deta
+
+                            end if
+
+                            if((IKind + JKind) .LE. CKind) then
+                                AtomuNumbSubject = sum(ClustersKind(IKind)%m_Atoms(:)%m_NA)
+                                AtomuNumbObject = sum(ClustersKind(JKind)%m_Atoms(:)%m_NA)
+                                AtomuNumbProductor = sum(ClustersKind(IKind+JKind)%m_Atoms(:)%m_NA)
+
+                                tempNBPVChangeRate(INode,IKind + JKind) = tempNBPVChangeRate(INode,IKind + JKind) + &
+                                                                            Factor*deta*(AtomuNumbSubject+AtomuNumbObject)/AtomuNumbProductor
+                            end if
+
                         end if
 
                     END DO
@@ -603,10 +629,6 @@ module NUCLEATION_SPACEDIST
             if(adjustlTime .eq. .true.) then
                 TSTEP = minTimeStep
             end if
-
-            write(*,*) "************************************"
-            write(*,*) ImplantedRate(1:NNodes,1)
-            write(*,*) "************************************"
 
             DO IKind = 1,CKind
 
@@ -689,14 +711,15 @@ module NUCLEATION_SPACEDIST
 
             END DO
 
-            TTIME = TTIME + TSTEP
-            ITIME = ITIME + 1
+            call Record%AddSimuTimes(TSTEP)
 
-            if(mod(ITIME,1) .eq. 0) then
+            call OutPutCurrent(Host_SimBoxes,Host_SimuCtrlParam,Record)
 
-                call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
+            if(mod(Record%GetSimuSteps(),1) .eq. 0) then
 
-                call Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,ITIME,TTIME,TSTEP,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
+                !call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
+
+                !call Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,ITIME,TTIME,TSTEP,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
             end if
 
             !if(Concent(CKind) .GT. 1.D-10) then
@@ -753,7 +776,7 @@ module NUCLEATION_SPACEDIST
             end if
 
 
-            if(TTIME .GT. Host_SimuCtrlParam%TermTValue) then
+            if(Record%GetSimuTimes() .GT. Host_SimuCtrlParam%TermTValue) then
                 exit
             end if
 
@@ -846,6 +869,85 @@ module NUCLEATION_SPACEDIST
         END Associate
         return
     end subroutine
+
+    !---------------------------------------------
+    subroutine OutPutCurrent(Host_SimBoxes,Host_SimuCtrlParam,Record)
+        implicit none
+        !---Dummy Vars---
+        type(SimulationBoxes)::Host_SimBoxes
+        type(SimulationCtrlParam),target::Host_SimuCtrlParam
+        type(MigCoalClusterRecord)::Record
+        !---Local Vars---
+        logical::OutIntegralBoxStatistic
+        logical::OutEachBoxStatistic
+        !---Body---
+
+        OutIntegralBoxStatistic = .false.
+        OutEachBoxStatistic = .true.
+
+        OutIntegralBoxStatistic = Record%WhetherOutSizeDist_IntegralBox(Host_SimuCtrlParam)
+
+        OutEachBoxStatistic = Record%WhetherOutSizeDist_EachBox(Host_SimuCtrlParam)
+
+        if(OutIntegralBoxStatistic .eq. .true. .or. OutEachBoxStatistic .eq. .true.) then
+!            call GetBoxesMigCoaleStat_Used_GPU(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,TheMigCoaleStatisticInfo,Record)
+!
+!            if(OutIntegralBoxStatistic .eq. .true.) then
+!                call PutOut_Instance_Statistic_IntegralBox(Host_Boxes,Host_SimuCtrlParam,TheMigCoaleStatisticInfo,Record,Model=0)
+!
+!                if(Host_SimuCtrlParam%OutPutSCFlag .eq. mp_OutTimeFlag_ByIntervalSteps) then
+!                    call Record%SetLastOutSizeDistTime_IntegralBox(dble(Record%GetSimuSteps()))
+!                else if(Host_SimuCtrlParam%OutPutSCFlag .eq. mp_OutTimeFlag_ByIntervalRealTime) then
+!                    call Record%SetLastOutSizeDistTime_IntegralBox(Record%GetSimuTimes())
+!                else if(Host_SimuCtrlParam%OutPutSCFlag .eq. mp_OutTimeFlag_ByIntervalTimeMagnification) then
+!                    call Record%SetLastOutSizeDistTime_IntegralBox(Record%GetSimuTimes())
+!                end if
+!            end if
+!
+!            if(OutEachBoxStatistic .eq. .true.) then
+!                call PutOut_Instance_Statistic_EachBox(Host_Boxes,Host_SimuCtrlParam,TheMigCoaleStatisticInfo,Record)
+!
+!                if(Host_SimuCtrlParam%OutPutSCFlag .eq. mp_OutTimeFlag_ByIntervalSteps) then
+!                    call Record%SetLastOutSizeDistTime_EachBox(dble(Record%GetSimuSteps()))
+!                else if(Host_SimuCtrlParam%OutPutSCFlag .eq. mp_OutTimeFlag_ByIntervalRealTime) then
+!                    call Record%SetLastOutSizeDistTime_EachBox(Record%GetSimuTimes())
+!                else if(Host_SimuCtrlParam%OutPutSCFlag .eq. mp_OutTimeFlag_ByIntervalTimeMagnification) then
+!                    call Record%SetLastOutSizeDistTime_EachBox(Record%GetSimuTimes())
+!                end if
+!            end if
+        end if
+
+        ! check if need to output intermediate configure
+        if(Host_SimuCtrlParam%OutPutConfFlag .eq. mp_OutTimeFlag_ByIntervalSteps) then
+            if((Record%GetSimuSteps() - Record%GetLastRecordOutConfigTime()) .GE. Host_SimuCtrlParam%OutPutConfValue .OR. &
+                Record%GetSimuTimes() .GE. Host_SimuCtrlParam%TermTValue) then
+
+                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record)
+
+                call Record%SetLastRecordOutConfigTime(dble(Record%GetSimuSteps()))
+
+            end if
+        else if(Host_SimuCtrlParam%OutPutConfFlag .eq. mp_OutTimeFlag_ByIntervalRealTime) then
+            if((Record%GetSimuTimes() - Record%GetLastRecordOutConfigTime()) .GE. Host_SimuCtrlParam%OutPutConfValue .OR. &
+                Record%GetSimuTimes() .GE. Host_SimuCtrlParam%TermTValue) then
+
+                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record)
+
+                call Record%SetLastRecordOutConfigTime(Record%GetSimuTimes())
+            end if
+
+        else if(Host_SimuCtrlParam%OutPutConfFlag .eq. mp_OutTimeFlag_ByIntervalTimeMagnification) then
+            if((Record%GetSimuTimes()/Host_SimuCtrlParam%OutPutConfValue) .GE. Record%GetLastRecordOutConfigTime() .OR. &
+                Record%GetSimuTimes() .GE. Host_SimuCtrlParam%TermTValue) then
+
+                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record)
+
+                call Record%SetLastRecordOutConfigTime(Record%GetSimuTimes())
+            end if
+        end if
+
+        return
+    end subroutine OutPutCurrent
 
     !---------------------------------------------
     subroutine Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,Step,TTime,TStep,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)

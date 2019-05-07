@@ -1429,7 +1429,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
   end subroutine Load_GB_SpecialDistFromExteFunc
 
 
-    !**********************OutPut***************************
+  !**********************OutPut***************************
   subroutine Puout_Instance_Config_SimBoxArray(this,Host_SimuCtrlParam,SimuRecord,RescaleCount)
     !***    Purpose: to output Intermediate Status
     !           this: the boxes info in host
@@ -1442,176 +1442,128 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     Class(SimulationRecord)::SimuRecord
     integer, optional::RescaleCount
     !---Local Vars---
-!    type(AtomsList),pointer::cursor=>null()
-!    character*256::c_ITIME
-!    character*256::C_TIMESECTION
-!    character*256::C_JOB
-!    integer::MultiBox
-!    integer::IBox
-!    integer::IAKind
-!    character*256::path
-!    integer::hFile
-!    integer::IC, ICFROM, ICTO
-!    integer::ISeed
-!    integer::ILayer
-!    integer::LayerNum
-!    character*32::KEYWORD
-!    character*256::CFormat
-!    character*256::CNUM
-!    character*15::AtomsStr(p_ATOMS_GROUPS_NUMBER)
-!    integer::tempLen
-!    integer::ElementsKind
-!    !---Body---
-!
-!    if(present(RescaleCount)) then
-!        write(c_ITIME,*) RescaleCount
-!        c_ITIME = adjustl(c_ITIME)
-!        c_ITIME = "BeforeRescale"//c_ITIME
-!    else
-!        write(c_ITIME,*) SimuRecord%GetOutPutIndex()
-!
-!        call SimuRecord%IncreaseOneOutPutIndex()
-!
-!        c_ITIME = adjustl(c_ITIME)
-!    end if
-!
-!    write(C_TIMESECTION,*) SimuRecord%GetTimeSections()
-!    C_TIMESECTION = adjustl(C_TIMESECTION)
-!    C_TIMESECTION = "Section"//C_TIMESECTION
-!
-!    write(C_JOB,*) SimuRecord%GetSimuPatch()
-!    C_JOB = adjustl(C_JOB)
-!    C_JOB = "Job"//C_JOB
-!
-!
-!    ! output the configuration(can also be for the restart)
-!    MultiBox = Host_SimuCtrlParam%MultiBox
-!
-!    path = Host_SimuCtrlParam%OutFilePath(1:LENTRIM(Host_SimuCtrlParam%OutFilePath))//FolderSpe//"Config_"//trim(C_JOB)//"_"//trim(C_TIMESECTION)//"_"//trim(c_ITIME)//".dat"
-!
-!    hFile = CreateNewFile(path)
-!
-!    open(hFile,file=path, form="formatted")
-!
-!    !---Start to write---
-!    write(hFile,FMT="(A)") OKMC_OUTCFG_FORMAT18
-!
-!    KEYWORD = "&TIME"
-!    write(hFile, FMT="(A20,1x,A15,1x,1PE18.7)") KEYWORD(1:LENTRIM(KEYWORD)),"(in s)",SimuRecord%GetSimuTimes()
-!
-!    KEYWORD = "&BOXLOW"
-!    write(hFile, FMT="(A20,1x,A15,1x,3(1PE14.4, 1x))") KEYWORD(1:LENTRIM(KEYWORD)),   &
-!                                                       "(in nm)",                     &
-!                                                       this%BoxBoundary(1,1)*C_CM2NM, &
-!                                                       this%BoxBoundary(2,1)*C_CM2NM, &
-!                                                       this%BoxBoundary(3,1)*C_CM2NM
-!
-!    KEYWORD = "&BOXSIZE"
-!    write(hFile, FMT="(A20,1x,A15,1x,3(1PE14.4, 1x))") KEYWORD(1:LENTRIM(KEYWORD)),  &
-!                                                       "(in nm)",                    &
-!                                                       this%BOXSIZE(1)*C_CM2NM,      &
-!                                                       this%BOXSIZE(2)*C_CM2NM,      &
-!                                                       this%BOXSIZE(3)*C_CM2NM
-!
-!    KEYWORD = "&NGRAIN"
-!    write(hFile,FMT="(A20,1x,I8)") KEYWORD(1:LENTRIM(KEYWORD)),this%m_GrainBoundary%GrainNum
-!    write(hFile,FMT="(A20,1x,4(A14,1x))")  "!","Seed ID", "x(nm)", "y(nm)", "z(nm)"
-!    KEYWORD = "&SEEDDATA"
-!    Do ISeed = 1,this%m_GrainBoundary%GrainNum
-!        write(hFile,fmt="(A20,1x,I14, 1x, 3(1PE14.4, 1x))") KEYWORD(1:LENTRIM(KEYWORD)),ISeed,this%m_GrainBoundary%GrainSeeds(ISeed)%m_POS(1:3)*C_CM2NM
-!    End Do
-!
-!!    CNUM = ""
-!!    write(CNUM,*) p_NUMBER_OF_STATU
-!!
-!!    KEYWORD = "&NCLUSTERS"
-!!    CFormat = ""
-!!    CFormat = "(2(A20,1x),"//CNUM(1:LENTRIM(CNUM))//"(A20,1x))"
-!!    write(hFile, FMT=CFormat(1:LENTRIM(CFormat))) KEYWORD(1:LENTRIM(KEYWORD)),"IBox",p_CStatu
-!!    KEYWORD = "&NCDATA"
-!!    CFormat = ""
-!!    CFormat = "(A20,1x,I20,1x,"//CNUM(1:LENTRIM(CNUM))//"(I20,1x))"
-!!    DO IBox = 1,MultiBox
-!!        write(hFile, FMT=CFormat(1:LENTRIM(CFormat))) KEYWORD(1:LENTRIM(KEYWORD)),IBox,this%m_BoxesBasicStatistic%BoxesStatis_Single(IBox)%NC
-!!    END DO
-!
-!    CNUM = ""
-!    write(CNUM,*) p_NUMBER_OF_STATU
-!    KEYWORD = "&BOXSEINDEX"
-!    CFormat = ""
-!    CFormat = "(8(A20,1x))"
-!    write(hFile, FMT=CFormat(1:LENTRIM(CFormat))) KEYWORD(1:LENTRIM(KEYWORD)),  &
-!                                                  "IBox",                       &
-!                                                  "SEUsedIndexFrom",            &
-!                                                  "SEUsedIndexTo",              &
-!                                                  "SEExpdIndexFrom",            &
-!                                                  "SEExpdIndexTo",              &
-!                                                  "SEVirtualIndexFrom",         &
-!                                                  "SEVirtualIndexTo"
-!
-!    KEYWORD = "&BOXSEDATA"
-!    CFormat = ""
-!    CFormat = "(A20,1x,I20,1x,"//CNUM(1:LENTRIM(CNUM))//"(I20,1x))"
-!    DO IBox = 1,MultiBox
-!        write(hFile, FMT=CFormat(1:LENTRIM(CFormat))) KEYWORD(1:LENTRIM(KEYWORD)),                  &
-!                                                      IBox,                                         &
-!                                                      this%m_BoxesInfo%SEUsedIndexBox(IBox,1:2),    &
-!                                                      this%m_BoxesInfo%SEExpdIndexBox(IBox,1:2),    &
-!                                                      this%m_BoxesInfo%SEVirtualIndexBox(IBox,1:2)
-!    END DO
-!
-!    CNUM = ""
-!    ElementsKind = this%Atoms_list%Get_ListCount()
-!    write(CNUM,*) ElementsKind
-!
-!    IAKind = 1
-!    tempLen = len(AtomsStr(1))
-!    cursor=>this%Atoms_list
-!    AtomsStr = " "
-!    DO While(associated(cursor))
-!        AtomsStr(IAKind)(tempLen-LENTRIM(cursor%m_Atom%m_Symbol)+1:tempLen) = cursor%m_Atom%m_Symbol
-!        IAKind = IAKind + 1
-!        cursor=>cursor%next
-!    END DO
-!
-!    KEYWORD = "&ELEMENT"
-!    CFormat = ""
-!    CFormat = "(A20,1x,"//CNUM(1:LENTRIM(CNUM))//"(A15,1x))"
-!    write(hFile, FMT=CFormat(1:LENTRIM(CFormat))) KEYWORD(1:LENTRIM(KEYWORD)),AtomsStr(1:ElementsKind)
-!
-!    KEYWORD = "&TYPE"
-!    CFormat = ""
-!    CFormat = "(9(A15,1x),"//CNUM(1:LENTRIM(CNUM))//"(A15,1x))"
-!    write(hFile,FMT=CFormat(1:LENTRIM(CFormat))) KEYWORD(1:LENTRIM(KEYWORD)),"IBox", "Layer","GBSeed1","GBSeed2","Statu","x(nm)","y(nm)","z(nm)",AtomsStr(1:ElementsKind)
-!
-!    CFormat = ""
-!    CFormat = "(A15,1x,5(I15, 1x),3(1PE15.4, 1x),"//CNUM(1:LENTRIM(CNUM))//"(I15,1x))"
-!    DO IBox = 1,MultiBox
-!        ICFROM = this%m_BoxesInfo%SEUsedIndexBox(IBox,1)
-!        ICTO   = this%m_BoxesInfo%SEUsedIndexBox(IBox,2)
-!
-!        if(ICTO .LE. 0) then
-!            cycle
-!        end if
-!
-!        DO IC = ICFROM, ICTO
-!
-!            if(this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu .eq. p_ACTIVEFREE_STATU .or. this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu .eq. p_ACTIVEINGB_STATU) then
-!
-!                write(hFile,fmt=CFormat(1:LENTRIM(CFormat))) "",                                                                &
-!                                                            IBox,                                                               &
-!                                                            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Layer,                     &
-!                                                            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_GrainID,                   &
-!                                                            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Statu,                     &
-!                                                            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_POS(1:3)*C_CM2NM,          &
-!                                                            this%m_ClustersInfo_CPU%m_Clusters(IC)%m_Atoms(1:ElementsKind)%m_NA
-!            end if
-!        END DO
-!    END DO
-!
-!    close(hFile)
-!
-!    Nullify(cursor)
+    type(AtomsList),pointer::cursor=>null()
+    character*256::c_ITIME
+    character*256::C_TIMESECTION
+    character*256::C_JOB
+    integer::IAKind
+    character*256::path
+    integer::hFile
+    integer::IKind
+    integer::ISeed
+    integer::ILayer
+    integer::LayerNum
+    character*32::KEYWORD
+    character*256::CFormat
+    character*256::CNUM
+    character*15::AtomsStr(p_ATOMS_GROUPS_NUMBER)
+    integer::tempLen
+    integer::ElementsKind
+    !---Body---
+
+    if(present(RescaleCount)) then
+        write(c_ITIME,*) RescaleCount
+        c_ITIME = adjustl(c_ITIME)
+        c_ITIME = "BeforeRescale"//c_ITIME
+    else
+        write(c_ITIME,*) SimuRecord%GetOutPutIndex()
+
+        call SimuRecord%IncreaseOneOutPutIndex()
+
+        c_ITIME = adjustl(c_ITIME)
+    end if
+
+    write(C_TIMESECTION,*) SimuRecord%GetTimeSections()
+    C_TIMESECTION = adjustl(C_TIMESECTION)
+    C_TIMESECTION = "Section"//C_TIMESECTION
+
+    write(C_JOB,*) SimuRecord%GetSimuPatch()
+    C_JOB = adjustl(C_JOB)
+    C_JOB = "Job"//C_JOB
+
+    path = Host_SimuCtrlParam%OutFilePath(1:LENTRIM(Host_SimuCtrlParam%OutFilePath))//FolderSpe//"Config_"//trim(C_JOB)//"_"//trim(C_TIMESECTION)//"_"//trim(c_ITIME)//".dat"
+
+    hFile = CreateNewFile(path)
+
+    open(hFile,file=path, form="formatted")
+
+    !---Start to write---
+    write(hFile,FMT="(A)") SPMF_OUTCFG_FORMAT18
+
+    KEYWORD = "&TIME"
+    write(hFile, FMT="(A20,1x,A15,1x,1PE18.7)") KEYWORD(1:LENTRIM(KEYWORD)),"(in s)",SimuRecord%GetSimuTimes()
+
+    KEYWORD = "&BOXLOW"
+    write(hFile, FMT="(A20,1x,A15,1x,3(1PE14.4, 1x))") KEYWORD(1:LENTRIM(KEYWORD)),   &
+                                                       "(in nm)",                     &
+                                                       this%BoxBoundary(1,1)*C_CM2NM, &
+                                                       this%BoxBoundary(2,1)*C_CM2NM, &
+                                                       this%BoxBoundary(3,1)*C_CM2NM
+
+    KEYWORD = "&BOXSIZE"
+    write(hFile, FMT="(A20,1x,A15,1x,3(1PE14.4, 1x))") KEYWORD(1:LENTRIM(KEYWORD)),  &
+                                                       "(in nm)",                    &
+                                                       this%BOXSIZE(1)*C_CM2NM,      &
+                                                       this%BOXSIZE(2)*C_CM2NM,      &
+                                                       this%BOXSIZE(3)*C_CM2NM
+
+    KEYWORD = "&NLAYER"
+    write(hFile,FMT="(A20,1x,I15,1x)") this%NNodes
+    KEYWORD = "&LAYERTHICK"
+    Do ILayer = 1,this%NNodes
+        write(hFile,FMT="(A20,1x,1PE14.4)") KEYWORD(1:LENTRIM(KEYWORD)),this%NodeSpace(ILayer)
+    End Do
+
+    KEYWORD = "&NGRAIN"
+    write(hFile,FMT="(A20,1x,I8)") KEYWORD(1:LENTRIM(KEYWORD)),this%m_GrainBoundary%GrainNum
+    write(hFile,FMT="(A20,1x,4(A14,1x))")  "!","Seed ID", "x(nm)", "y(nm)", "z(nm)"
+    KEYWORD = "&SEEDDATA"
+    Do ISeed = 1,this%m_GrainBoundary%GrainNum
+        write(hFile,fmt="(A20,1x,I14, 1x, 3(1PE14.4, 1x))") KEYWORD(1:LENTRIM(KEYWORD)),ISeed,this%m_GrainBoundary%GrainSeeds(ISeed)%m_POS(1:3)*C_CM2NM
+    End Do
+
+    CNUM = ""
+    ElementsKind = this%Atoms_list%Get_ListCount()
+    write(CNUM,*) ElementsKind
+
+    IAKind = 1
+    tempLen = len(AtomsStr(1))
+    cursor=>this%Atoms_list
+    AtomsStr = " "
+    DO While(associated(cursor))
+        AtomsStr(IAKind)(tempLen-LENTRIM(cursor%m_Atom%m_Symbol)+1:tempLen) = cursor%m_Atom%m_Symbol
+        IAKind = IAKind + 1
+        cursor=>cursor%next
+    END DO
+
+    KEYWORD = "&ELEMENT"
+    CFormat = ""
+    CFormat = "(A20,1x,"//CNUM(1:LENTRIM(CNUM))//"(A15,1x))"
+    write(hFile, FMT=CFormat(1:LENTRIM(CFormat))) KEYWORD(1:LENTRIM(KEYWORD)),AtomsStr(1:ElementsKind)
+
+    KEYWORD = "&TYPE"
+    CFormat = ""
+    CFormat = "(5(A15,1x),"//CNUM(1:LENTRIM(CNUM))//"(A15,1x))"
+    write(hFile,FMT=CFormat(1:LENTRIM(CFormat))) KEYWORD(1:LENTRIM(KEYWORD)),"Layer","GBSeed1","GBSeed2","Concentrate",AtomsStr(1:ElementsKind)
+
+    CFormat = ""
+    CFormat = "(A15,1x,3(I15, 1x),1PE15.4,1x,"//CNUM(1:LENTRIM(CNUM))//"(I15,1x))"
+    DO ILayer = 1,this%NNodes
+        DO IKind = 1,this%CKind
+
+            write(hFile,fmt=CFormat(1:LENTRIM(CFormat))) "",                                                                &
+                                                        ILayer,                                                             &
+                                                        this%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_GrainID,         &
+                                                        this%m_ClustersInfo_CPU%Concentrate(ILayer,IKind),                  &
+                                                        this%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Atoms(1:ElementsKind)%m_NA
+        END DO
+    END DO
+
+    write(hFile,fmt="(A)") "&ENDBOXMF18"
+
+    close(hFile)
+
+    Nullify(cursor)
 
     return
   end subroutine Puout_Instance_Config_SimBoxArray
