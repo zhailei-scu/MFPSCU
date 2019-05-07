@@ -318,17 +318,17 @@ module NUCLEATION_SPACEDIST
 
                 call SolveTridag(IKind,MatA,MatB,MatC,MatD,Concent,NNodes,MatW,MatH)
 
-                DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(NNodes)
-                FOutEachStep(IKind) = DiffGradient2*Concent(NNodes,IKind)
-                COutEachStep(IKind) = DiffGradient2*Concent(NNodes,IKind)*TSTEP/NodeSpace(NNodes)
-                FOutAccum(IKind) = FOutAccum(IKind) + FOutEachStep(IKind)
-                COutAccum(IKind) = COutAccum(IKind) + COutEachStep(IKind)
-
-                DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(1)
-                FSurfEachStep(IKind) = DiffGradient1*Concent(1,IKind)
-                CSurfEachStep(IKind) = DiffGradient1*Concent(1,IKind)*TSTEP/NodeSpace(1)
-                FSurfAccum(IKind) = FSurfAccum(IKind) + FSurfEachStep(IKind)
-                CSurfAccum(IKind) = CSurfAccum(IKind) + CSurfEachStep(IKind)
+!                DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(NNodes)
+!                FOutEachStep(IKind) = DiffGradient2*Concent(NNodes,IKind)
+!                COutEachStep(IKind) = DiffGradient2*Concent(NNodes,IKind)*TSTEP/NodeSpace(NNodes)
+!                FOutAccum(IKind) = FOutAccum(IKind) + FOutEachStep(IKind)
+!                COutAccum(IKind) = COutAccum(IKind) + COutEachStep(IKind)
+!
+!                DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(1)
+!                FSurfEachStep(IKind) = DiffGradient1*Concent(1,IKind)
+!                CSurfEachStep(IKind) = DiffGradient1*Concent(1,IKind)*TSTEP/NodeSpace(1)
+!                FSurfAccum(IKind) = FSurfAccum(IKind) + FSurfEachStep(IKind)
+!                CSurfAccum(IKind) = CSurfAccum(IKind) + CSurfEachStep(IKind)
 
                 if(IKind .eq. 1) then
 
@@ -355,6 +355,8 @@ module NUCLEATION_SPACEDIST
             END DO
 
             call Record%AddSimuTimes(TSTEP)
+
+            write(*,*) "Step",Record%GetSimuSteps(),"Time",Record%GetSimuTimes()
 
             call OutPutCurrent(Host_SimBoxes,Host_SimuCtrlParam,Record)
 
@@ -922,27 +924,39 @@ module NUCLEATION_SPACEDIST
             if((Record%GetSimuSteps() - Record%GetLastRecordOutConfigTime()) .GE. Host_SimuCtrlParam%OutPutConfValue .OR. &
                 Record%GetSimuTimes() .GE. Host_SimuCtrlParam%TermTValue) then
 
-                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record)
+                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record,LayerFirst=.true.)
+
+                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record,LayerFirst=.false.)
 
                 call Record%SetLastRecordOutConfigTime(dble(Record%GetSimuSteps()))
+
+                call Record%IncreaseOneOutPutIndex()
 
             end if
         else if(Host_SimuCtrlParam%OutPutConfFlag .eq. mp_OutTimeFlag_ByIntervalRealTime) then
             if((Record%GetSimuTimes() - Record%GetLastRecordOutConfigTime()) .GE. Host_SimuCtrlParam%OutPutConfValue .OR. &
                 Record%GetSimuTimes() .GE. Host_SimuCtrlParam%TermTValue) then
 
-                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record)
+                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record,LayerFirst=.true.)
+
+                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record,LayerFirst=.false.)
 
                 call Record%SetLastRecordOutConfigTime(Record%GetSimuTimes())
+
+                call Record%IncreaseOneOutPutIndex()
             end if
 
         else if(Host_SimuCtrlParam%OutPutConfFlag .eq. mp_OutTimeFlag_ByIntervalTimeMagnification) then
             if((Record%GetSimuTimes()/Host_SimuCtrlParam%OutPutConfValue) .GE. Record%GetLastRecordOutConfigTime() .OR. &
                 Record%GetSimuTimes() .GE. Host_SimuCtrlParam%TermTValue) then
 
-                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record)
+                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record,LayerFirst=.true.)
+
+                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record,LayerFirst=.false.)
 
                 call Record%SetLastRecordOutConfigTime(Record%GetSimuTimes())
+
+                call Record%IncreaseOneOutPutIndex()
             end if
         end if
 

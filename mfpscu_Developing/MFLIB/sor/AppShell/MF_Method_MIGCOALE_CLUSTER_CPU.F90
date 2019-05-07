@@ -647,7 +647,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 !        deallocate(CCNum)
 !        deallocate(CAcumNum)
 !
-!        call SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record)
+        call SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record)
 !
 !        call PutOut_Instance_Statistic_IntegralBox(SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap%m_MigCoaleStatisticInfo_Used,Record,Model=0)
 !        call PutOut_Instance_Statistic_EachBox(SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap%m_MigCoaleStatisticInfo_Used,Record)

@@ -1430,7 +1430,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 
 
   !**********************OutPut***************************
-  subroutine Puout_Instance_Config_SimBoxArray(this,Host_SimuCtrlParam,SimuRecord,RescaleCount)
+  subroutine Puout_Instance_Config_SimBoxArray(this,Host_SimuCtrlParam,SimuRecord,LayerFirst,RescaleCount)
     !***    Purpose: to output Intermediate Status
     !           this: the boxes info in host
     !           SimuRecord: the simulation records
@@ -1440,6 +1440,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     CLASS(SimulationBoxes)::this
     type(SimulationCtrlParam)::Host_SimuCtrlParam
     Class(SimulationRecord)::SimuRecord
+    logical,optional::LayerFirst
     integer, optional::RescaleCount
     !---Local Vars---
     type(AtomsList),pointer::cursor=>null()
@@ -1459,7 +1460,14 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     character*15::AtomsStr(p_ATOMS_GROUPS_NUMBER)
     integer::tempLen
     integer::ElementsKind
+    logical::ISLayerFirst
     !---Body---
+
+    ISLayerFirst = .true.
+
+    if(present(LayerFirst)) then
+        ISLayerFirst = LayerFirst
+    end if
 
     if(present(RescaleCount)) then
         write(c_ITIME,*) RescaleCount
@@ -1467,8 +1475,6 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
         c_ITIME = "BeforeRescale"//c_ITIME
     else
         write(c_ITIME,*) SimuRecord%GetOutPutIndex()
-
-        call SimuRecord%IncreaseOneOutPutIndex()
 
         c_ITIME = adjustl(c_ITIME)
     end if
@@ -1481,14 +1487,22 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     C_JOB = adjustl(C_JOB)
     C_JOB = "Job"//C_JOB
 
-    path = Host_SimuCtrlParam%OutFilePath(1:LENTRIM(Host_SimuCtrlParam%OutFilePath))//FolderSpe//"Config_"//trim(C_JOB)//"_"//trim(C_TIMESECTION)//"_"//trim(c_ITIME)//".dat"
+    if(ISLayerFirst .eq. .true.) then
+        path = Host_SimuCtrlParam%OutFilePath(1:LENTRIM(Host_SimuCtrlParam%OutFilePath))//FolderSpe//"Config_"//trim(C_JOB)//"_"//trim(C_TIMESECTION)//"_"//trim(c_ITIME)//"_LayerFirst"//".dat"
+    else
+        path = Host_SimuCtrlParam%OutFilePath(1:LENTRIM(Host_SimuCtrlParam%OutFilePath))//FolderSpe//"Config_"//trim(C_JOB)//"_"//trim(C_TIMESECTION)//"_"//trim(c_ITIME)//"_KindFirst"//".dat"
+    end if
 
     hFile = CreateNewFile(path)
 
     open(hFile,file=path, form="formatted")
 
     !---Start to write---
-    write(hFile,FMT="(A)") SPMF_OUTCFG_FORMAT18
+    if(ISLayerFirst .eq. .true.) then
+        write(hFile,FMT="(A,A,A,A)") SPMF_OUTCFG_FORMAT18,' "',"LayerFirst",'"'
+    else
+        write(hFile,FMT="(A,A,A,A)") SPMF_OUTCFG_FORMAT18,' "',"KindFirst",'"'
+    end if
 
     KEYWORD = "&TIME"
     write(hFile, FMT="(A20,1x,A15,1x,1PE18.7)") KEYWORD(1:LENTRIM(KEYWORD)),"(in s)",SimuRecord%GetSimuTimes()
@@ -1508,7 +1522,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
                                                        this%BOXSIZE(3)*C_CM2NM
 
     KEYWORD = "&NLAYER"
-    write(hFile,FMT="(A20,1x,I15,1x)") this%NNodes
+    write(hFile,FMT="(A20,1x,I15,1x)") KEYWORD(1:LENTRIM(KEYWORD)),this%NNodes
     KEYWORD = "&LAYERTHICK"
     Do ILayer = 1,this%NNodes
         write(hFile,FMT="(A20,1x,1PE14.4)") KEYWORD(1:LENTRIM(KEYWORD)),this%NodeSpace(ILayer)
@@ -1548,16 +1562,28 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 
     CFormat = ""
     CFormat = "(A15,1x,3(I15, 1x),1PE15.4,1x,"//CNUM(1:LENTRIM(CNUM))//"(I15,1x))"
-    DO ILayer = 1,this%NNodes
-        DO IKind = 1,this%CKind
 
-            write(hFile,fmt=CFormat(1:LENTRIM(CFormat))) "",                                                                &
+    if(ISLayerFirst .eq. .true.) then
+        DO ILayer = 1,this%NNodes
+            DO IKind = 1,this%CKind
+                write(hFile,fmt=CFormat(1:LENTRIM(CFormat))) "",                                                                &
                                                         ILayer,                                                             &
                                                         this%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_GrainID,         &
                                                         this%m_ClustersInfo_CPU%Concentrate(ILayer,IKind),                  &
                                                         this%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Atoms(1:ElementsKind)%m_NA
+            END DO
         END DO
-    END DO
+    else
+        DO IKind = 1,this%CKind
+            DO ILayer = 1,this%NNodes
+                write(hFile,fmt=CFormat(1:LENTRIM(CFormat))) "",                                                                &
+                                                        ILayer,                                                             &
+                                                        this%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_GrainID,         &
+                                                        this%m_ClustersInfo_CPU%Concentrate(ILayer,IKind),                  &
+                                                        this%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Atoms(1:ElementsKind)%m_NA
+            END DO
+        END DO
+    end if
 
     write(hFile,fmt="(A)") "&ENDBOXMF18"
 
