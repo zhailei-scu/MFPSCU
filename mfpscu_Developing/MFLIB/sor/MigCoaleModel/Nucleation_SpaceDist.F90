@@ -288,20 +288,80 @@ module NUCLEATION_SPACEDIST
 
                 DO INode = 1,NNodes
                     if(INode .eq. 1) then  ! upper surface
-                        !For surface, the Dirichlet boundary condition is applied
+
                         DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
-                        DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
 
                         MatA(INode) = 0.D0
-                        MatB(INode) = NodeSpace(INode)/TSTEP + (DiffGradient1 + DiffGradient2)
-                        MatC(INode) = -DiffGradient2
+                        if(NNodes .LE. 1) then
+                            DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                            select case(Host_SimuCtrlParam%BDCTYPE(3,1))
+                                case(p_Dirichlet_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP + DiffGradient1 + DiffGradient2
+                                case(p_Neumann_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP
+                                case default
+                                    write(*,*) "MFPSCUERROR: Unknown boundary condition ",Host_SimuCtrlParam%BDCTYPE(3,1)
+                                    pause
+                                    stop
+                            end select
+
+                            MatC(INode) = 0.D0
+                        else
+                            DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
+
+                            select case(Host_SimuCtrlParam%BDCTYPE(3,1))
+                                case(p_Dirichlet_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP + DiffGradient1 + DiffGradient2
+                                case(p_Neumann_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP + DiffGradient2
+                                case default
+                                    write(*,*) "MFPSCUERROR: Unknown boundary condition ",Host_SimuCtrlParam%BDCTYPE(3,1)
+                                    pause
+                                    stop
+                            end select
+
+                            MatC(INode) = -DiffGradient2
+                        end if
+
                         MatD(INode) = Concent(INode,IKind)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
                     else if(INode .eq. NNodes) then  ! Low surface
-                        !For surface, the Dirichlet boundary condition is applied
-                        DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
+
                         DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
-                        MatA(INode) = -DiffGradient1
-                        MatB(INode) = NodeSpace(INode)/TSTEP + (DiffGradient1 + DiffGradient2)
+
+                        if(NNodes .LE. 1) then
+                            DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                            MatA(INode) = 0.D0
+
+                            select case(Host_SimuCtrlParam%BDCTYPE(3,2))
+                                case(p_Dirichlet_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP + DiffGradient1 + DiffGradient2
+                                case(p_Neumann_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP
+                                case default
+                                    write(*,*) "MFPSCUERROR: Unknown boundary condition ",Host_SimuCtrlParam%BDCTYPE(3,2)
+                                    pause
+                                    stop
+                            end select
+                        else
+                            DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
+
+                            MatA(INode) = -DiffGradient1
+
+                            select case(Host_SimuCtrlParam%BDCTYPE(3,2))
+                                case(p_Dirichlet_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP + DiffGradient1 + DiffGradient2
+                                case(p_Neumann_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP + DiffGradient1
+                                case default
+                                    write(*,*) "MFPSCUERROR: Unknown boundary condition ",Host_SimuCtrlParam%BDCTYPE(3,2)
+                                    pause
+                                    stop
+                            end select
+
+                        end if
+
                         MatC(INode) = 0.D0
                         MatD(INode) = Concent(INode,IKind)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
                     else
@@ -642,20 +702,78 @@ module NUCLEATION_SPACEDIST
 
                 DO INode = 1,NNodes
                     if(INode .eq. 1) then  ! upper surface
-                        !For surface, the Dirichlet boundary condition is applied
+
                         DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
-                        DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
 
                         MatA(INode) = 0.D0
-                        MatB(INode) = (NodeSpace(INode)/TSTEP - (DiffGradient1 + DiffGradient2))*Concent(INode,IKind)
-                        MatC(INode) = DiffGradient2*Concent(INode+1,IKind)
+                        if(NNodes .LE. 1) then
+                            DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                            select case(Host_SimuCtrlParam%BDCTYPE(3,1))
+                                case(p_Dirichlet_BDC)
+                                    MatB(INode) = (NodeSpace(INode)/TSTEP - DiffGradient1 - DiffGradient2)*Concent(INode,IKind)
+                                case(p_Neumann_BDC)
+                                    MatB(INode) = (NodeSpace(INode)/TSTEP)*Concent(INode,IKind)
+                                case default
+                                    write(*,*) "MFPSCUERROR: Unknown boundary condition ",Host_SimuCtrlParam%BDCTYPE(3,1)
+                                    pause
+                                    stop
+                            end select
+
+                            MatC(INode) = 0.D0
+                        else
+                            DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
+
+                            select case(Host_SimuCtrlParam%BDCTYPE(3,1))
+                                case(p_Dirichlet_BDC)
+                                    MatB(INode) = (NodeSpace(INode)/TSTEP - DiffGradient1 - DiffGradient2)*Concent(INode,IKind)
+                                case(p_Neumann_BDC)
+                                    MatB(INode) = (NodeSpace(INode)/TSTEP - DiffGradient2)*Concent(INode,IKind)
+                                case default
+                                    write(*,*) "MFPSCUERROR: Unknown boundary condition ",Host_SimuCtrlParam%BDCTYPE(3,1)
+                                    pause
+                                    stop
+                            end select
+
+                            MatC(INode) = DiffGradient2*Concent(INode+1,IKind)
+                        end if
+
                         MatD(INode) = tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
                     else if(INode .eq. NNodes) then  ! Low surface
-                        !For surface, the Dirichlet boundary condition is applied
-                        DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
+
                         DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
-                        MatA(INode) = DiffGradient1*Concent(INode-1,IKind)
-                        MatB(INode) = (NodeSpace(INode)/TSTEP - (DiffGradient1 + DiffGradient2))*Concent(INode,IKind)
+
+                        if(NNodes .LE. 1) then
+                            DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                            MatA(INode) = 0.D0
+                            select case(Host_SimuCtrlParam%BDCTYPE(3,2))
+                                case(p_Dirichlet_BDC)
+                                    MatB(INode) = (NodeSpace(INode)/TSTEP - DiffGradient1 - DiffGradient2)*Concent(INode,IKind)
+                                case(p_Neumann_BDC)
+                                    MatB(INode) = (NodeSpace(INode)/TSTEP)*Concent(INode,IKind)
+                                case default
+                                    write(*,*) "MFPSCUERROR: Unknown boundary condition ",Host_SimuCtrlParam%BDCTYPE(3,2)
+                                    pause
+                                    stop
+                            end select
+                        else
+                            DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
+
+                            MatA(INode) = DiffGradient1*Concent(INode-1,IKind)
+                            select case(Host_SimuCtrlParam%BDCTYPE(3,2))
+                                case(p_Dirichlet_BDC)
+                                    MatB(INode) = (NodeSpace(INode)/TSTEP - DiffGradient1 - DiffGradient2)*Concent(INode,IKind)
+                                case(p_Neumann_BDC)
+                                    MatB(INode) = (NodeSpace(INode)/TSTEP - DiffGradient1)*Concent(INode,IKind)
+                                case default
+                                    write(*,*) "MFPSCUERROR: Unknown boundary condition ",Host_SimuCtrlParam%BDCTYPE(3,2)
+                                    pause
+                                    stop
+                            end select
+
+                        end if
+
                         MatC(INode) = 0.D0
                         MatD(INode) = tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
                     else

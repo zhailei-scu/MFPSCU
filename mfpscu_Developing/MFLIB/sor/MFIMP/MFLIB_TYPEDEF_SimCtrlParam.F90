@@ -29,6 +29,7 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
      !***PERIOD boundary************
      integer::PERIOD(3) = (/1,1,1/)                                     ! determine if PERIOD condition used
+     integer::BDCTYPE(3,2) = p_Neumann_BDC
 
 
      !***Informaiton about temperature
@@ -181,6 +182,7 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
      !***PERIOD boundary************
      this%PERIOD = otherOne%PERIOD
+     this%BDCTYPE = otherOne%BDCTYPE
 
     !***Informaiton about temperature
     this%TEMP = otherOne%TEMP
@@ -264,6 +266,7 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
      !***PERIOD boundary************
      this%PERIOD = (/1,1,1/)
+     this%BDCTYPE = p_Neumann_BDC
 
      !***Informaiton about temperature
      this%TEMP = 300.D0
@@ -406,6 +409,7 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
      !***PERIOD boundary************
      this%PERIOD = (/1,1,1/)
+     this%BDCTYPE = p_Neumann_BDC
 
      !***Informaiton about temperature
      this%TEMP = 300.D0
@@ -865,6 +869,9 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
     character*256::STR
     character*32::KEYWORD
     character*32::STRNUMB(10)
+    integer::TotalBDC
+    integer::I
+    integer::J
     !---Body---
     DO while(.true.)
         call GETINPUTSTRLINE(hFile,STR,LINE,"!",*100)
@@ -893,6 +900,42 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
                 this%PERIOD(1) = ISTR(STRNUMB(1))
                 this%PERIOD(2) = ISTR(STRNUMB(2))
                 this%PERIOD(3) = ISTR(STRNUMB(3))
+            case("&BDTYPE")
+                TotalBDC = 0
+
+                call EXTRACT_SUBSTR(STR,6,N,STRNUMB)
+
+                DO I = 1,3
+                    if(this%PERIOD(I) .LE. 0) then
+                        TotalBDC = TotalBDC + 2
+                    end if
+                END DO
+
+                if(N .ne. TotalBDC) then
+                    write(*,*) "MFPSCUERROR: You had open ",TotalBDC/2," dimension"
+                    write(*,*) "However, you specialed ",N, " surface boundary condition"
+                    write(*,*) "You should special ",TotalBDC," surface boundary condition"
+                    pause
+                    stop
+                end if
+
+                TotalBDC = 0
+                DO I = 1,3
+                    if(this%PERIOD(I) .LE. 0) then
+                        Do J = 1,2
+                            TotalBDC = TotalBDC + 1
+                            if(IsStrEqual(STRNUMB(TotalBDC),p_CDirichlet_BDC)) then
+                                this%BDCTYPE(I,J) = p_Dirichlet_BDC
+                            else if(IsStrEqual(STRNUMB(TotalBDC),p_CNeumann_BDC)) then
+                                this%BDCTYPE(I,J) = p_Neumann_BDC
+                            else
+                                write(*,*) "MFPSCUERROR: unknown boundary condition: ",STRNUMB(TotalBDC)
+                                pause
+                                stop
+                            end if
+                        END DO
+                    end if
+                END DO
         end select
     END DO
 
@@ -1296,6 +1339,8 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
     !---Local Vars---
     type(SimulationCtrlParam),pointer::cursor=>null()
     integer::ISect
+    integer::I
+    integer::J
     !---Body---
 
     write(hFile,*) "!****************Control file information***********************"
@@ -1315,6 +1360,21 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
         write(hFile,fmt="('!',A70,'!',2x,1PE10.4)") "SYSTEM SIMULATION TEMPERATURE =",cursor%TEMP
 
         write(hFile,fmt="('!',A70,'!',2x,3I10)") "PERIDIC condition =",cursor%PERIOD
+
+        write(hFile,fmt="('!',A70)") "----The boundary condition----"
+        DO I = 1,3
+            DO J = 1,2
+                if(cursor%BDCTYPE(I,J) .eq. p_Neumann_BDC) then
+                    write(hFile,fmt="('!',A70)") p_CNeumann_BDC
+                else if(cursor%BDCTYPE(I,J) .eq. p_Dirichlet_BDC) then
+                    write(hFile,fmt="('!',A70)") p_CDirichlet_BDC
+                else
+                    write(*,*) "MFPSCUERROR: Unknown boundary condition ",cursor%BDCTYPE(I,J)
+                    pause
+                    stop
+                end if
+            END DO
+        END DO
 
         !***Information about Implantation******************
         write(hFile,fmt="('!',A70,'!',2x,I10)") "The implantation section index is :", cursor%ImplantSectID

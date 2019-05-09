@@ -53,6 +53,14 @@ module MCMF_CONSTANTS
     integer, parameter::p_ATOMS_GROUPS_NUMBER = 3
     #endif
 
+    !---Boundary condition
+    integer, parameter::p_Neumann_BDC = 0
+    integer, parameter::p_Dirichlet_BDC = 1
+
+
+    character*9, parameter::p_CDirichlet_BDC = "Dirichlet"
+    character*7, parameter::p_CNeumann_BDC = "Neumann"
+
     character(len=1),parameter::p_ElementsTypeSpe = "@"
     character(len=1),parameter::p_ElementsNumSpe = "#"
     character(len=1),parameter::p_NumRangeSpe = "-"

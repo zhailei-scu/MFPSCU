@@ -119,7 +119,8 @@
     &ENDSUBCTL
 
     &BOUNDSUBCTL
-        &PERIDIC If use periodic boundary condition: X = 1, Y = 1, Z = 0
+        &PERIDIC If use periodic boundary condition: X = 1, Y = 1, Z = 0     ! currently ,the application only support z-direction spatical
+	&BDTYPE The boundary condition type is z = "Neumann" , "Neumann" ! if not use periodic boundary condition, must special the boundary condition,support "Dirichlet" and "Neumann" boundary condition
     &ENDSUBCTL
 
     &RATIOSUBCTL
@@ -140,7 +141,7 @@
 
 	&UPDATESTATISTIC  Use fixd step flag = 0, the correspond value = 10                          ! flag = 0 stans for by steps,flag = 1 by time(s)
   	
-        &OUTPUT_CONF     Output instant configuration flag = 0 , the interval = 1000                 ! flag = 0 for output each interval steps,flag = 1 for output each interval time(s), 2 by time magnification
+        &OUTPUT_CONF     Output instant configuration flag = 0 , the interval = 1                 ! flag = 0 for output each interval steps,flag = 1 for output each interval time(s), 2 by time magnification
         &OUTPUT_SC       Output instant size statistic information flag = 0 , the interval for total box = 10, the interval for each box = 1000     
 												     ! flag = 0 for output each interval steps,flag = 1 for output each interval time(s), 2 by time magnification
 	&OUTPUT_FUNCS    Output instant function statistic information flag = 1, the interval = 100  ! flag = 0 for output each interval steps,flag = 1 for output each interval time(s), 2 by time magnification
