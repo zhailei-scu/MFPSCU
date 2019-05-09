@@ -228,15 +228,12 @@ module NUCLEATION_SPACEDIST
                                 Factor = 0.5D0
 
                                 tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
-
                             else
-
                                 Factor = 1.D0
 
                                 tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
 
                                 tempNBPVChangeRate(INode,JKind) =  tempNBPVChangeRate(INode,JKind) - deta
-
                             end if
 
                             if((IKind + JKind) .LE. CKind) then
@@ -258,7 +255,9 @@ module NUCLEATION_SPACEDIST
 
             TSTEP = maxval(Concent)*Host_SimuCtrlParam%MaxChangeRate/maxval(dabs(tempNBPVChangeRate))
 
-            TSTEP = min(TSTEP,1D-8)
+            TSTEP = min(TSTEP,1D-9)
+
+            write(*,*) (minval(Host_SimBoxes%NodeSpace)**2)/maxval(ClustersKind(:)%m_DiffCoeff)
 
             tempNBPV = Concent
 
@@ -610,7 +609,9 @@ module NUCLEATION_SPACEDIST
 
             TSTEP = maxval(Concent)*Host_SimuCtrlParam%MaxChangeRate/maxval(dabs(tempNBPVChangeRate))
 
-            TSTEP = min(TSTEP,1D-8)
+            TSTEP = min(TSTEP,1D-9)
+
+            write(*,*) (minval(Host_SimBoxes%NodeSpace)**2)/maxval(ClustersKind(:)%m_DiffCoeff)
 
             tempNBPV = Concent
 
@@ -668,20 +669,18 @@ module NUCLEATION_SPACEDIST
 
                 END DO
 
-!                call SolveTridag(IKind,MatA,MatB,MatC,MatD,Concent,NNodes,MatW,MatH)
-
-                DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(NNodes)
-                FOutEachStep(IKind) = DiffGradient2*Concent(NNodes,IKind)
-                COutEachStep(IKind) = DiffGradient2*Concent(NNodes,IKind)*TSTEP/NodeSpace(NNodes)
-                FOutAccum(IKind) = FOutAccum(IKind) + FOutEachStep(IKind)
-                COutAccum(IKind) = COutAccum(IKind) + COutEachStep(IKind)
-
-
-                DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(1)
-                FSurfEachStep(IKind) = DiffGradient1*Concent(1,IKind)
-                CSurfEachStep(IKind) = DiffGradient1*Concent(1,IKind)*TSTEP/NodeSpace(1)
-                FSurfAccum(IKind) = FSurfAccum(IKind) + FSurfEachStep(IKind)
-                CSurfAccum(IKind) = CSurfAccum(IKind) + CSurfEachStep(IKind)
+!                DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(NNodes)
+!                FOutEachStep(IKind) = DiffGradient2*Concent(NNodes,IKind)
+!                COutEachStep(IKind) = DiffGradient2*Concent(NNodes,IKind)*TSTEP/NodeSpace(NNodes)
+!                FOutAccum(IKind) = FOutAccum(IKind) + FOutEachStep(IKind)
+!                COutAccum(IKind) = COutAccum(IKind) + COutEachStep(IKind)
+!
+!
+!                DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(1)
+!                FSurfEachStep(IKind) = DiffGradient1*Concent(1,IKind)
+!                CSurfEachStep(IKind) = DiffGradient1*Concent(1,IKind)*TSTEP/NodeSpace(1)
+!                FSurfAccum(IKind) = FSurfAccum(IKind) + FSurfEachStep(IKind)
+!                CSurfAccum(IKind) = CSurfAccum(IKind) + CSurfEachStep(IKind)
 
 
                 DO INode = 1,NNodes
@@ -716,6 +715,8 @@ module NUCLEATION_SPACEDIST
             call Record%AddSimuTimes(TSTEP)
 
             call OutPutCurrent(Host_SimBoxes,Host_SimuCtrlParam,Record)
+
+            write(*,*) "Step",Record%GetSimuSteps(),"Time",Record%GetSimuTimes()
 
             if(mod(Record%GetSimuSteps(),1) .eq. 0) then
 
