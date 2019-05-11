@@ -38,7 +38,8 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
      !****Parameters for mean filed control***
      real(kind=KMCDF)::DumplicateFactor = 1.D-6
-     real(kind=KMCDF)::MaxChangeRate = 0.05
+     real(kind=KMCDF)::MaxReactChangeRate = 0.05
+     real(kind=KMCDF)::MaxDiffuseChangeRate = 0.2
 
      !***Implantation section*********
      integer::ImplantSectID = 0                                         ! the implantation section index
@@ -190,7 +191,8 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
     !---Parameters for mean filed control---
     this%DumplicateFactor = otherOne%DumplicateFactor
-    this%MaxChangeRate = otherOne%MaxChangeRate
+    this%MaxReactChangeRate = otherOne%MaxReactChangeRate
+    this%MaxDiffuseChangeRate = otherOne%MaxDiffuseChangeRate
 
     !***Implantation sectin*********
     this%ImplantSectID = otherOne%ImplantSectID
@@ -274,7 +276,8 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
      !---Parameters for mean filed control---
      this%DumplicateFactor = 1.D-6
-     this%MaxChangeRate = 0.05
+     this%MaxReactChangeRate = 0.05
+     this%MaxDiffuseChangeRate = 0.2
 
      !***Implantation section*********
      this%ImplantSectID = 0
@@ -417,7 +420,8 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
 
      !---Parameters for mean filed control---
      this%DumplicateFactor = 1.D-6
-     this%MaxChangeRate = 0.05
+     this%MaxReactChangeRate = 0.05
+     this%MaxDiffuseChangeRate = 0.2
 
      !***Implantation section*********
      this%ImplantSectID = 0
@@ -968,17 +972,43 @@ module MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
         select case(KEYWORD(1:LENTRIM(KEYWORD)))
             case("&ENDSUBCTL")
                 exit
-            case("&MAXCHANGERATE")
+            case("&MAXREACTCHANGERATE")
                 call EXTRACT_NUMB(STR,1,N,STRTMP)
 
                 if(N .LT. 1) then
-                    write(*,*) "MFPSCUERROR: To few parameters for mean field max change rate setting"
+                    write(*,*) "MFPSCUERROR: To few parameters for mean field max change rate induced by reaction setting"
                     write(*,*) "At line: ",LINE
                     write(*,*) STR
                     pause
                     stop
                 end if
-                this%MaxChangeRate = DRSTR(STRTMP(1))
+                this%MaxReactChangeRate = DRSTR(STRTMP(1))
+
+                if(this%MaxReactChangeRate .GT. 1 .or. this%MaxReactChangeRate .LT. 0.D0) then
+                    write(*,*) "MFPSCUERROR: The max change rate induced by reaction should between 0 and 1."
+                    write(*,*) this%MaxReactChangeRate
+                    pause
+                    stop
+                end if
+
+            case("&MAXDIFFUSECHANGERATE")
+                call EXTRACT_NUMB(STR,1,N,STRTMP)
+
+                if(N .LT. 1) then
+                    write(*,*) "MFPSCUERROR: To few parameters for mean field max change rate induced by diffusion setting"
+                    write(*,*) "At line: ",LINE
+                    write(*,*) STR
+                    pause
+                    stop
+                end if
+                this%MaxDiffuseChangeRate = DRSTR(STRTMP(1))
+
+                if(this%MaxDiffuseChangeRate .GT. 1 .or. this%MaxDiffuseChangeRate .LT. 0.D0) then
+                    write(*,*) "MFPSCUERROR: The max change rate induced by diffusion should between 0 and 1."
+                    write(*,*) this%MaxDiffuseChangeRate
+                    pause
+                    stop
+                end if
 
             case("&DUMPLICATEFACTOR")
                 call EXTRACT_NUMB(STR,1,N,STRTMP)

@@ -78,8 +78,9 @@ module NUCLEATION_SPACEDIST
         return
     end subroutine InitSimu_SpaceDist
 
+
     !***************************************************
-    subroutine NucleationSimu_SpaceDist_Balance(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
+    subroutine NucleationSimu_SpaceDist_Balance_GrubDumplicate(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
         use RAND32_MODULE
         implicit none
         !---Dummy Vars---
@@ -131,6 +132,7 @@ module NUCLEATION_SPACEDIST
         real(kind=KMCDF)::ConCentrat0
         type(ReactionValue)::TheReactionValue
         real(kind=KMCDF)::ReactionCoeff
+        real(kind=KMCDF)::SFlux
         !---Body---
         CKind = Host_SimBoxes%CKind
         NNodes = Host_SimBoxes%NNodes
@@ -253,31 +255,66 @@ module NUCLEATION_SPACEDIST
                 END DO
             END DO
 
-            TSTEP = maxval(Concent)*Host_SimuCtrlParam%MaxChangeRate/maxval(dabs(tempNBPVChangeRate))
-
-            TSTEP = min(TSTEP,1D-9)
-
-            write(*,*) (minval(Host_SimBoxes%NodeSpace)**2)/maxval(ClustersKind(:)%m_DiffCoeff)
-
-            tempNBPV = Concent
-
-            tempNBPV = tempNBPV + tempNBPVChangeRate*TSTEP
-
             DO IKind = 1,CKind
                 DO INode = 1,NNodes
-                    if(tempNBPV(INode,IKind) .LT. 0) then
-                        tempTimeStep = Concent(INode,IKind)/dabs(tempNBPVChangeRate(INode,IKind))
-                        if(tempTimeStep .LE. minTimeStep) then
-                            minTimeStep = tempTimeStep
-                        end if
-                        adjustlTime = .true.
+                    tempTimeStep = Host_SimuCtrlParam%MaxReactChangeRate*Concent(INode,IKind)/dabs(tempNBPVChangeRate(INode,IKind))
+                    if(dabs(tempNBPVChangeRate(INode,IKind)) .GT. 0.D0 .AND. tempTimeStep .LE. TSTEP) then
+                        TSTEP = tempTimeStep
                     end if
+
+                    if(INode .eq. 1) then  ! upper surface
+
+                        DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                        if(NNodes .LE. 1) then
+                            DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                            SFlux = DiffGradient1*Concent(INode,IKind) + DiffGradient2*Concent(INode,IKind)
+                            if(SFlux .GT. 0.D0) then
+                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+                            end if
+                        else
+                            DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
+
+                            SFlux = DiffGradient1*Concent(INode,IKind) - DiffGradient2*(Concent(INode+1,IKind) - Concent(INode,IKind))
+                            if(SFlux .GT. 0.D0) then
+                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+                            end if
+
+                        end if
+
+                    else if(INode .eq. NNodes) then  ! Low surface
+
+                        DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                        if(NNodes .LE. 1) then
+                            DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                            SFlux = DiffGradient1*Concent(INode,IKind) + DiffGradient2*Concent(INode,IKind)
+                            if(SFlux .GT. 0.D0) then
+                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+                            end if
+                        else
+                            DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
+
+                            SFlux = DiffGradient1*(Concent(INode,IKind) - Concent(INode-1,IKind)) + DiffGradient2*Concent(INode,IKind)
+                            if(SFlux .GT. 0.D0) then
+                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+                            end if
+                        end if
+
+                    else
+                        DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
+                        DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
+
+                        SFlux = DiffGradient1*(Concent(INode,IKind) - Concent(INode-1,IKind)) - DiffGradient2*(Concent(INode+1,IKind) - Concent(INode,IKind))
+                        if(SFlux .GT. 0.D0) then
+                            TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+                        end if
+                    end if
+
                 END DO
             END DO
-
-            if(adjustlTime .eq. .true.) then
-                TSTEP = minTimeStep
-            end if
 
             DO IKind = 1,CKind
 
@@ -415,15 +452,13 @@ module NUCLEATION_SPACEDIST
 
             call Record%AddSimuTimes(TSTEP)
 
-            write(*,*) "Step",Record%GetSimuSteps(),"Time",Record%GetSimuTimes()
-
             call OutPutCurrent(Host_SimBoxes,Host_SimuCtrlParam,Record)
 
             if(mod(Record%GetSimuSteps(),1) .eq. 0) then
 
-                !call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
+                call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
 
-                !call Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,ITIME,TTIME,TSTEP,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
+                call Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,Record%GetSimuSteps(),Record%GetSimuTimes(),TSTEP,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
             end if
 
             !if(Concent(CKind) .GT. 1.D-10) then
@@ -477,19 +512,22 @@ module NUCLEATION_SPACEDIST
 
                 Dumplicate = Dumplicate*2
                 write(*,*) "Dumplicate",Dumplicate
+                pause
             end if
 
             if(Record%GetSimuTimes() .GT. Host_SimuCtrlParam%TermTValue) then
                 exit
             end if
 
+            TSTEP = TSTEP*1.5
+
           END DO
         END Associate
 
-    end subroutine NucleationSimu_SpaceDist_Balance
+    end subroutine NucleationSimu_SpaceDist_Balance_GrubDumplicate
 
     !***************************************************
-    subroutine NucleationSimu_SpaceDist_Transient(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
+    subroutine NucleationSimu_SpaceDist_Transient_GrubDumplicate(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
         use RAND32_MODULE
         implicit none
         !---Dummy Vars---
@@ -541,6 +579,7 @@ module NUCLEATION_SPACEDIST
         real(kind=KMCDF)::ConCentrat0
         real(kind=KMCDF)::ReactionCoeff
         type(ReactionValue)::TheReactionValue
+        real(kind=KMCDF)::SFlux
         !---Body---
         CKind = Host_SimBoxes%CKind
 
@@ -667,31 +706,66 @@ module NUCLEATION_SPACEDIST
                 END DO
             END DO
 
-            TSTEP = maxval(Concent)*Host_SimuCtrlParam%MaxChangeRate/maxval(dabs(tempNBPVChangeRate))
-
-            TSTEP = min(TSTEP,1D-9)
-
-            write(*,*) (minval(Host_SimBoxes%NodeSpace)**2)/maxval(ClustersKind(:)%m_DiffCoeff)
-
-            tempNBPV = Concent
-
-            tempNBPV = tempNBPV + tempNBPVChangeRate*TSTEP
-
             DO IKind = 1,CKind
                 DO INode = 1,NNodes
-                    if(tempNBPV(INode,IKind) .LT. 0) then
-                        tempTimeStep = Concent(INode,IKind)/dabs(tempNBPVChangeRate(INode,IKind))
-                        if(tempTimeStep .LE. minTimeStep) then
-                            minTimeStep = tempTimeStep
-                        end if
-                        adjustlTime = .true.
+                    tempTimeStep = Host_SimuCtrlParam%MaxReactChangeRate*Concent(INode,IKind)/dabs(tempNBPVChangeRate(INode,IKind))
+                    if(dabs(tempNBPVChangeRate(INode,IKind)) .GT. 0.D0 .AND. tempTimeStep .LE. TSTEP) then
+                        TSTEP = tempTimeStep
                     end if
+
+                    if(INode .eq. 1) then  ! upper surface
+
+                        DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                        if(NNodes .LE. 1) then
+                            DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                            SFlux = DiffGradient1*Concent(INode,IKind) + DiffGradient2*Concent(INode,IKind)
+                            if(SFlux .GT. 0.D0) then
+                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+                            end if
+                        else
+                            DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
+
+                            SFlux = DiffGradient1*Concent(INode,IKind) - DiffGradient2*(Concent(INode+1,IKind) - Concent(INode,IKind))
+                            if(SFlux .GT. 0.D0) then
+                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+                            end if
+                        end if
+
+                    else if(INode .eq. NNodes) then  ! Low surface
+
+                        DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                        if(NNodes .LE. 1) then
+                            DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                            SFlux = DiffGradient1*Concent(INode,IKind) + DiffGradient2*Concent(INode,IKind)
+                            if(SFlux .GT. 0.D0) then
+                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+                            end if
+                        else
+                            DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
+
+                            SFlux = DiffGradient1*(Concent(INode,IKind) - Concent(INode-1,IKind)) + DiffGradient2*Concent(INode,IKind)
+                            if(SFlux .GT. 0.D0) then
+                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+                            end if
+
+                        end if
+
+                    else
+                        DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
+                        DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
+
+                        SFlux = DiffGradient1*(Concent(INode,IKind) - Concent(INode-1,IKind)) - DiffGradient2*(Concent(INode+1,IKind) - Concent(INode,IKind))
+                        if(SFlux .GT. 0.D0) then
+                            TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+                        end if
+                    end if
+
                 END DO
             END DO
-
-            if(adjustlTime .eq. .true.) then
-                TSTEP = minTimeStep
-            end if
 
             DO IKind = 1,CKind
 
@@ -838,9 +912,9 @@ module NUCLEATION_SPACEDIST
 
             if(mod(Record%GetSimuSteps(),1) .eq. 0) then
 
-                !call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
+                call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
 
-                !call Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,ITIME,TTIME,TSTEP,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
+                call Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,Record%GetSimuSteps(),Record%GetSimuTimes(),TSTEP,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
             end if
 
             !if(Concent(CKind) .GT. 1.D-10) then
@@ -894,6 +968,7 @@ module NUCLEATION_SPACEDIST
 
                 Dumplicate = Dumplicate*2
                 write(*,*) "Dumplicate",Dumplicate
+                pause
             end if
 
 
@@ -901,10 +976,12 @@ module NUCLEATION_SPACEDIST
                 exit
             end if
 
+            TSTEP = TSTEP*1.5
+
           END DO
         END Associate
 
-    end subroutine NucleationSimu_SpaceDist_Transient
+    end subroutine NucleationSimu_SpaceDist_Transient_GrubDumplicate
 
     !----------------------------------------------------------------------
     subroutine SolveTridag(IKind,MatrixA,MatrixB,MatrixC,MatrixD,Solver,MatrixSize,w,h)
@@ -1100,10 +1177,7 @@ module NUCLEATION_SPACEDIST
         real(kind=KMCDF),dimension(:),allocatable::N3
         real(kind=KMCDF),dimension(:),allocatable::Rave
         !---Local Vars---
-        integer::hFile
         integer::CKind
-        character*256::C_Index
-        character*256::fileName
         integer::I
         integer::NNodes
         integer::INode
@@ -1133,7 +1207,6 @@ module NUCLEATION_SPACEDIST
             end if
           END DO
 
-
           write(6,FMT="(15(A15,1x))") "Step","Time","TStep","NPOWER0Ave","NPOWER1DIV2Ave","NPOWER1Ave","NPOWER3DIV2Ave","N1","N2","N3","Rave(nm)"
 
           write(6,FMT="(I15,1x,15(E15.5,1x))") Step,TTime,TStep,sum(NPOWER0Ave)/NNodes,sum(NPOWER1DIV2Ave)/NNodes,sum(NPOWER1Ave)/NNodes,sum(NPOWER3DIV2Ave)/NNodes, &
@@ -1145,31 +1218,6 @@ module NUCLEATION_SPACEDIST
           Flush(m_StatisticFile)
 
 
-          LastOutPutConifgIndex = LastOutPutConifgIndex + 1
-
-
-          call AvailableIOUnit(hFile)
-
-          write(C_Index,*) LastOutPutConifgIndex
-
-          C_Index = adjustl(C_Index)
-
-          fileName = Host_SimuCtrlParam%OutFilePath(1:len_trim(Host_SimuCtrlParam%OutFilePath))//FolderSpe//"Config"//C_Index(1:len_trim(C_Index))//".dat"
-
-          open(Unit=hFile,file=trim(fileName))
-
-          write(hFile,*) "Time",TTime
-
-          write(hFile,FMT="(4(A15))") "n","NBPV","u","Z(u)"
-
-          DO I = 1,CKind
-              write(hFile,FMT="(15(E15.5))") sum(ClustersKind(I)%m_Atoms(:)%m_NA),                              &
-                                             sum(Concent(1:NNodes,I))/NNodes,                                   &
-                                             sum(ClustersKind(I)%m_Atoms(:)%m_NA)*TTime**(-dble(2)/dble(5)),    &
-                                             (sum(Concent(1:NNodes,I))/NNodes)/(TTime**(-dble(4)/dble(5)))
-          END DO
-
-          close(hFile)
          END associate
 
         return

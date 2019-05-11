@@ -9,7 +9,7 @@ module NUCLEATION_GRUB
 !    real(kind=KMCDF),dimension(:),allocatable::NBPAPV
 !    real(kind=KMCDF),dimension(:),allocatable::NATOMS
 !
-!    real(kind=KMCDF)::MaxChangeRate = 0.05
+!    real(kind=KMCDF)::MaxReactChangeRate = 0.05
 !
 !    real(kind=KMCDF)::Temperature = 1000                ! (K)
 !
@@ -155,7 +155,7 @@ module NUCLEATION_GRUB
 !
 !            END DO
 !
-!            ReduceTimeStep = maxval(NBPAPV)*MaxChangeRate/maxval(dabs(tempNBPAPVChangeRate))
+!            ReduceTimeStep = maxval(NBPAPV)*MaxReactChangeRate/maxval(dabs(tempNBPAPVChangeRate))
 !
 !            tempNBPAPV = NBPAPV
 !

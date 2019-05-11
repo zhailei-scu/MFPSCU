@@ -16,6 +16,7 @@
 				<Compiler>
 					<Add option="-Minform=inform" />
 					<Add option="-g" />
+					<Add option="-Mcuda=cuda8.0,cc35,nodebug,nollvm" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -26,8 +27,9 @@
 				<Option compiler="pgifortran" />
 				<Option createDefFile="1" />
 				<Compiler>
-					<Add option="-Minform=inform" />
 					<Add option="-O2" />
+					<Add option="-Minform=inform" />
+					<Add option="-tp sandybridge-64 -Mvect=sse,simd -Minform=warn -Minfo=all -Mcuda=fastmath,cuda8.0,cc35" />
 				</Compiler>
 			</Target>
 		</Build>
@@ -43,7 +45,9 @@
 		<Unit filename="../sor/MigCoaleModel/MigCoale_Evolution_UniformDist.F90">
 			<Option weight="0" />
 		</Unit>
-		<Unit filename="../sor/MigCoaleModel/MigCoale_Implantation.F90" />
+		<Unit filename="../sor/MigCoaleModel/MigCoale_Implantation.F90">
+			<Option weight="2" />
+		</Unit>
 		<Unit filename="../sor/MigCoaleModel/MigCoale_Statistic_CPU.F90">
 			<Option weight="1" />
 		</Unit>
@@ -63,7 +67,10 @@
 			<Option weight="0" />
 		</Unit>
 		<Unit filename="../sor/MigCoaleModel/Nucleation_SpaceDist.F90">
-			<Option weight="1" />
+			<Option weight="3" />
+		</Unit>
+		<Unit filename="../sor/MigCoaleModel/Nucleation_SpaceDist_GPU.F90">
+			<Option weight="3" />
 		</Unit>
 		<Extensions>
 			<code_completion />

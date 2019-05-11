@@ -139,7 +139,7 @@ module NUCLEATION_IMPLANT
 !
 !            END DO
 !
-!            TSTEP = maxval(NBPV)*m_MaxChangeRate/maxval(dabs(tempNBPVChangeRate))
+!            TSTEP = maxval(NBPV)*m_MaxReactChangeRate/maxval(dabs(tempNBPVChangeRate))
 !
 !            tempNBPV = NBPV
 !

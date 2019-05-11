@@ -120,11 +120,12 @@
 
     &BOUNDSUBCTL
         &PERIDIC If use periodic boundary condition: X = 1, Y = 1, Z = 0     ! currently ,the application only support z-direction spatical
-	&BDTYPE The boundary condition type is z = "Neumann" , "Neumann" ! if not use periodic boundary condition, must special the boundary condition,support "Dirichlet" and "Neumann" boundary condition
+	&BDTYPE The boundary condition type is z = "Dirichlet" , "Dirichlet" ! if not use periodic boundary condition, must special the boundary condition,support "Dirichlet" and "Neumann" boundary condition
     &ENDSUBCTL
 
     &RATIOSUBCTL
-	&MAXCHANGERATE The max change rate in each step is 0.05
+	&MAXREACTCHANGERATE The max change rate induced by reaction in each step is 0.05
+	&MAXDIFFUSECHANGERATE The max change rate induced by diffusion in each step is 0.2
 	&DUMPLICATEFACTOR The factor for dumplicate the size is = 1.D-12
     &ENDSUBCTL
 
