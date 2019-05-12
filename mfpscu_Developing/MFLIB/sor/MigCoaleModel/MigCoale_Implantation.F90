@@ -1459,6 +1459,10 @@ module MIGCOALE_IMPLANTATION
 
         ImplantRate = 0.D0
 
+        if(this%ImplantFlux .LE. 0.D0) then
+            return
+        end if
+
         LayerStart = 1
 
         LayerNum = size(this%LayerThick)
@@ -1581,6 +1585,10 @@ module MIGCOALE_IMPLANTATION
 
       ImplantRate = 0.D0
 
+      if(this%ImplantFlux .LE. 0.D0) then
+        return
+      end if
+
       LayerStart = 1
 
       LayerNum = size(this%LayerThick)
@@ -1689,6 +1697,10 @@ module MIGCOALE_IMPLANTATION
         SampleTimeEachLayer = 100
 
         ImplantRate = 0.D0
+
+        if(this%ImplantFlux .LE. 0.D0) then
+            return
+        end if
 
         MaxGroups = 1
 

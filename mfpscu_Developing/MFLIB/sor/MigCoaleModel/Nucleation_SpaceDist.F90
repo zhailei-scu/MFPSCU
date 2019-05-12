@@ -212,7 +212,7 @@ module NUCLEATION_SPACEDIST
 
                         if(ReactionCoeff .GE. DRAND32()) then
 
-                            deta = Dumplicate*Concent(INode,IKind)*Concent(INode,JKind)* &
+                            deta = Dumplicate*4*PI*Concent(INode,IKind)*Concent(INode,JKind)* &
                                     (ClustersKind(IKind)%m_RAD + ClustersKind(JKind)%m_RAD)* &
                                     (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(JKind)%m_DiffCoeff)
 
@@ -505,7 +505,6 @@ module NUCLEATION_SPACEDIST
 
                 Dumplicate = Dumplicate*2
                 write(*,*) "Dumplicate",Dumplicate
-                pause
             end if
 
             if(Record%GetSimuTimes() .GT. Host_SimuCtrlParam%TermTValue) then
@@ -654,7 +653,7 @@ module NUCLEATION_SPACEDIST
                         if(ReactionCoeff .GE. DRAND32()) then
 
 
-                            deta = Dumplicate*Concent(INode,IKind)*Concent(INode,JKind)* &
+                            deta = Dumplicate*4*PI*Concent(INode,IKind)*Concent(INode,JKind)* &
                                     (ClustersKind(IKind)%m_RAD + ClustersKind(JKind)%m_RAD)* &
                                     (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(JKind)%m_DiffCoeff)
 
@@ -868,23 +867,23 @@ module NUCLEATION_SPACEDIST
 
                 if(IKind .eq. 1) then
 
-                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out flux from up surface",FSurfAccum(IKind)
-                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out concentrate from up surface",CSurfAccum(IKind)
-                    write(*,fmt="(A50,1x,1ES14.6)") "Out flux from up surface in current step",FSurfEachStep(IKind)
-                    write(*,fmt="(A50,1x,1ES14.6)") "Out concentrate from up surface in current step",CSurfEachStep(IKind)
-                    DO INode = 1,NNodes
-                        write(*,fmt="(A10,1x,I10,1x,A15,1x,1ES14.6)") "INode",INode,"Concent(INode,1)",Concent(INode,1)
-                    END DO
-                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out flux from lower surface",FOutAccum(IKind)
-                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out concentrate from lower surface",COutAccum(IKind)
-                    write(*,fmt="(A50,1x,1ES14.6)") "Out flux from lower surface in current step",FOutEachStep(IKind)
-                    write(*,fmt="(A50,1x,1ES14.6)") "Out concentrate from lower surface in current step",COutEachStep(IKind)
-
-                    write(*,*) "----------------------------------------"
-                    write(*,*) "sum(Concent(:,1))",sum(Concent(:,1))
-                    write(*,*) "sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)",sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)
-                    write(*,*) "(sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1))/ConCentrat0",(ConCentrat0 - (sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)))/ConCentrat0
-                    write(*,*) "----------------------------------------"
+!                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out flux from up surface",FSurfAccum(IKind)
+!                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out concentrate from up surface",CSurfAccum(IKind)
+!                    write(*,fmt="(A50,1x,1ES14.6)") "Out flux from up surface in current step",FSurfEachStep(IKind)
+!                    write(*,fmt="(A50,1x,1ES14.6)") "Out concentrate from up surface in current step",CSurfEachStep(IKind)
+!                    DO INode = 1,NNodes
+!                        write(*,fmt="(A10,1x,I10,1x,A15,1x,1ES14.6)") "INode",INode,"Concent(INode,1)",Concent(INode,1)
+!                    END DO
+!                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out flux from lower surface",FOutAccum(IKind)
+!                    write(*,fmt="(A50,1x,1ES14.6)") "Accumulated out concentrate from lower surface",COutAccum(IKind)
+!                    write(*,fmt="(A50,1x,1ES14.6)") "Out flux from lower surface in current step",FOutEachStep(IKind)
+!                    write(*,fmt="(A50,1x,1ES14.6)") "Out concentrate from lower surface in current step",COutEachStep(IKind)
+!
+!                    write(*,*) "----------------------------------------"
+!                    write(*,*) "sum(Concent(:,1))",sum(Concent(:,1))
+!                    write(*,*) "sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)",sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)
+!                    write(*,*) "(sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1))/ConCentrat0",(ConCentrat0 - (sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)))/ConCentrat0
+!                    write(*,*) "----------------------------------------"
                 end if
 
 
@@ -893,8 +892,6 @@ module NUCLEATION_SPACEDIST
             call Record%AddSimuTimes(TSTEP)
 
             call OutPutCurrent(Host_SimBoxes,Host_SimuCtrlParam,Record)
-
-            write(*,*) "Step",Record%GetSimuSteps(),"Time",Record%GetSimuTimes()
 
             if(mod(Record%GetSimuSteps(),1) .eq. 0) then
 
@@ -954,7 +951,6 @@ module NUCLEATION_SPACEDIST
 
                 Dumplicate = Dumplicate*2
                 write(*,*) "Dumplicate",Dumplicate
-                pause
             end if
 
 
@@ -1195,10 +1191,10 @@ module NUCLEATION_SPACEDIST
 
           write(6,FMT="(15(A15,1x))") "Step","Time","TStep","NPOWER0Ave","NPOWER1DIV2Ave","NPOWER1Ave","NPOWER3DIV2Ave","N1","N2","N3","Rave(nm)"
 
-          write(6,FMT="(I15,1x,15(E15.5,1x))") Step,TTime,TStep,sum(NPOWER0Ave)/NNodes,sum(NPOWER1DIV2Ave)/NNodes,sum(NPOWER1Ave)/NNodes,sum(NPOWER3DIV2Ave)/NNodes, &
+          write(6,FMT="(I15,1x,15(E15.8,1x))") Step,TTime,TStep,sum(NPOWER0Ave)/NNodes,sum(NPOWER1DIV2Ave)/NNodes,sum(NPOWER1Ave)/NNodes,sum(NPOWER3DIV2Ave)/NNodes, &
                                              sum(N1)/NNodes,sum(N2)/NNodes,sum(N3)/NNodes,sum(Rave)*C_CM2NM/NNodes
 
-          write(m_StatisticFile,FMT="(I15,1x,15(E15.5,1x))") Step,TTime,TStep,sum(NPOWER0Ave)/NNodes,sum(NPOWER1DIV2Ave)/NNodes,sum(NPOWER1Ave)/NNodes,sum(NPOWER3DIV2Ave)/NNodes, &
+          write(m_StatisticFile,FMT="(I15,1x,15(E15.8,1x))") Step,TTime,TStep,sum(NPOWER0Ave)/NNodes,sum(NPOWER1DIV2Ave)/NNodes,sum(NPOWER1Ave)/NNodes,sum(NPOWER3DIV2Ave)/NNodes, &
                                              sum(N1)/NNodes,sum(N2)/NNodes,sum(N3)/NNodes,sum(Rave)*C_CM2NM/NNodes
 
           Flush(m_StatisticFile)
