@@ -1,0 +1,9 @@
+# depslib dependency file v1.0
+1557754626 source:/home/zhailei/Development/MeanField/mfpscu_Developing/MFLIB/sor/CommonGPU/MCMF_CONSTANTS_GPU.F90
+
+1557755042 source:/home/zhailei/Development/MeanField/mfpscu_Developing/MFLIB/sor/CommonGPU/MCMF_Utilities_GPU.F90
+
+1557754794 source:/home/zhailei/Development/MeanField/mfpscu_Developing/MFLIB/sor/CommonGPU/MCMF_TYPEDEF_DiffusorsDefine_GPU.F90
+
+1557754808 source:/home/zhailei/Development/MeanField/mfpscu_Developing/MFLIB/sor/CommonGPU/MCMF_TYPEDEF_ReactionsDefine_GPU.F90
+

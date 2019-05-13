@@ -255,56 +255,56 @@ module NUCLEATION_SPACEDIST
                         TSTEP = min(TSTEP,tempTimeStep)
                     end if
 
-                    if(INode .eq. 1) then  ! upper surface
-
-                        DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
-
-                        if(NNodes .LE. 1) then
-                            DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
-
-                            SFlux = DiffGradient1*Concent(INode,IKind) + DiffGradient2*Concent(INode,IKind)
-                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
-                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
-                            end if
-                        else
-                            DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
-
-                            SFlux = DiffGradient1*Concent(INode,IKind) - DiffGradient2*(Concent(INode+1,IKind) - Concent(INode,IKind))
-                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
-                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
-                            end if
-
-                        end if
-
-                    else if(INode .eq. NNodes) then  ! Low surface
-
-                        DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
-
-                        if(NNodes .LE. 1) then
-                            DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
-
-                            SFlux = DiffGradient1*Concent(INode,IKind) + DiffGradient2*Concent(INode,IKind)
-                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
-                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
-                            end if
-                        else
-                            DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
-
-                            SFlux = DiffGradient1*(Concent(INode,IKind) - Concent(INode-1,IKind)) + DiffGradient2*Concent(INode,IKind)
-                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
-                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
-                            end if
-                        end if
-
-                    else
-                        DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
-                        DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
-
-                        SFlux = DiffGradient1*(Concent(INode,IKind) - Concent(INode-1,IKind)) - DiffGradient2*(Concent(INode+1,IKind) - Concent(INode,IKind))
-                        if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
-                            TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
-                        end if
-                    end if
+!                    if(INode .eq. 1) then  ! upper surface
+!
+!                        DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+!
+!                        if(NNodes .LE. 1) then
+!                            DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+!
+!                            SFlux = DiffGradient1*Concent(INode,IKind) + DiffGradient2*Concent(INode,IKind)
+!                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
+!                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+!                            end if
+!                        else
+!                            DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
+!
+!                            SFlux = DiffGradient1*Concent(INode,IKind) - DiffGradient2*(Concent(INode+1,IKind) - Concent(INode,IKind))
+!                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
+!                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+!                            end if
+!
+!                        end if
+!
+!                    else if(INode .eq. NNodes) then  ! Low surface
+!
+!                        DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+!
+!                        if(NNodes .LE. 1) then
+!                            DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+!
+!                            SFlux = DiffGradient1*Concent(INode,IKind) + DiffGradient2*Concent(INode,IKind)
+!                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
+!                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+!                            end if
+!                        else
+!                            DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
+!
+!                            SFlux = DiffGradient1*(Concent(INode,IKind) - Concent(INode-1,IKind)) + DiffGradient2*Concent(INode,IKind)
+!                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
+!                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+!                            end if
+!                        end if
+!
+!                    else
+!                        DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
+!                        DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
+!
+!                        SFlux = DiffGradient1*(Concent(INode,IKind) - Concent(INode-1,IKind)) - DiffGradient2*(Concent(INode+1,IKind) - Concent(INode,IKind))
+!                        if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
+!                            TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+!                        end if
+!                    end if
 
                 END DO
             END DO
@@ -421,23 +421,23 @@ module NUCLEATION_SPACEDIST
 
                 if(IKind .eq. 1) then
 
-                    write(*,*) "Accumulated out flux from up surface",FSurfAccum(IKind)
-                    write(*,*) "Accumulated out concentrate from up surface",CSurfAccum(IKind)
-                    write(*,*) "Out flux from up surface in current step",FSurfEachStep(IKind)
-                    write(*,*) "Out concentrate from up surface in current step",CSurfEachStep(IKind)
-                    DO INode = 1,NNodes
-                        write(*,*) "INode",INode,"Concent(INode,1)",Concent(INode,1)
-                    END DO
-                    write(*,*) "Accumulated out flux from lower surface",FOutAccum(IKind)
-                    write(*,*) "Accumulated out concentrate from lower surface",COutAccum(IKind)
-                    write(*,*) "Out flux from lower surface in current step",FOutEachStep(IKind)
-                    write(*,*) "Out concentrate from lower surface in current step",COutEachStep(IKind)
-
-                    write(*,*) "----------------------------------------"
-                    write(*,*) "sum(Concent(:,1))",sum(Concent(:,1))
-                    write(*,*) "sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)",sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)
-                    write(*,*) "(sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1))/ConCentrat0",(ConCentrat0 - (sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)))/ConCentrat0
-                    write(*,*) "----------------------------------------"
+!                    write(*,*) "Accumulated out flux from up surface",FSurfAccum(IKind)
+!                    write(*,*) "Accumulated out concentrate from up surface",CSurfAccum(IKind)
+!                    write(*,*) "Out flux from up surface in current step",FSurfEachStep(IKind)
+!                    write(*,*) "Out concentrate from up surface in current step",CSurfEachStep(IKind)
+!                    DO INode = 1,NNodes
+!                        write(*,*) "INode",INode,"Concent(INode,1)",Concent(INode,1)
+!                    END DO
+!                    write(*,*) "Accumulated out flux from lower surface",FOutAccum(IKind)
+!                    write(*,*) "Accumulated out concentrate from lower surface",COutAccum(IKind)
+!                    write(*,*) "Out flux from lower surface in current step",FOutEachStep(IKind)
+!                    write(*,*) "Out concentrate from lower surface in current step",COutEachStep(IKind)
+!
+!                    write(*,*) "----------------------------------------"
+!                    write(*,*) "sum(Concent(:,1))",sum(Concent(:,1))
+!                    write(*,*) "sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)",sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)
+!                    write(*,*) "(sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1))/ConCentrat0",(ConCentrat0 - (sum(Concent(:,1)) + CSurfAccum(1) + COutAccum(1)))/ConCentrat0
+!                    write(*,*) "----------------------------------------"
                 end if
 
 

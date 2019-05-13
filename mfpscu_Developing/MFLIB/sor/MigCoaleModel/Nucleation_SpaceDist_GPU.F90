@@ -1,6 +1,7 @@
 module NUCLEATION_SPACEDIST_GPU
     use cudafor
     use MFLIB_GLOBAL
+    use MCMF_CONSTANTS_GPU
     use MIGCOALE_IMPLANTATION
     use MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     use MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
@@ -543,76 +544,259 @@ module NUCLEATION_SPACEDIST_GPU
     end subroutine NucleationSimu_SpaceDist_Balance_GrubDumplicate_GPU
 
     !***************************************************
-    attributes(global) subroutine Kernel_CalReaction()
+    attributes(global) subroutine Kernel_CalReaction_Vanish(NNode,CKind,Dev_Concent,Dev_ClusterKindArray,Dev_tempNBPVChangeRate)
         implicit none
         !---Dummy Vars---
+        integer,value::NNode
+        integer,value::CKind
+        real(kind=KMCDF),device::Dev_Concent(:,:)
+        type(ACluster),device::Dev_ClusterKindArray(:)
+        real(kind=KMCDF),device::Dev_tempNBPVChangeRate(:,:)
         !---Local Vars---
+        integer::tid
+        integer::bid
+        integer::cid
+        integer::IKind
+        integer::JKInd
+        integer::INode
+        real(kind=KMCDF)::deta
+        real(kind=KMCDF)::Factor
         !---Body---
         tid = (threadidx%y - 1)*blockdim%x +threadidx%x
         bid = (blockidx%y - 1)*griddim%x + blockidx%x
-        cid = (bid - 1)*p_BLOCKSIZE + tid
+        cid = (bid - 1)*p_BlockSize + tid
 
         IKind = (cid - 1)/NNode + 1
         INode = cid - (IKind-1)*NNode
 
+        DO JKind = 1,CKind
+
+!            TheReactionValue = Host_SimBoxes%m_ReactionsMap%get(ClustersKind(IKind),ClustersKind(JKind))
+!
+!            ReactionCoeff = 0.D0
+!            select case(TheReactionValue%ReactionCoefficientType)
+!                case(p_ReactionCoefficient_ByValue)
+!                    ReactionCoeff = TheReactionValue%ReactionCoefficient_Value
+!                case(p_ReactionCoefficient_ByArrhenius)
+!                    ReactionCoeff = TheReactionValue%PreFactor*exp(-C_EV2ERG*TheReactionValue%ActEnergy/Host_SimuCtrlParam%TKB)
+!            end select
+
+!            if(ReactionCoeff .GE. DRAND32()) then
 
 
-        DO INode = 1,NNodes
-                DO IKind = 1,CKind
+                deta =  4*PI*Dev_Concent(INode,IKind)*Dev_Concent(INode,JKind)* &
+                                    (Dev_ClusterKindArray(IKind)%m_RAD + Dev_ClusterKindArray(JKind)%m_RAD)* &
+                                    (Dev_ClusterKindArray(IKind)%m_DiffCoeff + Dev_ClusterKindArray(JKind)%m_DiffCoeff)
 
-                    DO JKind = IKind,CKind
+                Dev_tempNBPVChangeRate(INode,IKind) =  Dev_tempNBPVChangeRate(INode,IKind) - deta
 
-                        TheReactionValue = Host_SimBoxes%m_ReactionsMap%get(ClustersKind(IKind),ClustersKind(JKind))
+!            end if
 
-                        ReactionCoeff = 0.D0
-                        select case(TheReactionValue%ReactionCoefficientType)
-                            case(p_ReactionCoefficient_ByValue)
-                                ReactionCoeff = TheReactionValue%ReactionCoefficient_Value
-                            case(p_ReactionCoefficient_ByArrhenius)
-                                ReactionCoeff = TheReactionValue%PreFactor*exp(-C_EV2ERG*TheReactionValue%ActEnergy/Host_SimuCtrlParam%TKB)
-                        end select
-
-                        if(ReactionCoeff .GE. DRAND32()) then
-
-
-                            deta = Dumplicate*4*PI*Concent(INode,IKind)*Concent(INode,JKind)* &
-                                    (ClustersKind(IKind)%m_RAD + ClustersKind(JKind)%m_RAD)* &
-                                    (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(JKind)%m_DiffCoeff)
-
-                            if(IKind .eq. JKind) then
-
-                                Factor = 0.5D0
-
-                                tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
-
-                            else
-
-                                Factor = 1.D0
-
-                                tempNBPVChangeRate(INode,IKind) =  tempNBPVChangeRate(INode,IKind) - deta
-
-                                tempNBPVChangeRate(INode,JKind) =  tempNBPVChangeRate(INode,JKind) - deta
-
-                            end if
-
-                            if((IKind + JKind) .LE. CKind) then
-                                AtomuNumbSubject = sum(ClustersKind(IKind)%m_Atoms(:)%m_NA)
-                                AtomuNumbObject = sum(ClustersKind(JKind)%m_Atoms(:)%m_NA)
-                                AtomuNumbProductor = sum(ClustersKind(IKind+JKind)%m_Atoms(:)%m_NA)
-
-                                tempNBPVChangeRate(INode,IKind + JKind) = tempNBPVChangeRate(INode,IKind + JKind) + &
-                                                                            Factor*deta*(AtomuNumbSubject+AtomuNumbObject)/AtomuNumbProductor
-                            end if
-
-                        end if
-
-                    END DO
-
-                END DO
         END DO
 
         return
-    end subroutine Kernel_CalReaction
+    end subroutine Kernel_CalReaction_Vanish
+
+    !***************************************************
+    attributes(global) subroutine Kernel_CalReaction_Generate(NNode,CKind,Dev_Concent,Dev_ClusterKindArray,Dev_tempNBPVChangeRate)
+        implicit none
+        !---Dummy Vars---
+        integer,value::NNode
+        integer,value::CKind
+        real(kind=KMCDF),device::Dev_Concent(:,:)
+        type(ACluster),device::Dev_ClusterKindArray(:)
+        real(kind=KMCDF),device::Dev_tempNBPVChangeRate(:,:)
+        !---Local Vars---
+        integer::tid
+        integer::bid
+        integer::cid
+        integer::IKind
+        integer::JKInd
+        integer::LKind
+        integer::INode
+        real(kind=KMCDF)::deta
+        real(kind=KMCDF)::Factor
+        integer::AtomuNumbSubject
+        integer::AtomuNumbObject
+        integer::AtomuNumbProductor
+        !---Body---
+        tid = (threadidx%y - 1)*blockdim%x +threadidx%x
+        bid = (blockidx%y - 1)*griddim%x + blockidx%x
+        cid = (bid - 1)*p_BlockSize + tid
+
+        LKind = (cid - 1)/NNode + 1
+        INode = cid - (LKind-1)*NNode
+
+        DO Ikind = 1,LKind - 1
+
+            JKind = LKind - IKind
+
+!            TheReactionValue = Host_SimBoxes%m_ReactionsMap%get(ClustersKind(IKind),ClustersKind(JKind))
+!
+!            ReactionCoeff = 0.D0
+!            select case(TheReactionValue%ReactionCoefficientType)
+!                case(p_ReactionCoefficient_ByValue)
+!                    ReactionCoeff = TheReactionValue%ReactionCoefficient_Value
+!                case(p_ReactionCoefficient_ByArrhenius)
+!                    ReactionCoeff = TheReactionValue%PreFactor*exp(-C_EV2ERG*TheReactionValue%ActEnergy/Host_SimuCtrlParam%TKB)
+!            end select
+
+!            if(ReactionCoeff .GE. DRAND32()) then
+
+                Factor = 1.D0
+                if(IKind .eq. JKInd) then
+                    Factor = 0.5D0
+                end if
+
+                deta =  4*PI*Dev_Concent(INode,IKind)*Dev_Concent(INode,JKind)* &
+                                    (Dev_ClusterKindArray(IKind)%m_RAD + Dev_ClusterKindArray(JKind)%m_RAD)* &
+                                    (Dev_ClusterKindArray(IKind)%m_DiffCoeff + Dev_ClusterKindArray(JKind)%m_DiffCoeff)
+
+                AtomuNumbSubject = sum(Dev_ClusterKindArray(IKind)%m_Atoms(:)%m_NA,dim=1)
+                AtomuNumbObject = sum(Dev_ClusterKindArray(JKind)%m_Atoms(:)%m_NA,dim=1)
+                AtomuNumbProductor = sum(Dev_ClusterKindArray(LKind)%m_Atoms(:)%m_NA,dim=1)
+
+                Dev_tempNBPVChangeRate(INode,LKind) =  Dev_tempNBPVChangeRate(INode,LKind) + &
+                                                       Factor*deta*(AtomuNumbSubject+AtomuNumbObject)/AtomuNumbProductor
+
+!            end if
+
+        END DO
+
+        return
+    end subroutine Kernel_CalReaction_Generate
+
+    !***************************************************
+    attributes(global) subroutine Kernel_DoReaction_And_NodeDiffusion_Balance(NNode,CKind,Dev_Concent,Dev_ClusterKindArray,Dev_tempNBPVChangeRate)
+        implicit none
+        !---Dummy Vars---
+        integer,value::NNode
+        integer,value::CKind
+        real(kind=KMCDF),device::Dev_Concent(:,:)
+        type(ACluster),device::Dev_ClusterKindArray(:)
+        real(kind=KMCDF),device::Dev_tempNBPVChangeRate(:,:)
+        !---Local Vars---
+        integer::tid
+        integer::bid
+        integer::cid
+        integer::IKind
+        integer::JKInd
+        integer::LKind
+        integer::INode
+        real(kind=KMCDF)::deta
+        real(kind=KMCDF)::Factor
+        integer::AtomuNumbSubject
+        integer::AtomuNumbObject
+        integer::AtomuNumbProductor
+        !---Body---
+        tid = (threadidx%y - 1)*blockdim%x +threadidx%x
+        bid = (blockidx%y - 1)*griddim%x + blockidx%x
+        cid = (bid - 1)*p_BlockSize + tid
+
+        LKind = (cid - 1)/NNode + 1
+        INode = cid - (LKind-1)*NNode
+
+        MatA = 0.D0
+        MatB = 0.D0
+        MatC = 0.D0
+        MatD = 0.D0
+
+        DO INode = 1,NNodes
+                    if(INode .eq. 1) then  ! upper surface
+
+                        DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                        MatA(INode) = 0.D0
+                        if(NNodes .LE. 1) then
+                            DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                            select case(Host_SimuCtrlParam%BDCTYPE(3,1))
+                                case(p_Dirichlet_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP + DiffGradient1 + DiffGradient2
+                                case(p_Neumann_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP
+                                case default
+                                    write(*,*) "MFPSCUERROR: Unknown boundary condition ",Host_SimuCtrlParam%BDCTYPE(3,1)
+                                    pause
+                                    stop
+                            end select
+
+                            MatC(INode) = 0.D0
+                        else
+                            DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
+
+                            select case(Host_SimuCtrlParam%BDCTYPE(3,1))
+                                case(p_Dirichlet_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP + DiffGradient1 + DiffGradient2
+                                case(p_Neumann_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP + DiffGradient2
+                                case default
+                                    write(*,*) "MFPSCUERROR: Unknown boundary condition ",Host_SimuCtrlParam%BDCTYPE(3,1)
+                                    pause
+                                    stop
+                            end select
+
+                            MatC(INode) = -DiffGradient2
+                        end if
+
+                        MatD(INode) = Concent(INode,IKind)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
+                    else if(INode .eq. NNodes) then  ! Low surface
+
+                        DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                        if(NNodes .LE. 1) then
+                            DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                            MatA(INode) = 0.D0
+
+                            select case(Host_SimuCtrlParam%BDCTYPE(3,2))
+                                case(p_Dirichlet_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP + DiffGradient1 + DiffGradient2
+                                case(p_Neumann_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP
+                                case default
+                                    write(*,*) "MFPSCUERROR: Unknown boundary condition ",Host_SimuCtrlParam%BDCTYPE(3,2)
+                                    pause
+                                    stop
+                            end select
+                        else
+                            DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
+
+                            MatA(INode) = -DiffGradient1
+
+                            select case(Host_SimuCtrlParam%BDCTYPE(3,2))
+                                case(p_Dirichlet_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP + DiffGradient1 + DiffGradient2
+                                case(p_Neumann_BDC)
+                                    MatB(INode) = NodeSpace(INode)/TSTEP + DiffGradient1
+                                case default
+                                    write(*,*) "MFPSCUERROR: Unknown boundary condition ",Host_SimuCtrlParam%BDCTYPE(3,2)
+                                    pause
+                                    stop
+                            end select
+
+                        end if
+
+                        MatC(INode) = 0.D0
+                        MatD(INode) = Concent(INode,IKind)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
+                    else
+                        DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
+                        DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
+                        MatA(INode) = -DiffGradient1
+                        MatB(INode) = NodeSpace(INode)/TSTEP + (DiffGradient1 + DiffGradient2)
+                        MatC(INode) = -DiffGradient2
+                        MatD(INode) = Concent(INode,IKind)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
+                    end if
+
+                END DO
+
+        call SolveTridag(IKind,MatA,MatB,MatC,MatD,Concent,NNodes,MatW,MatH)
+
+
+        return
+    end subroutine Kernel_DoReaction_And_NodeDiffusion_Balance
+
+
     !***************************************************
     subroutine NucleationSimu_SpaceDist_Transient_GrubDumplicate_GPU(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
         use RAND32_MODULE

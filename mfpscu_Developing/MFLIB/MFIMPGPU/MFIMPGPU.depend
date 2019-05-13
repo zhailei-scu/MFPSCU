@@ -1,0 +1,11 @@
+# depslib dependency file v1.0
+1557754613 source:/home/zhailei/Development/MeanField/mfpscu_Developing/MFLIB/sor/MFIMPGPU/MFLIB_TYPEDEF_SimBoxArray_GPU.F90
+
+1557755457 source:/home/zhailei/Development/MeanField/mfpscu_Developing/MFLIB/sor/MFIMPGPU/MFLIB_TYPEDEF_Geometry_GPU.F90
+
+1557755485 source:/home/zhailei/Development/MeanField/mfpscu_Developing/MFLIB/sor/MFIMPGPU/MFLIB_TYPEDEF_ClustersInfo_GPU.F90
+
+1557755515 source:/home/zhailei/Development/MeanField/mfpscu_Developing/MFLIB/sor/MFIMPGPU/MCMF_TYPEDEF_RecordList_GPU.F90
+
+1557755533 source:/home/zhailei/Development/MeanField/mfpscu_Developing/MFLIB/sor/MFIMPGPU/MFLIB_GLOBAL_GPU.F90
+

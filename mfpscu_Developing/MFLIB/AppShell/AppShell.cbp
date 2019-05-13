@@ -32,13 +32,13 @@
 			</Target>
 		</Build>
 		<Unit filename="../sor/AppShell/MF_MethodClass_Factory_CPU.F90">
-			<Option weight="0" />
+			<Option weight="1" />
 		</Unit>
 		<Unit filename="../sor/AppShell/MF_Method_MIGCOALE_CLUSTER_CPU.F90">
 			<Option weight="0" />
 		</Unit>
 		<Unit filename="../sor/AppShell/MF_SimBoxArray_AppShell_CPU.F90">
-			<Option weight="1" />
+			<Option weight="2" />
 		</Unit>
 		<Unit filename="../sor/AppShell/MF_SimBoxArray_ToolShell_CPU.F90">
 			<Option weight="0" />

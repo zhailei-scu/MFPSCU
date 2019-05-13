@@ -13,7 +13,9 @@
 		</Project>
 		<Project filename="MFLIB/AppShell/AppShell.cbp">
 			<Depends filename="MFLIB/MigCoaleModel/MigCoaleModel.cbp" />
+			<Depends filename="MFLIB/MFIMPGPU/MFIMPGPU.cbp" />
 			<Depends filename="MFLIB/MFIMP/MFIMP.cbp" />
+			<Depends filename="MFLIB/CommonGPU/CommonGPU.cbp" />
 			<Depends filename="MFLIB/Common/Common.cbp" />
 			<Depends filename="LIB/MiniUtilities/MiniUtilities.cbp" />
 			<Depends filename="LIB/RandGenerators/RandGenerators.cbp" />
@@ -21,12 +23,25 @@
 			<Depends filename="MSMLIB/MSMLIB.cbp" />
 		</Project>
 		<Project filename="MFLIB/MigCoaleModel/MigCoaleModel.cbp">
+			<Depends filename="MFLIB/MFIMPGPU/MFIMPGPU.cbp" />
 			<Depends filename="MFLIB/MFIMP/MFIMP.cbp" />
+			<Depends filename="MFLIB/CommonGPU/CommonGPU.cbp" />
 			<Depends filename="MFLIB/Common/Common.cbp" />
 			<Depends filename="LIB/MiniUtilities/MiniUtilities.cbp" />
 			<Depends filename="LIB/RandGenerators/RandGenerators.cbp" />
 			<Depends filename="TCCLIB/TCCLIB.cbp" />
 			<Depends filename="MSMLIB/MSMLIB.cbp" />
+			<Depends filename="LIB/CudaRandomC2F/CudaRandomC2F.cbp" />
+		</Project>
+		<Project filename="MFLIB/MFIMPGPU/MFIMPGPU.cbp">
+			<Depends filename="MFLIB/MFIMP/MFIMP.cbp" />
+			<Depends filename="MFLIB/CommonGPU/CommonGPU.cbp" />
+			<Depends filename="MFLIB/Common/Common.cbp" />
+			<Depends filename="LIB/MiniUtilities/MiniUtilities.cbp" />
+			<Depends filename="LIB/RandGenerators/RandGenerators.cbp" />
+			<Depends filename="TCCLIB/TCCLIB.cbp" />
+			<Depends filename="MSMLIB/MSMLIB.cbp" />
+			<Depends filename="LIB/CudaRandomC2F/CudaRandomC2F.cbp" />
 		</Project>
 		<Project filename="MFLIB/MFIMP/MFIMP.cbp">
 			<Depends filename="MFLIB/Common/Common.cbp" />
@@ -34,6 +49,14 @@
 			<Depends filename="LIB/RandGenerators/RandGenerators.cbp" />
 			<Depends filename="TCCLIB/TCCLIB.cbp" />
 			<Depends filename="MSMLIB/MSMLIB.cbp" />
+		</Project>
+		<Project filename="MFLIB/CommonGPU/CommonGPU.cbp">
+			<Depends filename="MFLIB/Common/Common.cbp" />
+			<Depends filename="LIB/MiniUtilities/MiniUtilities.cbp" />
+			<Depends filename="LIB/RandGenerators/RandGenerators.cbp" />
+			<Depends filename="TCCLIB/TCCLIB.cbp" />
+			<Depends filename="MSMLIB/MSMLIB.cbp" />
+			<Depends filename="LIB/CudaRandomC2F/CudaRandomC2F.cbp" />
 		</Project>
 		<Project filename="MFLIB/Common/Common.cbp">
 			<Depends filename="LIB/MiniUtilities/MiniUtilities.cbp" />
@@ -44,6 +67,9 @@
 		<Project filename="LIB/MiniUtilities/MiniUtilities.cbp" />
 		<Project filename="LIB/RandGenerators/RandGenerators.cbp" />
 		<Project filename="TCCLIB/TCCLIB.cbp" />
-		<Project filename="MSMLIB/MSMLIB.cbp" />
+		<Project filename="MSMLIB/MSMLIB.cbp">
+			<Depends filename="LIB/CudaRandomC2F/CudaRandomC2F.cbp" />
+		</Project>
+		<Project filename="LIB/CudaRandomC2F/CudaRandomC2F.cbp" />
 	</Workspace>
 </CodeBlocks_workspace_file>
