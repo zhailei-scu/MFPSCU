@@ -63,6 +63,12 @@ module MFLIB_GLOBAL
         case("&RESTART_MF_MIGCOALE_CLUSTER_CPU")
           CtrlParam%RESTARTAT = 1
           m_AppType = KEYWORD(LENTRIM("&RESTART_")+1:LENTRIM(KEYWORD))
+        case("&START_MF_MIGCOALE_CLUSTER_GPU")
+          CtrlParam%RESTARTAT = 0
+          m_AppType = KEYWORD(LENTRIM("&START_")+1:LENTRIM(KEYWORD))
+        case("&RESTART_MF_MIGCOALE_CLUSTER_GPU")
+          CtrlParam%RESTARTAT = 1
+          m_AppType = KEYWORD(LENTRIM("&RESTART_")+1:LENTRIM(KEYWORD))
         case default
           write(*,*) "MFPSCUERROR: Illegal flag in sample file: ",KEYWORD(1:LENTRIM(KEYWORD))
           pause

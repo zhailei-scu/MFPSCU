@@ -1,15 +1,15 @@
-module MF_SimBoxArray_AppShell_CPU
-    use MFLIB_GLOBAL
-    use MF_MethodClass_Factory_CPU
+module MF_SimBoxArray_AppShell_GPU
+    use MFLIB_GLOBAL_GPU
+    use MF_MethodClass_Factory_GPU
 
     type(SimulationBoxes)::m_SimBoxes
     type(SimulationCtrlParam)::m_CtrlParam
-    type(MFMethodClassCPU)::m_MethodClass
+    type(MFMethodClassGPU)::m_MethodClass
 
     contains
 
     !*********************************************************
-    subroutine AppShell_Main_CPU(NMPI,processid,INICONFIGPROC)
+    subroutine AppShell_Main_GPU(NMPI,processid,INICONFIGPROC)
         use RAND32SEEDLIB_MODULE,only:GetSeed_RAND32SEEDLIB
         use RAND32_MODULE,only:DRAND32_PUTSEED
         implicit none
@@ -28,6 +28,8 @@ module MF_SimBoxArray_AppShell_CPU
         character*256::filePath
         integer::err
         integer::arg_Num
+        integer::start_Index_Dev = 0
+        integer::num_use_Device = 1
         integer::ISEED0,ISEED(2)
 
         character(len=256)::ExePath
@@ -48,7 +50,20 @@ module MF_SimBoxArray_AppShell_CPU
 
             call GET_COMMAND_ARGUMENT(1,ARG)
             Read(ARG,fmt="(A256)") filePath
+
+            if(arg_NUM .GE. 2) THEN
+                call GET_COMMAND_ARGUMENT(2,ARG)
+                Read(ARG,*) start_Index_Dev
+            end if
+
+            if(arg_NUM .GE. 3) THEN
+                call GET_COMMAND_ARGUMENT(3,ARG)
+                Read(ARG,*) num_use_Device
+            end if
         end if
+
+        !*********Init device setting*********************
+        call Init_Device_Setting(start_Index_Dev,num_use_Device)
 
         !*********Create/Open log file********************
         call OpenLogFile(m_hFILELOG)
@@ -83,6 +98,6 @@ module MF_SimBoxArray_AppShell_CPU
         END DO
 
         return
-    end subroutine AppShell_Main_CPU
+    end subroutine AppShell_Main_GPU
 
-end module MF_SimBoxArray_AppShell_CPU
+end module MF_SimBoxArray_AppShell_GPU

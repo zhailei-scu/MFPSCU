@@ -1,6 +1,6 @@
-program MEANFIELDNUCLEATION_SPACEDIST
+program MEANFIELDNUCLEATION_SPACEDIST_CPU
     use MF_SimBoxArray_AppShell_CPU
-    use NUCLEATION_GRUB
+    !use NUCLEATION_GRUB
 
     implicit none
 
@@ -18,4 +18,4 @@ program MEANFIELDNUCLEATION_SPACEDIST
     pause
     stop
 
-end program
+end program MEANFIELDNUCLEATION_SPACEDIST_CPU

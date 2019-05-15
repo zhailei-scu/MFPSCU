@@ -89,6 +89,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     procedure,non_overridable,public,pass::Putin_SPMF_OUTCFG_FORMAT18_Distribution
     procedure,non_overridable,private,pass::DoPutin_FromDistribution
     procedure,non_overridable,private,pass::CopySimulationBoxesFromOther
+    procedure,non_overridable,public,pass::ReSizeClusterKind_CPU
     Generic::Assignment(=)=>CopySimulationBoxesFromOther
     procedure,non_overridable,public,pass::Clean=>CleanSimulationBoxes
     Final::DestorySimulationBoxes
@@ -126,6 +127,7 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
   private::CleanSimulationBoxes
   private::DestorySimulationBoxes
   private::CopySimulationBoxesFromOther
+  private::ReSizeClusterKind_CPU
 
   contains
 
@@ -224,6 +226,108 @@ module MFLIB_TYPEDEF_SIMULATIONBOXARRAY
 
     return
   end subroutine
+
+  !******************************************************************
+  subroutine ReSizeClusterKind_CPU(this,Host_SimuCtrlParam,RNFACTOR,FREESURDIFPRE,NewSize)
+    implicit none
+    !------Dummy Vars-------
+    CLASS(SimulationBoxes)::this
+    type(SimulationCtrlParam),target::Host_SimuCtrlParam
+    real(kind=KMCDF)::RNFACTOR
+    real(kind=KMCDF)::FREESURDIFPRE
+    integer,intent(in)::NewSize
+    !---Local Vars---
+    integer::NNodes
+    integer::OldSize
+    integer::OldNA
+    type(DiffusorValue)::TheDiffusorValue
+    integer::IKind
+    integer::INode
+    real(kind=KMCDF),dimension(:,:),allocatable::tempConcentrate
+    type(ACluster),dimension(:),allocatable::tempClustersKindArray
+    !---Body---
+
+    call this%m_ClustersInfo_CPU%GetClustersInfo_ArraySize(NNodes,OldSize)
+
+    if(NNodes*OldSize .GT. 0) then
+        call AllocateArray_Host(tempConcentrate,NNodes,OldSize,"tempConcentrate")
+        call AllocateArray_Host(tempClustersKindArray,OldSize,"tempClustersKindArray")
+
+        tempConcentrate = this%m_ClustersInfo_CPU%Concentrate
+
+        tempClustersKindArray = this%m_ClustersInfo_CPU%ClustersKindArray
+
+        call this%m_ClustersInfo_CPU%Clean()
+
+        call this%m_ClustersInfo_CPU%AllocateClustersInfo_CPU(NNodes,NewSize)
+
+        if(NewSize .GE. OldSize) then
+
+            DO INode = 1,NNodes
+                this%m_ClustersInfo_CPU%Concentrate(INode,1:OldSize) = tempConcentrate(INode,1:OldSize)
+                this%m_ClustersInfo_CPU%Concentrate(INode,OldSize+1:NewSize) = 0.D0
+            END DO
+
+            this%m_ClustersInfo_CPU%ClustersKindArray(1:OldSize) = tempClustersKindArray(1:OldSize)
+
+            OldNA = sum(tempClustersKindArray(OldSize)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA)
+
+            DO IKind = OldSize+1,NewSize
+
+                this%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA = &
+                    ((OldNA + IKind - OldSize)*tempClustersKindArray(OldSize)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA)/OldNA
+
+                TheDiffusorValue = this%m_DiffusorTypesMap%get(this%m_ClustersInfo_CPU%ClustersKindArray(IKind))
+
+                select case(TheDiffusorValue%ECRValueType_Free)
+                    case(p_ECR_ByValue)
+                        this%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_RAD = TheDiffusorValue%ECR_Free
+                    case(p_ECR_ByBCluster)
+                        this%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_RAD = &
+                            DSQRT(sum(this%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_Atoms(:)%m_NA)/RNFACTOR)
+                end select
+
+                select case(TheDiffusorValue%DiffusorValueType_Free)
+                    case(p_DiffuseCoefficient_ByValue)
+                        this%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
+                    case(p_DiffuseCoefficient_ByArrhenius)
+                        this%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_DiffCoeff = &
+                            TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
+                    case(p_DiffuseCoefficient_ByBCluster)
+                        ! Here we adopt a model that D=D0*(1/R)**Gama
+                        this%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_DiffCoeff = &
+                            FREESURDIFPRE*(this%m_ClustersInfo_CPU%ClustersKindArray(IKind)%m_RAD**(-p_GAMMA))
+                end select
+            END DO
+        else
+            DO INode = 1,NNodes
+                this%m_ClustersInfo_CPU%Concentrate(INode,1:NewSize) = tempConcentrate(INode,1:NewSize)
+            END DO
+
+            this%m_ClustersInfo_CPU%ClustersKindArray(1:NewSize) = tempClustersKindArray(1:NewSize)
+        end if
+    else
+        if(NNodes .LE. 0) then
+            write(*,*) "MFPSCUERROR: The nodes number cannot less than 1 when re-size clusters kinds array"
+            pause
+            stop
+        end if
+
+        if(OldSize .LE. 0) then
+            write(*,*) "MFPSCUERROR: The origin clusters kinds number cannot less than 1 when re-size clusters kinds array"
+            pause
+            stop
+        end if
+    end if
+
+    this%CKind = NewSize
+
+    call DeAllocateArray_Host(tempConcentrate,"tempConcentrate")
+
+    call DeAllocateArray_Host(tempClustersKindArray,"tempClustersKindArray")
+
+    return
+  end subroutine ReSizeClusterKind_CPU
 
   !*****************************************************************
   subroutine Load_Parameter_SimulationBoxes(this,hBoxFile)

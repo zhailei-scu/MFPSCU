@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="MeanField_SpaceDist_GPU" />
+		<Option pch_mode="2" />
+		<Option compiler="pgifortran" />
+		<Build>
+			<Target title="Debug">
+				<Option output="~/meanFieldworkspace/mfpscu_Developing/APPLICATIONS/Debug/MeanField_SpaceDist_GPU" prefix_auto="1" extension_auto="1" />
+				<Option object_output="~/meanFieldworkspace/mfpscu_Developing/APPLICATIONS/Debug/" />
+				<Option type="1" />
+				<Option compiler="pgifortran" />
+				<Option parameters="~/meanFieldworkspace/MeanFiledTestDataDesign/MFSampleStep.dat 1 1" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-Mcuda=cuda8.0,cc35,nodebug,nollvm -pgc++libs -ldl" />
+					<Add directory="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug" />
+				</Compiler>
+				<Linker>
+					<Add option="-Mcuda=cuda8.0,cc35,nodebug,nollvm -pgc++libs -ldl" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libAppShell.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libMigCoaleModel.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libMFIMPGPU.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libMFIMP.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libCommonGPU.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libCommon.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libTCCLIB.a" />
+					<Add library="/home/zhailei/Development/MeanField/tcc-0.9.27/libtcc.a" />
+					<Add library="/home/zhailei/Development/MeanField/tcc-0.9.27/libtcc1.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libMiniUtilities.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libMSMLIB.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libRandGenerators.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug/libCudaRandomC2F.a" />
+					<Add directory="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Debug" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="~/meanFieldworkspace/mfpscu_Developing/APPLICATIONS/Release/MeanField_SpaceDist_GPU" prefix_auto="1" extension_auto="1" />
+				<Option object_output="~/meanFieldworkspace/mfpscu_Developing/APPLICATIONS/Release/" />
+				<Option type="1" />
+				<Option compiler="pgifortran" />
+				<Option parameters="~/meanFieldworkspace/MeanFiledTestDataDesign/MFSampleStep.dat 1 1" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-tp sandybridge-64 -Mvect=sse,simd -Minform=warn -Minfo=all -Mcuda=fastmath,cuda8.0,cc35 -pgc++libs -ldl" />
+					<Add directory="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release" />
+				</Compiler>
+				<Linker>
+					<Add option="-tp sandybridge-64 -Mvect=sse,simd -Minform=warn -Minfo=all -Mcuda=fastmath,cuda8.0,cc35" />
+					<Add option="-pgc++libs -ldl" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libAppShell.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libMigCoaleModel.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libMFIMPGPU.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libMFIMP.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libCommonGPU.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libCommon.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libMiniUtilities.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libMSMLIB.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libRandGenerators.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libTCCLIB.a" />
+					<Add library="/home/zhailei/Development/MeanField/tcc-0.9.27/libtcc.a" />
+					<Add library="/home/zhailei/Development/MeanField/tcc-0.9.27/libtcc1.a" />
+					<Add library="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release/libCudaRandomC2F.a" />
+					<Add directory="/home/zhailei/meanFieldworkspace/mfpscu_Developing/LIB/Release" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Minform=inform" />
+		</Compiler>
+		<Unit filename="../../sor/APPLICATIONS/MeanFieldNucleation_SpaceDist_GPU.F90">
+			<Option weight="0" />
+		</Unit>
+		<Extensions>
+			<envvars />
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

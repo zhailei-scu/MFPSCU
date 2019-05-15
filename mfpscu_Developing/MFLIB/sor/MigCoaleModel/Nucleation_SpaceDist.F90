@@ -113,7 +113,6 @@ module NUCLEATION_SPACEDIST
         real(kind=KMCDF),dimension(:),allocatable::FOutEachStep
         real(kind=KMCDF),dimension(:),allocatable::CSurfEachStep
         real(kind=KMCDF),dimension(:),allocatable::COutEachStep
-        logical::startAnnealing
         integer::I
         integer::INode
         integer::NNodes
@@ -168,15 +167,18 @@ module NUCLEATION_SPACEDIST
 
         COutAccum = 0.D0
 
-        startAnnealing = .false.
 
         call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
 
-        Associate(ClustersKind=>Host_SimBoxes%m_ClustersInfo_CPU%ClustersKindArray,Concent=>Host_SimBoxes%m_ClustersInfo_CPU%Concentrate,NodeSpace=>Host_SimBoxes%NodeSpace)
+        ConCentrat0 = sum(Host_SimBoxes%m_ClustersInfo_CPU%Concentrate)
 
-          ConCentrat0 = sum(Concent)
+        ImplantedRate = 0.D0
 
-          DO While(.true.)
+        call TheImplantSection%Cal_ImplantClustersRate(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,ImplantedRate)
+
+        DO While(.true.)
+
+          Associate(ClustersKind=>Host_SimBoxes%m_ClustersInfo_CPU%ClustersKindArray,Concent=>Host_SimBoxes%m_ClustersInfo_CPU%Concentrate,NodeSpace=>Host_SimBoxes%NodeSpace)
 
             call Record%IncreaseOneSimuStep()
 
@@ -189,10 +191,6 @@ module NUCLEATION_SPACEDIST
             CSurfEachStep = 0.D0
 
             COutEachStep = 0.D0
-
-            ImplantedRate = 0.D0
-
-            call TheImplantSection%Cal_ImplantClustersRate(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,ImplantedRate)
 
             DO INode = 1,NNodes
 
@@ -254,7 +252,7 @@ module NUCLEATION_SPACEDIST
                     if(tempNBPVChangeRate(INode,IKind) .LT. 0.D0 .AND. Concent(INode,IKind) .GT. 0.D0) then
                         TSTEP = min(TSTEP,tempTimeStep)
                     end if
-
+!
 !                    if(INode .eq. 1) then  ! upper surface
 !
 !                        DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
@@ -458,53 +456,74 @@ module NUCLEATION_SPACEDIST
             if(DSQRT(dble(sum(ClustersKind(CKind)%m_Atoms(:)%m_NA)))*sum(Concent(1:NNodes,CKind)) .GT. &
                sum(NPOWER1DIV2Ave)*Host_SimuCtrlParam%DumplicateFactor) then
 
-                DO INode = 1,NNodes
+               write(*,*) "---Expand Clusters kind---"
 
-                    DO I = 1,(CKind -1)/2 + 1
-                        if(2*I .LE. CKind) then
-                            Concent(INode,I) = (Concent(INode,2*I-1)*sum(ClustersKind(2*I-1)%m_Atoms(:)%m_NA)+Concent(INode,2*I)*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA)) &
-                                               /(2.D0*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA))
-                        else
-                            Concent(INode,I) = Concent(INode,2*I - 1)
-                        end if
+                if(TheImplantSection%ImplantFlux .GT. 0.D0) then
+                    call Host_SimBoxes%ReSizeClusterKind_CPU(Host_SimuCtrlParam,m_RNFACTOR,m_FREESURDIFPRE,CKind*2)
+
+                    CKind = CKind*2
+                    NNodes = Host_SimBoxes%NNodes
+
+                    call DeAllocateArray_Host(tempNBPVChangeRate,"tempNBPVChangeRate")
+                    call AllocateArray_Host(tempNBPVChangeRate,NNodes,CKind,"tempNBPVChangeRate")
+                    tempNBPVChangeRate = 0.D0
+
+                    call DeAllocateArray_Host(ImplantedRate,"ImplantedRate")
+                    call AllocateArray_Host(ImplantedRate,NNodes,CKind,"ImplantedRate")
+                    ImplantedRate = 0.D0
+
+                    call TheImplantSection%Cal_ImplantClustersRate(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,ImplantedRate)
+
+                    write(*,*) "Max clusters kind number: ",CKind
+                else
+
+                    DO INode = 1,NNodes
+
+                        DO I = 1,(CKind -1)/2 + 1
+                            if(2*I .LE. CKind) then
+                                Concent(INode,I) = (Concent(INode,2*I-1)*sum(ClustersKind(2*I-1)%m_Atoms(:)%m_NA)+Concent(INode,2*I)*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA)) &
+                                                    /(2.D0*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA))
+                            else
+                                Concent(INode,I) = Concent(INode,2*I - 1)
+                            end if
+                        END DO
+
+                        Concent(INode,(CKind -1)/2+2:CKind) = 0.D0
+
+                        DO I = 1,(CKind -1)/2 + 1
+                            if(2*I .LE. CKind) then
+                                ClustersKind(I) = ClustersKind(2*I)
+                            else
+                                ClustersKind(I) = ClustersKind(2*I - 1)
+                            end if
+                        END DO
+
+                        DO I = (CKind -1)/2 + 2,CKind
+                            ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA = 2*ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA
+                            TheDiffusorValue = Host_SimBoxes%m_DiffusorTypesMap%get(ClustersKind(I))
+
+                            select case(TheDiffusorValue%ECRValueType_Free)
+                                case(p_ECR_ByValue)
+                                    ClustersKind(I)%m_RAD = TheDiffusorValue%ECR_Free
+                                case(p_ECR_ByBCluster)
+                                    ClustersKind(I)%m_RAD = DSQRT(sum(ClustersKind(I)%m_Atoms(:)%m_NA)/m_RNFACTOR)
+                            end select
+
+                            select case(TheDiffusorValue%DiffusorValueType_Free)
+                                case(p_DiffuseCoefficient_ByValue)
+                                    ClustersKind(I)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
+                                case(p_DiffuseCoefficient_ByArrhenius)
+                                    ClustersKind(I)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
+                                case(p_DiffuseCoefficient_ByBCluster)
+                                    ! Here we adopt a model that D=D0*(1/R)**Gama
+                                    ClustersKind(I)%m_DiffCoeff = m_FREESURDIFPRE*(ClustersKind(I)%m_RAD**(-p_GAMMA))
+                            end select
+                        END DO
+
                     END DO
-
-                    Concent(INode,(CKind -1)/2+2:CKind) = 0.D0
-
-                    DO I = 1,(CKind -1)/2 + 1
-                        if(2*I .LE. CKind) then
-                            ClustersKind(I) = ClustersKind(2*I)
-                        else
-                            ClustersKind(I) = ClustersKind(2*I - 1)
-                        end if
-                    END DO
-
-                    DO I = (CKind -1)/2 + 2,CKind
-                        ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA = 2*ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA
-                        TheDiffusorValue = Host_SimBoxes%m_DiffusorTypesMap%get(ClustersKind(I))
-
-                        select case(TheDiffusorValue%ECRValueType_Free)
-                            case(p_ECR_ByValue)
-                                ClustersKind(I)%m_RAD = TheDiffusorValue%ECR_Free
-                            case(p_ECR_ByBCluster)
-                                ClustersKind(I)%m_RAD = DSQRT(sum(ClustersKind(I)%m_Atoms(:)%m_NA)/m_RNFACTOR)
-                        end select
-
-                        select case(TheDiffusorValue%DiffusorValueType_Free)
-                            case(p_DiffuseCoefficient_ByValue)
-                                ClustersKind(I)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
-                            case(p_DiffuseCoefficient_ByArrhenius)
-                                ClustersKind(I)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
-                            case(p_DiffuseCoefficient_ByBCluster)
-                                ! Here we adopt a model that D=D0*(1/R)**Gama
-                                ClustersKind(I)%m_DiffCoeff = m_FREESURDIFPRE*(ClustersKind(I)%m_RAD**(-p_GAMMA))
-                        end select
-                    END DO
-
-                END DO
-
-                Dumplicate = Dumplicate*2
-                write(*,*) "Dumplicate",Dumplicate
+                    Dumplicate = Dumplicate*2
+                    write(*,*) "Dumplicate",Dumplicate
+                end if
             end if
 
             if(Record%GetSimuTimes() .GT. Host_SimuCtrlParam%TermTValue) then
@@ -513,8 +532,8 @@ module NUCLEATION_SPACEDIST
 
             TSTEP = TSTEP*1.5
 
-          END DO
-        END Associate
+          END Associate
+        END DO
 
     end subroutine NucleationSimu_SpaceDist_Balance_GrubDumplicate
 
@@ -552,7 +571,6 @@ module NUCLEATION_SPACEDIST
         real(kind=KMCDF),dimension(:),allocatable::FOutEachStep
         real(kind=KMCDF),dimension(:),allocatable::CSurfEachStep
         real(kind=KMCDF),dimension(:),allocatable::COutEachStep
-        logical::startAnnealing
         integer::NNodes
         integer::INode
         real(kind=KMCDF)::Factor
@@ -608,15 +626,15 @@ module NUCLEATION_SPACEDIST
 
         COutAccum = 0.D0
 
-        startAnnealing = .false.
-
         call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
 
-        Associate(ClustersKind=>Host_SimBoxes%m_ClustersInfo_CPU%ClustersKindArray,Concent=>Host_SimBoxes%m_ClustersInfo_CPU%Concentrate,NodeSpace=>Host_SimBoxes%NodeSpace)
+        ConCentrat0 = sum(Host_SimBoxes%m_ClustersInfo_CPU%Concentrate)
 
-          ConCentrat0 = sum(Concent)
+        call TheImplantSection%Cal_ImplantClustersRate(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,ImplantedRate)
 
-          DO While(.true.)
+        DO While(.true.)
+
+          Associate(ClustersKind=>Host_SimBoxes%m_ClustersInfo_CPU%ClustersKindArray,Concent=>Host_SimBoxes%m_ClustersInfo_CPU%Concentrate,NodeSpace=>Host_SimBoxes%NodeSpace)
 
             call Record%IncreaseOneSimuStep()
 
@@ -631,8 +649,6 @@ module NUCLEATION_SPACEDIST
             COutEachStep = 0.D0
 
             ImplantedRate = 0.D0
-
-            call TheImplantSection%Cal_ImplantClustersRate(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,ImplantedRate)
 
             DO INode = 1,NNodes
 
@@ -904,53 +920,74 @@ module NUCLEATION_SPACEDIST
             if(DSQRT(dble(sum(ClustersKind(CKind)%m_Atoms(:)%m_NA)))*sum(Concent(1:NNodes,CKind)) .GT. &
                sum(NPOWER1DIV2Ave)*Host_SimuCtrlParam%DumplicateFactor) then
 
-                DO INode = 1,NNodes
+               write(*,*) "---Expand Clusters kind---"
 
-                    DO I = 1,(CKind -1)/2 + 1
-                        if(2*I .LE. CKind) then
-                            Concent(INode,I) = (Concent(INode,2*I-1)*sum(ClustersKind(2*I-1)%m_Atoms(:)%m_NA)+Concent(INode,2*I)*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA)) &
-                                               /(2.D0*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA))
-                        else
-                            Concent(INode,I) = Concent(INode,2*I - 1)
-                        end if
+                if(TheImplantSection%ImplantFlux .GT. 0.D0) then
+                    call Host_SimBoxes%ReSizeClusterKind_CPU(Host_SimuCtrlParam,m_RNFACTOR,m_FREESURDIFPRE,CKind*2)
+
+                    CKind = CKind*2
+                    NNodes = Host_SimBoxes%NNodes
+
+                    call DeAllocateArray_Host(tempNBPVChangeRate,"tempNBPVChangeRate")
+                    call AllocateArray_Host(tempNBPVChangeRate,NNodes,CKind,"tempNBPVChangeRate")
+                    tempNBPVChangeRate = 0.D0
+
+                    call DeAllocateArray_Host(ImplantedRate,"ImplantedRate")
+                    call AllocateArray_Host(ImplantedRate,NNodes,CKind,"ImplantedRate")
+                    ImplantedRate = 0.D0
+
+                    call TheImplantSection%Cal_ImplantClustersRate(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,ImplantedRate)
+
+                    write(*,*) "Max clusters kind number: ",CKind
+                else
+
+                    DO INode = 1,NNodes
+
+                        DO I = 1,(CKind -1)/2 + 1
+                            if(2*I .LE. CKind) then
+                                Concent(INode,I) = (Concent(INode,2*I-1)*sum(ClustersKind(2*I-1)%m_Atoms(:)%m_NA)+Concent(INode,2*I)*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA)) &
+                                                    /(2.D0*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA))
+                            else
+                                Concent(INode,I) = Concent(INode,2*I - 1)
+                            end if
+                        END DO
+
+                        Concent(INode,(CKind -1)/2+2:CKind) = 0.D0
+
+                        DO I = 1,(CKind -1)/2 + 1
+                            if(2*I .LE. CKind) then
+                                ClustersKind(I) = ClustersKind(2*I)
+                            else
+                                ClustersKind(I) = ClustersKind(2*I - 1)
+                            end if
+                        END DO
+
+                        DO I = (CKind -1)/2 + 2,CKind
+                            ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA = 2*ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA
+                            TheDiffusorValue = Host_SimBoxes%m_DiffusorTypesMap%get(ClustersKind(I))
+
+                            select case(TheDiffusorValue%ECRValueType_Free)
+                                case(p_ECR_ByValue)
+                                    ClustersKind(I)%m_RAD = TheDiffusorValue%ECR_Free
+                                case(p_ECR_ByBCluster)
+                                    ClustersKind(I)%m_RAD = DSQRT(sum(ClustersKind(I)%m_Atoms(:)%m_NA)/m_RNFACTOR)
+                            end select
+
+                            select case(TheDiffusorValue%DiffusorValueType_Free)
+                                case(p_DiffuseCoefficient_ByValue)
+                                    ClustersKind(I)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
+                                case(p_DiffuseCoefficient_ByArrhenius)
+                                    ClustersKind(I)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
+                                case(p_DiffuseCoefficient_ByBCluster)
+                                    ! Here we adopt a model that D=D0*(1/R)**Gama
+                                    ClustersKind(I)%m_DiffCoeff = m_FREESURDIFPRE*(ClustersKind(I)%m_RAD**(-p_GAMMA))
+                            end select
+                        END DO
+
                     END DO
-
-                    Concent(INode,(CKind -1)/2+2:CKind) = 0.D0
-
-                    DO I = 1,(CKind -1)/2 + 1
-                        if(2*I .LE. CKind) then
-                            ClustersKind(I) = ClustersKind(2*I)
-                        else
-                            ClustersKind(I) = ClustersKind(2*I - 1)
-                        end if
-                    END DO
-
-                    DO I = (CKind -1)/2 + 2,CKind
-                        ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA = 2*ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA
-                        TheDiffusorValue = Host_SimBoxes%m_DiffusorTypesMap%get(ClustersKind(I))
-
-                        select case(TheDiffusorValue%ECRValueType_Free)
-                            case(p_ECR_ByValue)
-                                ClustersKind(I)%m_RAD = TheDiffusorValue%ECR_Free
-                            case(p_ECR_ByBCluster)
-                                ClustersKind(I)%m_RAD = DSQRT(sum(ClustersKind(I)%m_Atoms(:)%m_NA)/m_RNFACTOR)
-                        end select
-
-                        select case(TheDiffusorValue%DiffusorValueType_Free)
-                            case(p_DiffuseCoefficient_ByValue)
-                                ClustersKind(I)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
-                            case(p_DiffuseCoefficient_ByArrhenius)
-                                ClustersKind(I)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
-                            case(p_DiffuseCoefficient_ByBCluster)
-                                ! Here we adopt a model that D=D0*(1/R)**Gama
-                                ClustersKind(I)%m_DiffCoeff = m_FREESURDIFPRE*(ClustersKind(I)%m_RAD**(-p_GAMMA))
-                        end select
-                    END DO
-
-                END DO
-
-                Dumplicate = Dumplicate*2
-                write(*,*) "Dumplicate",Dumplicate
+                    Dumplicate = Dumplicate*2
+                    write(*,*) "Dumplicate",Dumplicate
+                end if
             end if
 
 
@@ -959,9 +996,9 @@ module NUCLEATION_SPACEDIST
             end if
 
             TSTEP = TSTEP*1.5
+          END Associate
+       END DO
 
-          END DO
-        END Associate
 
     end subroutine NucleationSimu_SpaceDist_Transient_GrubDumplicate
 

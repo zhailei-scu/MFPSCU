@@ -8,6 +8,7 @@ module MCMF_CONSTANTS_GPU
     !***Box Info
 
     real(kind=KMCSF),constant::dm_BOXBOUNDARY(3,2)                                ! siumulation box boundary, in unit of atomic radiua
+    integer,constant::dm_BDCTYPE(3,2)
     real(kind=KMCSF),constant::dm_BOXSIZE(3)                                      ! simulation box size
     real(kind=KMCSF),constant::dm_HBOXSIZE(3)                                     ! half box size
     integer,constant::dm_PERIOD(3)
@@ -47,6 +48,7 @@ module MCMF_CONSTANTS_GPU
         !---Body----
         !*** copy to device constant memory
         dm_PERIOD  = Host_SimuCtrlParam%PERIOD
+        dm_BDCTYPE = Host_SimuCtrlParam%BDCTYPE
         dm_TKB = Host_SimuCtrlParam%TKB
 
         return

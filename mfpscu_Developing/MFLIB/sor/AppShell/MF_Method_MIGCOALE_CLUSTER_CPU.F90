@@ -69,11 +69,10 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
         Final::CleanInitBoxSimCfgList
     end type
 
-    type(InitBoxSimCfgList),target::m_InitBoxSimCfgList
-    type(ImplantList)::m_ImplantList
-    type(MigCoalClusterRecord)::m_MigCoalClusterRecord
-    type(MigCoaleStatInfoWrap),private::m_MigCoaleStatInfoWrap
-    !type(MigCoale_GVarsDev),private::m_MigCoale_GVarsDev
+    type(InitBoxSimCfgList),target,public::m_InitBoxSimCfgList
+    type(ImplantList),public::m_ImplantList
+    type(MigCoalClusterRecord),public::m_MigCoalClusterRecord
+    type(MigCoaleStatInfoWrap),public::m_MigCoaleStatInfoWrap
 
     private::CopyInitBoxSimCfgFromOther
     private::Clean_InitBoxSimCfg
@@ -86,7 +85,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
     contains
 
     !*****************************************************************
-    subroutine For_One_Test(Host_SimBoxes,Host_SimuCtrlParam,JobIndex)
+    subroutine For_One_Test_CPU(Host_SimBoxes,Host_SimuCtrlParam,JobIndex)
         implicit none
         !---Dummy Vars---
         type(SimulationBoxes)::Host_SimBoxes
@@ -144,7 +143,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
                 PImplantSection=>m_ImplantList%Get_P(PSimCtrlParam%ImplantSectID)
 
-                call For_One_TimeSect(Host_SimBoxes,PSimCtrlParam,PImplantSection,m_MigCoaleStatInfoWrap,m_MigCoalClusterRecord)
+                call For_One_TimeSect_CPU(Host_SimBoxes,PSimCtrlParam,PImplantSection,m_MigCoaleStatInfoWrap,m_MigCoalClusterRecord)
 
                 call m_MigCoalClusterRecord%SetLastRecordImplantNum(m_MigCoalClusterRecord%GetImplantedEntitiesNum())
 
@@ -162,10 +161,10 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 
         return
 
-    end subroutine For_One_Test
+    end subroutine For_One_Test_CPU
 
     !****************************************************************
-    subroutine For_One_TimeSect(Host_SimBoxes,Host_SimuCtrlParam,TheImplantSection,TheMigCoaleStatInfoWrap,Record)
+    subroutine For_One_TimeSect_CPU(Host_SimBoxes,Host_SimuCtrlParam,TheImplantSection,TheMigCoaleStatInfoWrap,Record)
         implicit none
         !---Dummy Vars---
         type(SimulationBoxes)::Host_SimBoxes
@@ -187,7 +186,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 !
 !            DO WHILE(.TRUE.)
 !
-!                call For_One_Step(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,Dev_MigCoaleGVars,TheImplantSection,TheMigCoaleStatInfoWrap,Record,TSTEP)
+!                call For_One_Step_CPU(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,Dev_MigCoaleGVars,TheImplantSection,TheMigCoaleStatInfoWrap,Record,TSTEP)
 !
 !                if(Host_SimuCtrlParam%TUpdateStatisFlag .eq. mp_UpdateStatisFlag_ByIntervalSteps) then
 !                    if ((Record%GetSimuSteps() - Record%GetLastUpdateStatisTime()) .GE. Host_SimuCtrlParam%TUpdateStatisValue) then
@@ -227,10 +226,10 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 !        call PutOut_Instance_Statistic_IntegralBox(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap%m_MigCoaleStatisticInfo_Used,Record,Model=1)
 
         return
-    end subroutine For_One_TimeSect
+    end subroutine For_One_TimeSect_CPU
 !
 !    !*********************************************************************
-!    subroutine For_One_Step(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,Dev_MigCoaleGVars,TheImplantSection,TheMigCoaleStatInfoWrap,Record,TSTEP)
+!    subroutine For_One_Step_CPU(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,Dev_MigCoaleGVars,TheImplantSection,TheMigCoaleStatInfoWrap,Record,TSTEP)
 !        implicit none
 !        !---Dummy Vars---
 !        type(SimulationBoxes)::Host_Boxes
@@ -256,7 +255,7 @@ module MF_Method_MIGCOALE_CLUSTER_CPU
 !        call Record%AddSimuTimes(TSTEP)
 !
 !        return
-!    end subroutine For_One_Step
+!    end subroutine For_One_Step_CPU
 
     !*************************************************************
     subroutine CopyInitBoxSimCfgFromOther(this,other)

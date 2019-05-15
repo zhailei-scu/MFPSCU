@@ -1,4 +1,4 @@
-module MF_MethodClass_Factory_CPU
+module MF_MethodClass_Factory_GPU
     use MFLIB_TYPEDEF_SIMULATIONBOXARRAY
     use MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
     implicit none
@@ -15,7 +15,7 @@ module MF_MethodClass_Factory_CPU
     end interface
 
 
-    type,public::MFMethodClassCPU
+    type,public::MFMethodClassGPU
         character(len=20)::name
         type(SimulationBoxes),pointer::pSimulationBoxes=>null()
         type(SimulationCtrlParam),pointer::pSimulationCtrlParam=>null()
@@ -35,10 +35,10 @@ module MF_MethodClass_Factory_CPU
     contains
     !*********************************************
     subroutine Register_Method_Class(this,className,SimBoxes,SimCtrlParams)
-        use MF_Method_MIGCOALE_CLUSTER_CPU, only:For_One_Test_MF_MIGCOALE_CLUSTER => For_One_Test_CPU
+        use MF_Method_MIGCOALE_CLUSTER_GPU, only:For_One_Test_MF_MIGCOALE_CLUSTER => For_One_Test_GPU
         implicit none
         !---Dummy Vars---
-        CLASS(MFMethodClassCPU)::this
+        CLASS(MFMethodClassGPU)::this
         character*(*)::className
         type(SimulationBoxes),target::SimBoxes
         type(SimulationCtrlParam),target::SimCtrlParams
@@ -48,8 +48,8 @@ module MF_MethodClass_Factory_CPU
         this%pSimulationCtrlParam=>SimCtrlParams
 
         select case(className(1:LENTRIM(className)))
-            case("MF_MIGCOALE_CLUSTER_CPU")
-                this%name = "MF_MIGCOALE_CLUSTER_CPU"
+            case("MF_MIGCOALE_CLUSTER_GPU")
+                this%name = "MF_MIGCOALE_CLUSTER_GPU"
                 this%ForOneTest=>For_One_Test_MF_MIGCOALE_CLUSTER
             case default
                 write(*,*) "MFPSCUERROR: The unknown method name: ",className
@@ -64,7 +64,7 @@ module MF_MethodClass_Factory_CPU
     subroutine Clean_MethodClass(this)
         implicit none
         !---Dummy Vars---
-        class(MFMethodClassCPU)::this
+        class(MFMethodClassGPU)::this
         !---Body---
         Nullify(this%ForOneTest)
         Nullify(this%pSimulationBoxes)
@@ -81,11 +81,11 @@ module MF_MethodClass_Factory_CPU
     subroutine CleanMethodClass(this)
         implicit none
         !---Dummy Vars---
-        type(MFMethodClassCPU)::this
+        type(MFMethodClassGPU)::this
         !---Body---
         call this%Clean_MethodClass()
         return
     end subroutine
 
 
-end module MF_MethodClass_Factory_CPU
+end module MF_MethodClass_Factory_GPU

@@ -104,6 +104,8 @@ module MFLIB_TYPEDEF_ClustersInfo_CPU
 
         NNodes = size(this%Concentrate,dim=1)
 
+        ClustersKinds = ClustersKindsNum
+
         return
     end subroutine Get_ClustersInfo_ArraySize
 
