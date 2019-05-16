@@ -246,63 +246,66 @@ module NUCLEATION_SPACEDIST
 
             TSTEP = maxval(Concent)*Host_SimuCtrlParam%MaxReactChangeRate/maxval(dabs(tempNBPVChangeRate))
 
+            write(*,*) "!---------------------"
+            write(*,*) "TSTEP1",TSTEP
+
             DO IKind = 1,CKind
                 DO INode = 1,NNodes
                     tempTimeStep = Concent(INode,IKind)/dabs(tempNBPVChangeRate(INode,IKind))
                     if(tempNBPVChangeRate(INode,IKind) .LT. 0.D0 .AND. Concent(INode,IKind) .GT. 0.D0) then
                         TSTEP = min(TSTEP,tempTimeStep)
                     end if
-!
-!                    if(INode .eq. 1) then  ! upper surface
-!
-!                        DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
-!
-!                        if(NNodes .LE. 1) then
-!                            DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
-!
-!                            SFlux = DiffGradient1*Concent(INode,IKind) + DiffGradient2*Concent(INode,IKind)
-!                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
-!                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
-!                            end if
-!                        else
-!                            DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
-!
-!                            SFlux = DiffGradient1*Concent(INode,IKind) - DiffGradient2*(Concent(INode+1,IKind) - Concent(INode,IKind))
-!                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
-!                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
-!                            end if
-!
-!                        end if
-!
-!                    else if(INode .eq. NNodes) then  ! Low surface
-!
-!                        DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
-!
-!                        if(NNodes .LE. 1) then
-!                            DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
-!
-!                            SFlux = DiffGradient1*Concent(INode,IKind) + DiffGradient2*Concent(INode,IKind)
-!                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
-!                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
-!                            end if
-!                        else
-!                            DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
-!
-!                            SFlux = DiffGradient1*(Concent(INode,IKind) - Concent(INode-1,IKind)) + DiffGradient2*Concent(INode,IKind)
-!                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
-!                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
-!                            end if
-!                        end if
-!
-!                    else
-!                        DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
-!                        DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
-!
-!                        SFlux = DiffGradient1*(Concent(INode,IKind) - Concent(INode-1,IKind)) - DiffGradient2*(Concent(INode+1,IKind) - Concent(INode,IKind))
-!                        if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
-!                            TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
-!                        end if
-!                    end if
+
+                    if(INode .eq. 1) then  ! upper surface
+
+                        DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                        if(NNodes .LE. 1) then
+                            DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                            SFlux = DiffGradient1*Concent(INode,IKind) + DiffGradient2*Concent(INode,IKind)
+                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
+                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+                            end if
+                        else
+                            DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
+
+                            SFlux = DiffGradient1*Concent(INode,IKind) - DiffGradient2*(Concent(INode+1,IKind) - Concent(INode,IKind))
+                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
+                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+                            end if
+
+                        end if
+
+                    else if(INode .eq. NNodes) then  ! Low surface
+
+                        DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                        if(NNodes .LE. 1) then
+                            DiffGradient1 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
+
+                            SFlux = DiffGradient1*Concent(INode,IKind) + DiffGradient2*Concent(INode,IKind)
+                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
+                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+                            end if
+                        else
+                            DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
+
+                            SFlux = DiffGradient1*(Concent(INode,IKind) - Concent(INode-1,IKind)) + DiffGradient2*Concent(INode,IKind)
+                            if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
+                                TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+                            end if
+                        end if
+
+                    else
+                        DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
+                        DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
+
+                        SFlux = DiffGradient1*(Concent(INode,IKind) - Concent(INode-1,IKind)) - DiffGradient2*(Concent(INode+1,IKind) - Concent(INode,IKind))
+                        if(SFlux .GT. 0.D0 .AND. Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind) .GT. 0) then
+                            TSTEP = min(TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate*Concent(INode,IKind)/(dabs(SFlux)/NodeSpace(INode)))
+                        end if
+                    end if
 
                 END DO
             END DO
@@ -402,6 +405,12 @@ module NUCLEATION_SPACEDIST
                     end if
 
                 END DO
+
+                write(*,*) "MatA",MatA
+                write(*,*) "MatB",MatB
+                write(*,*) "MatC",MatC
+                write(*,*) "MatD",MatD
+
 
                 call SolveTridag(IKind,MatA,MatB,MatC,MatD,Concent,NNodes,MatW,MatH)
 
