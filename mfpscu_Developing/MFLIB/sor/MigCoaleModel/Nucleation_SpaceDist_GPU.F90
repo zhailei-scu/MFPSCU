@@ -7,9 +7,19 @@ module NUCLEATION_SPACEDIST_GPU
     use MFLIB_TYPEDEF_SIMULATIONCTRLPARAM
     use MIGCOALE_ADDONDATA_HOST
     implicit none
-    !---Local Vars---
+
     character*256::fileName
-    !---Body---
+
+    real(kind=KMCDF),dimension(:,:),allocatable::m_ImplantedRate
+    real(kind=KMCDF),dimension(:),allocatable::FSurfAccum
+    real(kind=KMCDF),dimension(:),allocatable::FOutAccum
+    real(kind=KMCDF),dimension(:),allocatable::CSurfAccum
+    real(kind=KMCDF),dimension(:),allocatable::COutAccum
+    real(kind=KMCDF),dimension(:),allocatable::FSurfEachStep
+    real(kind=KMCDF),dimension(:),allocatable::FOutEachStep
+    real(kind=KMCDF),dimension(:),allocatable::CSurfEachStep
+    real(kind=KMCDF),dimension(:),allocatable::COutEachStep
+
     real(kind=KMCDF),device,dimension(:,:),allocatable::dm_MatrixA
     real(kind=KMCDF),device,dimension(:,:),allocatable::dm_MatrixB
     real(kind=KMCDF),device,dimension(:,:),allocatable::dm_MatrixC
@@ -17,17 +27,16 @@ module NUCLEATION_SPACEDIST_GPU
     real(kind=KMCDF),device,dimension(:,:),allocatable::dm_w
     real(kind=KMCDF),device,dimension(:,:),allocatable::dm_h
 
-    real(kind=KMCDF),dimension(:,:),allocatable::MatrixA
-    real(kind=KMCDF),dimension(:,:),allocatable::MatrixB
-    real(kind=KMCDF),dimension(:,:),allocatable::MatrixC
-    real(kind=KMCDF),dimension(:,:),allocatable::MatrixD
-
-
     real(kind=KMCDF),device,dimension(:,:),allocatable::dm_ImplantedRate
 
     real(kind=KMCDF),device,dimension(:),allocatable::dm_Reduced_MaxChangeRate
     real(kind=KMCDF),device,dimension(:),allocatable::dm_Reduced_MaxConcent
     real(kind=KMCDF),device,dimension(:),allocatable::dm_Reduced_MinTStep
+
+    real(kind=KMCDF),device,dimension(:),allocatable::dm_Reduced_NPOWER0Ave
+    real(kind=KMCDF),device,dimension(:),allocatable::dm_Reduced_NPOWER1DIV2Ave
+    real(kind=KMCDF),device,dimension(:),allocatable::dm_Reduced_NPOWER1Ave
+    real(kind=KMCDF),device,dimension(:),allocatable::dm_Reduced_NPOWER3DIV2Ave
 
     integer::Dumplicate = 1
 
@@ -48,7 +57,29 @@ module NUCLEATION_SPACEDIST_GPU
         !---Dummy Vars---
         type(SimulationBoxes)::Host_Boxes
         type(SimulationCtrlParam)::Host_SimuCtrlParam
-        integer::I
+        !---Body---
+
+        call Init_Global_Arrays_CPU(Host_Boxes,Host_SimuCtrlParam)
+
+        call Init_Global_Arrays_GPU(Host_Boxes,Host_SimuCtrlParam)
+
+        call AvailableIOUnit(m_StatisticFile)
+
+        fileName = Host_SimuCtrlParam%OutFilePath(1:len_trim(Host_SimuCtrlParam%OutFilePath))//FolderSpe//"Statistic.dat"
+
+        open(Unit=m_StatisticFile,file=fileName(1:len_trim(fileName)))
+
+        write(m_StatisticFile,FMT="(15(A15,1x))") "Step","Time","TStep","NPOWER0Ave","NPOWER1DIV2Ave","NPOWER1Ave","NPOWER3DIV2Ave","N1","N2","N3","Rave(nm)"
+
+        return
+    end subroutine InitSimu_SpaceDist_GPU
+
+    !***************************************************
+    subroutine Init_Global_Arrays_GPU(Host_Boxes,Host_SimuCtrlParam)
+        !---Dummy Vars---
+        type(SimulationBoxes)::Host_Boxes
+        type(SimulationCtrlParam)::Host_SimuCtrlParam
+        !---Local  Vars---
         integer::NNodes
         integer::CKind
         integer::NReduceSize
@@ -113,32 +144,6 @@ module NUCLEATION_SPACEDIST_GPU
         allocate(dm_h(NNodes,CKind))
 
 
-
-        if(allocated(MatrixA)) then
-            deallocate(MatrixA)
-        end if
-        allocate(MatrixA(NNodes,CKind))
-
-        if(allocated(MatrixB)) then
-            deallocate(MatrixB)
-        end if
-        allocate(MatrixB(NNodes,CKind))
-
-        if(allocated(MatrixC)) then
-            deallocate(MatrixC)
-        end if
-        allocate(MatrixC(NNodes,CKind))
-
-        if(allocated(MatrixD)) then
-            deallocate(MatrixD)
-        end if
-        allocate(MatrixD(NNodes,CKind))
-
-
-
-
-
-
         if(allocated(dm_ImplantedRate)) then
             deallocate(dm_ImplantedRate)
         end if
@@ -160,17 +165,72 @@ module NUCLEATION_SPACEDIST_GPU
         end if
         allocate(dm_Reduced_MinTStep(NReduceSize))
 
+        if(allocated(dm_Reduced_NPOWER0Ave)) then
+            deallocate(dm_Reduced_NPOWER0Ave)
+        end if
+        allocate(dm_Reduced_NPOWER0Ave(NReduceSize))
 
-        call AvailableIOUnit(m_StatisticFile)
+        if(allocated(dm_Reduced_NPOWER1Ave)) then
+            deallocate(dm_Reduced_NPOWER1Ave)
+        end if
+        allocate(dm_Reduced_NPOWER1Ave(NReduceSize))
 
-        fileName = Host_SimuCtrlParam%OutFilePath(1:len_trim(Host_SimuCtrlParam%OutFilePath))//FolderSpe//"Statistic.dat"
+        if(allocated(dm_Reduced_NPOWER1DIV2Ave)) then
+            deallocate(dm_Reduced_NPOWER1DIV2Ave)
+        end if
+        allocate(dm_Reduced_NPOWER1DIV2Ave(NReduceSize))
 
-        open(Unit=m_StatisticFile,file=fileName(1:len_trim(fileName)))
+        if(allocated(dm_Reduced_NPOWER3DIV2Ave)) then
+            deallocate(dm_Reduced_NPOWER3DIV2Ave)
+        end if
+        allocate(dm_Reduced_NPOWER3DIV2Ave(NReduceSize))
 
-        write(m_StatisticFile,FMT="(15(A15,1x))") "Step","Time","TStep","NPOWER0Ave","NPOWER1DIV2Ave","NPOWER1Ave","NPOWER3DIV2Ave","N1","N2","N3","Rave(nm)"
 
         return
-    end subroutine InitSimu_SpaceDist_GPU
+    end subroutine Init_Global_Arrays_GPU
+
+    !***************************************************
+    subroutine Init_Global_Arrays_CPU(Host_Boxes,Host_SimuCtrlParam)
+        !---Dummy Vars---
+        type(SimulationBoxes)::Host_Boxes
+        type(SimulationCtrlParam)::Host_SimuCtrlParam
+        !---Local  Vars---
+        integer::NNodes
+        integer::CKind
+        integer::NReduceSize
+        !---Body---
+        NNodes = Host_Boxes%NNodes
+
+        CKind = Host_Boxes%CKind
+
+        allocate(m_ImplantedRate(NNodes,CKind))
+
+        allocate(FSurfAccum(NNodes))
+
+        allocate(FOutAccum(NNodes))
+
+        allocate(CSurfAccum(NNodes))
+
+        allocate(COutAccum(NNodes))
+
+        allocate(FSurfEachStep(NNodes))
+
+        allocate(FOutEachStep(NNodes))
+
+        allocate(CSurfEachStep(NNodes))
+
+        allocate(COutEachStep(NNodes))
+
+        FSurfAccum = 0.D0
+
+        FOutAccum = 0.D0
+
+        CSurfAccum = 0.D0
+
+        COutAccum = 0.D0
+
+        return
+    end subroutine Init_Global_Arrays_CPU
 
     !***************************************************
     subroutine NucleationSimu_SpaceDist_Balance_GrubDumplicate_GPU(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
@@ -188,24 +248,14 @@ module NUCLEATION_SPACEDIST_GPU
         integer::JKind
         real(kind=KMCDF)::TSTEP
         real(kind=KMCDF)::deta
-        real(kind=KMCDF),dimension(:,:),allocatable::tempNBPVChangeRate
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER0Ave
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER1DIV2Ave
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER1Ave
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER3DIV2Ave
-        real(kind=KMCDF),dimension(:),allocatable::N1
-        real(kind=KMCDF),dimension(:),allocatable::N2
-        real(kind=KMCDF),dimension(:),allocatable::N3
-        real(kind=KMCDF),dimension(:),allocatable::Rave
-        real(kind=KMCDF),dimension(:,:),allocatable::ImplantedRate
-        real(kind=KMCDF),dimension(:),allocatable::FSurfAccum
-        real(kind=KMCDF),dimension(:),allocatable::FOutAccum
-        real(kind=KMCDF),dimension(:),allocatable::CSurfAccum
-        real(kind=KMCDF),dimension(:),allocatable::COutAccum
-        real(kind=KMCDF),dimension(:),allocatable::FSurfEachStep
-        real(kind=KMCDF),dimension(:),allocatable::FOutEachStep
-        real(kind=KMCDF),dimension(:),allocatable::CSurfEachStep
-        real(kind=KMCDF),dimension(:),allocatable::COutEachStep
+        real(kind=KMCDF)::NPOWER0Ave
+        real(kind=KMCDF)::NPOWER1DIV2Ave
+        real(kind=KMCDF)::NPOWER1Ave
+        real(kind=KMCDF)::NPOWER3DIV2Ave
+        real(kind=KMCDF)::N1
+        real(kind=KMCDF)::N2
+        real(kind=KMCDF)::N3
+        real(kind=KMCDF)::Rave
         integer::I
         integer::INode
         integer::NNodes
@@ -226,57 +276,23 @@ module NUCLEATION_SPACEDIST_GPU
         CKind = Host_SimBoxes%CKind
         NNodes = Host_SimBoxes%NNodes
 
-        allocate(tempNBPVChangeRate(NNodes,CKind))
-
-        allocate(NPOWER0Ave(NNodes),NPOWER1DIV2Ave(NNodes),NPOWER1Ave(NNodes),NPOWER3DIV2Ave(NNodes))
-
-        allocate(N1(NNodes),N2(NNodes),N3(NNodes),Rave(NNodes))
-
-        allocate(ImplantedRate(NNodes,CKind))
-
-        allocate(FSurfAccum(NNodes))
-
-        allocate(FOutAccum(NNodes))
-
-        allocate(CSurfAccum(NNodes))
-
-        allocate(COutAccum(NNodes))
-
-        allocate(FSurfEachStep(NNodes))
-
-        allocate(FOutEachStep(NNodes))
-
-        allocate(CSurfEachStep(NNodes))
-
-        allocate(COutEachStep(NNodes))
-
         TSTEP = 0.01
-
-        FSurfAccum = 0.D0
-
-        FOutAccum = 0.D0
-
-        CSurfAccum = 0.D0
-
-        COutAccum = 0.D0
 
         !call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
 
-        Associate(ClustersKind=>Host_SimBoxes%m_ClustersInfo_CPU%ClustersKindArray,Concent=>Host_SimBoxes%m_ClustersInfo_CPU%Concentrate,NodeSpace=>Host_SimBoxes%NodeSpace)
+        ConCentrat0 = sum(Host_SimBoxes%m_ClustersInfo_CPU%Concentrate)
 
-          ConCentrat0 = sum(Concent)
+        m_ImplantedRate = 0.D0
 
-          ImplantedRate = 0.D0
+        call TheImplantSection%Cal_ImplantClustersRate(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,m_ImplantedRate)
 
-          call TheImplantSection%Cal_ImplantClustersRate(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,ImplantedRate)
+        dm_ImplantedRate = m_ImplantedRate
 
-          dm_ImplantedRate = ImplantedRate
+        DO While(.true.)
 
-          DO While(.true.)
+          Associate(ClustersKind=>Host_SimBoxes%m_ClustersInfo_CPU%ClustersKindArray,Concent=>Host_SimBoxes%m_ClustersInfo_CPU%Concentrate,NodeSpace=>Host_SimBoxes%NodeSpace)
 
             call Record%IncreaseOneSimuStep()
-
-            tempNBPVChangeRate = 0.D0
 
             FSurfEachStep = 0.D0
 
@@ -334,62 +350,87 @@ module NUCLEATION_SPACEDIST_GPU
 
             if(mod(Record%GetSimuSteps(),1) .eq. 0) then
 
-                !call Cal_Statistic_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
+                call Cal_Statistic_GPU(Host_SimBoxes,Host_SimuCtrlParam,Dumplicate,dm_Concentrate,dm_NodeSpace,dm_ClustersKindArray, &
+                                       dm_Reduced_NPOWER0Ave,dm_Reduced_NPOWER1DIV2Ave,dm_Reduced_NPOWER1Ave,dm_Reduced_NPOWER3DIV2Ave, &
+                                       NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
 
-                !call Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,Record%GetSimuSteps(),Record%GetSimuTimes(),TSTEP,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
+                call Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,Record%GetSimuSteps(),Record%GetSimuTimes(),TSTEP,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
             end if
 
             !if(Concent(CKind) .GT. 1.D-10) then
             if(DSQRT(dble(sum(ClustersKind(CKind)%m_Atoms(:)%m_NA)))*sum(Concent(1:NNodes,CKind)) .GT. &
-               sum(NPOWER1DIV2Ave)*Host_SimuCtrlParam%DumplicateFactor) then
+               NPOWER1DIV2Ave*Host_SimuCtrlParam%DumplicateFactor) then
 
-                DO INode = 1,NNodes
+                write(*,*) "---Expand Clusters kind---"
 
-                    DO I = 1,(CKind -1)/2 + 1
-                        if(2*I .LE. CKind) then
-                            Concent(INode,I) = (Concent(INode,2*I-1)*sum(ClustersKind(2*I-1)%m_Atoms(:)%m_NA)+Concent(INode,2*I)*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA)) &
-                                               /(2.D0*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA))
-                        else
-                            Concent(INode,I) = Concent(INode,2*I - 1)
-                        end if
+                if(TheImplantSection%ImplantFlux .GT. 0.D0) then
+                    call Host_SimBoxes%ReSizeClusterKind_CPU(Host_SimuCtrlParam,m_RNFACTOR,m_FREESURDIFPRE,CKind*2)
+
+                    CKind = CKind*2
+                    NNodes = Host_SimBoxes%NNodes
+
+                    call Init_Global_Arrays_CPU(Host_SimBoxes,Host_SimuCtrlParam)
+
+                    call Init_Global_Arrays_GPU(Host_SimBoxes,Host_SimuCtrlParam)
+
+                    call TheImplantSection%Cal_ImplantClustersRate(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,m_ImplantedRate)
+
+                    dm_ImplantedRate = m_ImplantedRate
+
+                    write(*,*) "Max clusters kind number: ",CKind
+                else
+
+                    DO INode = 1,NNodes
+
+                        DO I = 1,(CKind -1)/2 + 1
+                            if(2*I .LE. CKind) then
+                                Concent(INode,I) = (Concent(INode,2*I-1)*sum(ClustersKind(2*I-1)%m_Atoms(:)%m_NA)+Concent(INode,2*I)*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA)) &
+                                                    /(2.D0*sum(ClustersKind(2*I)%m_Atoms(:)%m_NA))
+                            else
+                                Concent(INode,I) = Concent(INode,2*I - 1)
+                            end if
+                        END DO
+
+                        Concent(INode,(CKind -1)/2+2:CKind) = 0.D0
+
+                        DO I = 1,(CKind -1)/2 + 1
+                            if(2*I .LE. CKind) then
+                                ClustersKind(I) = ClustersKind(2*I)
+                            else
+                                ClustersKind(I) = ClustersKind(2*I - 1)
+                            end if
+                        END DO
+
+                        DO I = (CKind -1)/2 + 2,CKind
+                            ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA = 2*ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA
+                            TheDiffusorValue = Host_SimBoxes%m_DiffusorTypesMap%get(ClustersKind(I))
+
+                            select case(TheDiffusorValue%ECRValueType_Free)
+                                case(p_ECR_ByValue)
+                                    ClustersKind(I)%m_RAD = TheDiffusorValue%ECR_Free
+                                case(p_ECR_ByBCluster)
+                                    ClustersKind(I)%m_RAD = DSQRT(sum(ClustersKind(I)%m_Atoms(:)%m_NA)/m_RNFACTOR)
+                            end select
+
+                            select case(TheDiffusorValue%DiffusorValueType_Free)
+                                case(p_DiffuseCoefficient_ByValue)
+                                    ClustersKind(I)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
+                                case(p_DiffuseCoefficient_ByArrhenius)
+                                    ClustersKind(I)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
+                                case(p_DiffuseCoefficient_ByBCluster)
+                                    ! Here we adopt a model that D=D0*(1/R)**Gama
+                                    ClustersKind(I)%m_DiffCoeff = m_FREESURDIFPRE*(ClustersKind(I)%m_RAD**(-p_GAMMA))
+                            end select
+                        END DO
+
                     END DO
 
-                    Concent(INode,(CKind -1)/2+2:CKind) = 0.D0
+                    dm_ClustersKindArray = ClustersKind
+                    dm_Concentrate = Concent
 
-                    DO I = 1,(CKind -1)/2 + 1
-                        if(2*I .LE. CKind) then
-                            ClustersKind(I) = ClustersKind(2*I)
-                        else
-                            ClustersKind(I) = ClustersKind(2*I - 1)
-                        end if
-                    END DO
-
-                    DO I = (CKind -1)/2 + 2,CKind
-                        ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA = 2*ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA
-                        TheDiffusorValue = Host_SimBoxes%m_DiffusorTypesMap%get(ClustersKind(I))
-
-                        select case(TheDiffusorValue%ECRValueType_Free)
-                            case(p_ECR_ByValue)
-                                ClustersKind(I)%m_RAD = TheDiffusorValue%ECR_Free
-                            case(p_ECR_ByBCluster)
-                                ClustersKind(I)%m_RAD = DSQRT(sum(ClustersKind(I)%m_Atoms(:)%m_NA)/m_RNFACTOR)
-                        end select
-
-                        select case(TheDiffusorValue%DiffusorValueType_Free)
-                            case(p_DiffuseCoefficient_ByValue)
-                                ClustersKind(I)%m_DiffCoeff = TheDiffusorValue%DiffuseCoefficient_Free_Value
-                            case(p_DiffuseCoefficient_ByArrhenius)
-                                ClustersKind(I)%m_DiffCoeff = TheDiffusorValue%PreFactor_Free*exp(-C_EV2ERG*TheDiffusorValue%ActEnergy_Free/Host_SimuCtrlParam%TKB)
-                            case(p_DiffuseCoefficient_ByBCluster)
-                                ! Here we adopt a model that D=D0*(1/R)**Gama
-                                ClustersKind(I)%m_DiffCoeff = m_FREESURDIFPRE*(ClustersKind(I)%m_RAD**(-p_GAMMA))
-                        end select
-                    END DO
-
-                END DO
-
-                Dumplicate = Dumplicate*2
-                write(*,*) "Dumplicate",Dumplicate
+                    Dumplicate = Dumplicate*2
+                    write(*,*) "Dumplicate",Dumplicate
+                end if
             end if
 
             if(Record%GetSimuTimes() .GT. Host_SimuCtrlParam%TermTValue) then
@@ -398,9 +439,11 @@ module NUCLEATION_SPACEDIST_GPU
 
             TSTEP = TSTEP*1.5
 
-          END DO
-        END Associate
+          END Associate
 
+        END DO
+
+        return
     end subroutine NucleationSimu_SpaceDist_Balance_GrubDumplicate_GPU
 
     !***************************************************
@@ -449,7 +492,7 @@ module NUCLEATION_SPACEDIST_GPU
         write(*,*) "TSTEP1",TSTEP
 
         call Kernel_AdjustlTimeStep<<<blocks,threads>>>(NNodes,CKind,TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate,Dev_Concent,Dev_NodeSpace, &
-                                          Dev_ClusterKindArray,Dev_tempNBPVChangeRate,Reduced_MinTStep)
+                                                        Dev_ClusterKindArray,Dev_tempNBPVChangeRate,Reduced_MinTStep)
 
         TSTEP = minval(Reduced_MinTStep)
 
@@ -499,18 +542,6 @@ module NUCLEATION_SPACEDIST_GPU
                                                          Dev_ClusterKindArray,Dev_tempNBPVChangeRate,Dev_ImplantedRate,&
                                                          Dev_MatrixA,Dev_MatrixB,Dev_MatrixC,Dev_MatrixD,Dev_w,Dev_h)
 
-
-        MatrixA = dm_MatrixA
-        MatrixB = dm_MatrixB
-        MatrixC = dm_MatrixC
-        MatrixD = dm_MatrixD
-
-        DO IKind = 1,CKind
-            write(*,*) "MatA",MatrixA(:,IKind)
-            write(*,*) "MatB",MatrixB(:,IKind)
-            write(*,*) "MatC",MatrixC(:,IKind)
-            write(*,*) "MatD",MatrixD(:,IKind)
-        END DO
 
         return
     end subroutine DoReactionAndDiffusion
@@ -973,6 +1004,281 @@ module NUCLEATION_SPACEDIST_GPU
     end subroutine Dev_SolveTridag
 
 
+    !---------------------------------------------------------------------
+    subroutine Cal_Statistic_GPU(Host_SimBoxes,Host_SimuCtrlParam,Dumplicate,Dev_Concent,Dev_NodeSpace,Dev_ClusterKindArray,&
+                                 Reduced_NPOWER0Ave,Reduced_NPOWER1DIV2Ave,Reduced_NPOWER1Ave,Reduced_NPOWER3DIV2Ave, &
+                                 NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave)
+        implicit none
+        !---Dummy Vars---
+        type(SimulationBoxes)::Host_SimBoxes
+        type(SimulationCtrlParam),target::Host_SimuCtrlParam
+        integer,intent(in)::Dumplicate
+        real(kind=KMCDF),device,dimension(:,:),allocatable::Dev_Concent
+        real(kind=KMCDF),device,dimension(:),allocatable::Dev_NodeSpace
+        type(ACluster),device,dimension(:),allocatable::Dev_ClusterKindArray
+        real(kind=KMCDF),device,dimension(:),allocatable::Reduced_NPOWER0Ave
+        real(kind=KMCDF),device,dimension(:),allocatable::Reduced_NPOWER1DIV2Ave
+        real(kind=KMCDF),device,dimension(:),allocatable::Reduced_NPOWER1Ave
+        real(kind=KMCDF),device,dimension(:),allocatable::Reduced_NPOWER3DIV2Ave
+        real(kind=KMCDF)::NPOWER0Ave
+        real(kind=KMCDF)::NPOWER1DIV2Ave
+        real(kind=KMCDF)::NPOWER1Ave
+        real(kind=KMCDF)::NPOWER3DIV2Ave
+        !---Local Vars---
+        integer::CKind
+        integer::NNodes
+        integer::NB
+        integer::BX
+        integer::BY
+        type(dim3)::blocks
+        type(dim3)::threads
+        real(kind=KMCDF)::TotalThickness
+        !---Body---
+        NNodes = Host_SimBoxes%NNodes
+        CKind = Host_SimBoxes%CKind
+        TotalThickness = sum(Host_SimBoxes%NodeSpace)
 
+        NB = (NNodes*CKind -1)/p_BLOCKSIZE + 1
+        BX = p_BLOCKSIZE
+        BY = 1
+
+        blocks = dim3(NB,1,1)
+        threads = dim3(BX,BY,1)
+
+
+        call Kernel_Cal_Statistic<<<blocks,threads>>>(NNodes,CKind,Dumplicate,Dev_Concent,Dev_NodeSpace,Dev_ClusterKindArray, &
+                                                      Reduced_NPOWER0Ave,Reduced_NPOWER1DIV2Ave,Reduced_NPOWER1Ave,Reduced_NPOWER3DIV2Ave)
+
+        if(TotalThickness .GT. 0) then
+            NPOWER0Ave = sum(Reduced_NPOWER0Ave)/TotalThickness
+            NPOWER1DIV2Ave = sum(Reduced_NPOWER1DIV2Ave)/TotalThickness
+            NPOWER1Ave = sum(Reduced_NPOWER1Ave)/TotalThickness
+            NPOWER3DIV2Ave = sum(Reduced_NPOWER3DIV2Ave)/TotalThickness
+        else
+            write(*,*) "MFPSCUERROR: The system thickness cannot less than 0"
+            write(*,*) "If you want to simulate the situation of an no-space distribution and uniform system"
+            write(*,*) "You can special the node number = 1 and set the Neumann boundary condition."
+            pause
+            stop
+        end if
+        return
+    end subroutine
+
+    !---------------------------------------------------------------------
+    attributes(global) subroutine Kernel_Cal_Statistic(NNodes,CKind,Dumplicate,Dev_Concent,Dev_NodeSpace,Dev_ClusterKindArray, &
+                                                       Reduced_NPOWER0Ave,Reduced_NPOWER1DIV2Ave,Reduced_NPOWER1Ave,Reduced_NPOWER3DIV2Ave)
+        implicit none
+        !---Dummy Vars---
+        integer,value::NNodes
+        integer,value::CKind
+        integer,value::Dumplicate
+        real(kind=KMCDF),device::Dev_Concent(NNodes,*)
+        real(kind=KMCDF),device::Dev_NodeSpace(:)
+        type(ACluster),device::Dev_ClusterKindArray(:)
+        real(kind=KMCDF),device::Reduced_NPOWER0Ave(:)
+        real(kind=KMCDF),device::Reduced_NPOWER1DIV2Ave(:)
+        real(kind=KMCDF),device::Reduced_NPOWER1Ave(:)
+        real(kind=KMCDF),device::Reduced_NPOWER3DIV2Ave(:)
+        !---Local Vars---
+        integer::tid
+        integer::cid
+        integer::bid
+        integer::IKind
+        integer::INode
+        integer::I
+        real(kind=KMCDF),shared::Shared_NPOWER0Ave(p_BLOCKSIZE)
+        real(kind=KMCDF),shared::Shared_NPOWER1DIV2Ave(p_BLOCKSIZE)
+        real(kind=KMCDF),shared::Shared_NPOWER1Ave(p_BLOCKSIZE)
+        real(kind=KMCDF),shared::Shared_NPOWER3DIV2Ave(p_BLOCKSIZE)
+        !---Body---
+        tid = (threadidx%y - 1)*blockdim%x +threadidx%x
+        bid = (blockidx%y - 1)*griddim%x + blockidx%x
+        cid = (bid - 1)*p_BlockSize + tid
+
+        IKind = (cid - 1)/NNodes + 1
+
+        INode = cid - (IKind -1)*NNodes
+
+        Shared_NPOWER0Ave(tid) = 0.D0
+        Shared_NPOWER1DIV2Ave(tid) = 0.D0
+        Shared_NPOWER1Ave(tid) = 0.D0
+        Shared_NPOWER3DIV2Ave(tid) = 0.D0
+
+        if(IKind .LE. CKind) then
+
+            Shared_NPOWER0Ave(tid) = Dumplicate*Dev_Concent(INode,IKind)*Dev_NodeSpace(INode)
+
+            Shared_NPOWER1DIV2Ave(tid) = Dumplicate*(sum(Dev_ClusterKindArray(IKind)%m_Atoms(:)%m_NA,dim=1)**0.5D0)*Dev_Concent(INode,IKind)*Dev_NodeSpace(INode)
+
+            Shared_NPOWER1Ave(tid) = Dumplicate*sum(Dev_ClusterKindArray(IKind)%m_Atoms(:)%m_NA,dim=1)*Dev_Concent(INode,IKind)*Dev_NodeSpace(INode)
+
+            Shared_NPOWER3DIV2Ave(tid) = Dumplicate*(sum(Dev_ClusterKindArray(IKind)%m_Atoms(:)%m_NA,dim=1)**1.5D0)*Dev_Concent(INode,IKind)*Dev_NodeSpace(INode)
+
+            I = p_BLOCKSIZE/2
+
+            call syncthreads()
+
+            DO While(I .GT. 0)
+                if(tid .LE. I) then
+                    Shared_NPOWER0Ave(tid) = Shared_NPOWER0Ave(tid) + Shared_NPOWER0Ave(tid + I)
+                    Shared_NPOWER1DIV2Ave(tid) = Shared_NPOWER1DIV2Ave(tid) + Shared_NPOWER1DIV2Ave(tid + I)
+                    Shared_NPOWER1Ave(tid) = Shared_NPOWER1Ave(tid) + Shared_NPOWER1Ave(tid + I)
+                    Shared_NPOWER3DIV2Ave(tid) = Shared_NPOWER3DIV2Ave(tid) + Shared_NPOWER3DIV2Ave(tid + I)
+                end if
+
+                call syncthreads()
+
+                I = I/2
+            END DO
+        end if
+
+        if(tid .eq. 1) then
+            Reduced_NPOWER0Ave(bid) = Shared_NPOWER0Ave(1)
+            Reduced_NPOWER1DIV2Ave(bid) = Shared_NPOWER1DIV2Ave(1)
+            Reduced_NPOWER1Ave(bid) = Shared_NPOWER1Ave(1)
+            Reduced_NPOWER3DIV2Ave(bid) = Shared_NPOWER3DIV2Ave(1)
+        end if
+
+        return
+    end subroutine Kernel_Cal_Statistic
+
+    !---------------------------------------------
+    subroutine OutPutCurrent(Host_SimBoxes,Host_SimuCtrlParam,Record)
+        implicit none
+        !---Dummy Vars---
+        type(SimulationBoxes)::Host_SimBoxes
+        type(SimulationCtrlParam),target::Host_SimuCtrlParam
+        type(MigCoalClusterRecord)::Record
+        !---Local Vars---
+        logical::OutIntegralBoxStatistic
+        logical::OutEachBoxStatistic
+        !---Body---
+
+        OutIntegralBoxStatistic = .false.
+        OutEachBoxStatistic = .true.
+
+        OutIntegralBoxStatistic = Record%WhetherOutSizeDist_IntegralBox(Host_SimuCtrlParam)
+
+        OutEachBoxStatistic = Record%WhetherOutSizeDist_EachBox(Host_SimuCtrlParam)
+
+        if(OutIntegralBoxStatistic .eq. .true. .or. OutEachBoxStatistic .eq. .true.) then
+!            call GetBoxesMigCoaleStat_Used_GPU(Host_Boxes,Host_SimuCtrlParam,Dev_Boxes,TheMigCoaleStatisticInfo,Record)
+!
+!            if(OutIntegralBoxStatistic .eq. .true.) then
+!                call PutOut_Instance_Statistic_IntegralBox(Host_Boxes,Host_SimuCtrlParam,TheMigCoaleStatisticInfo,Record,Model=0)
+!
+!                if(Host_SimuCtrlParam%OutPutSCFlag .eq. mp_OutTimeFlag_ByIntervalSteps) then
+!                    call Record%SetLastOutSizeDistTime_IntegralBox(dble(Record%GetSimuSteps()))
+!                else if(Host_SimuCtrlParam%OutPutSCFlag .eq. mp_OutTimeFlag_ByIntervalRealTime) then
+!                    call Record%SetLastOutSizeDistTime_IntegralBox(Record%GetSimuTimes())
+!                else if(Host_SimuCtrlParam%OutPutSCFlag .eq. mp_OutTimeFlag_ByIntervalTimeMagnification) then
+!                    call Record%SetLastOutSizeDistTime_IntegralBox(Record%GetSimuTimes())
+!                end if
+!            end if
+!
+!            if(OutEachBoxStatistic .eq. .true.) then
+!                call PutOut_Instance_Statistic_EachBox(Host_Boxes,Host_SimuCtrlParam,TheMigCoaleStatisticInfo,Record)
+!
+!                if(Host_SimuCtrlParam%OutPutSCFlag .eq. mp_OutTimeFlag_ByIntervalSteps) then
+!                    call Record%SetLastOutSizeDistTime_EachBox(dble(Record%GetSimuSteps()))
+!                else if(Host_SimuCtrlParam%OutPutSCFlag .eq. mp_OutTimeFlag_ByIntervalRealTime) then
+!                    call Record%SetLastOutSizeDistTime_EachBox(Record%GetSimuTimes())
+!                else if(Host_SimuCtrlParam%OutPutSCFlag .eq. mp_OutTimeFlag_ByIntervalTimeMagnification) then
+!                    call Record%SetLastOutSizeDistTime_EachBox(Record%GetSimuTimes())
+!                end if
+!            end if
+        end if
+
+        ! check if need to output intermediate configure
+        if(Host_SimuCtrlParam%OutPutConfFlag .eq. mp_OutTimeFlag_ByIntervalSteps) then
+            if((Record%GetSimuSteps() - Record%GetLastRecordOutConfigTime()) .GE. Host_SimuCtrlParam%OutPutConfValue .OR. &
+                Record%GetSimuTimes() .GE. Host_SimuCtrlParam%TermTValue) then
+
+                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record,LayerFirst=.true.)
+
+                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record,LayerFirst=.false.)
+
+                call Record%SetLastRecordOutConfigTime(dble(Record%GetSimuSteps()))
+
+                call Record%IncreaseOneOutPutIndex()
+
+            end if
+        else if(Host_SimuCtrlParam%OutPutConfFlag .eq. mp_OutTimeFlag_ByIntervalRealTime) then
+            if((Record%GetSimuTimes() - Record%GetLastRecordOutConfigTime()) .GE. Host_SimuCtrlParam%OutPutConfValue .OR. &
+                Record%GetSimuTimes() .GE. Host_SimuCtrlParam%TermTValue) then
+
+                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record,LayerFirst=.true.)
+
+                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record,LayerFirst=.false.)
+
+                call Record%SetLastRecordOutConfigTime(Record%GetSimuTimes())
+
+                call Record%IncreaseOneOutPutIndex()
+            end if
+
+        else if(Host_SimuCtrlParam%OutPutConfFlag .eq. mp_OutTimeFlag_ByIntervalTimeMagnification) then
+            if((Record%GetSimuTimes()/Host_SimuCtrlParam%OutPutConfValue) .GE. Record%GetLastRecordOutConfigTime() .OR. &
+                Record%GetSimuTimes() .GE. Host_SimuCtrlParam%TermTValue) then
+
+                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record,LayerFirst=.true.)
+
+                call Host_SimBoxes%PutoutCfg(Host_SimuCtrlParam,Record,LayerFirst=.false.)
+
+                call Record%SetLastRecordOutConfigTime(Record%GetSimuTimes())
+
+                call Record%IncreaseOneOutPutIndex()
+            end if
+        end if
+
+        return
+    end subroutine OutPutCurrent
+
+    !---------------------------------------------
+    subroutine Put_Out_IMPLANT(Host_SimBoxes,Host_SimuCtrlParam,Step,TTime,TStep,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave,N1,N2,N3,Rave)
+        implicit none
+        !---Dummy Vars---
+        type(SimulationBoxes)::Host_SimBoxes
+        type(SimulationCtrlParam),target::Host_SimuCtrlParam
+        integer,intent(in)::Step
+        real(kind=KMCDF),intent(in)::TTime
+        real(kind=KMCDF),intent(in)::TStep
+        real(kind=KMCDF)::NPOWER0Ave
+        real(kind=KMCDF)::NPOWER1DIV2Ave
+        real(kind=KMCDF)::NPOWER1Ave
+        real(kind=KMCDF)::NPOWER3DIV2Ave
+        !---Local Vars---
+        real(kind=KMCDF)::N1
+        real(kind=KMCDF)::N2
+        real(kind=KMCDF)::N3
+        real(kind=KMCDF)::Rave
+        !---Body---
+
+        N1 = 0.D0
+        N2 = 0.D0
+        N3 = 0.D0
+        Rave = 0.D0
+
+        if(NPOWER0Ave .GT. 0) then
+            N1 = (NPOWER1DIV2Ave/NPOWER0Ave)**2
+
+            N2 = NPOWER1Ave/NPOWER0Ave
+
+            N3 = (NPOWER3DIV2Ave/NPOWER0Ave)**(dble(2)/dble(3))
+
+            Rave= DSQRT(N1/m_RNFACTOR)
+        end if
+
+        write(6,FMT="(15(A15,1x))") "Step","Time","TStep","NPOWER0Ave","NPOWER1DIV2Ave","NPOWER1Ave","NPOWER3DIV2Ave","N1","N2","N3","Rave(nm)"
+
+        write(6,FMT="(I15,1x,15(E15.8,1x))") Step,TTime,TStep,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave, &
+                                             N1,N2,N3,Rave*C_CM2NM
+
+        write(m_StatisticFile,FMT="(I15,1x,15(E15.8,1x))") Step,TTime,TStep,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave, &
+                                             N1,N2,N3,Rave*C_CM2NM
+
+        Flush(m_StatisticFile)
+
+        return
+    end subroutine
 
 end module NUCLEATION_SPACEDIST_GPU

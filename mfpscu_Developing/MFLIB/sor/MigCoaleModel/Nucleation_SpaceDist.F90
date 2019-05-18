@@ -406,12 +406,6 @@ module NUCLEATION_SPACEDIST
 
                 END DO
 
-                write(*,*) "MatA",MatA
-                write(*,*) "MatB",MatB
-                write(*,*) "MatC",MatC
-                write(*,*) "MatD",MatD
-
-
                 call SolveTridag(IKind,MatA,MatB,MatC,MatD,Concent,NNodes,MatW,MatH)
 
 !                DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(NNodes)
