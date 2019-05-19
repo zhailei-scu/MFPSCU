@@ -1,5 +1,5 @@
 !"START" mean start a new session from initial file, restart mean start from previous configure file 
-&START_MF_MIGCOALE_CLUSTER_CPU
+&START_MF_MIGCOALE_CLUSTER_GPU
   &MFBOXF "BoxFile.dat"
   &MFCTLF "CtrlFile.dat"
   &MFINIF "IniF.dat"

@@ -96,14 +96,14 @@ module NUCLEATION_SPACEDIST
         real(kind=KMCDF)::TSTEP
         real(kind=KMCDF)::deta
         real(kind=KMCDF),dimension(:,:),allocatable::tempNBPVChangeRate
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER0Ave
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER1DIV2Ave
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER1Ave
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER3DIV2Ave
-        real(kind=KMCDF),dimension(:),allocatable::N1
-        real(kind=KMCDF),dimension(:),allocatable::N2
-        real(kind=KMCDF),dimension(:),allocatable::N3
-        real(kind=KMCDF),dimension(:),allocatable::Rave
+        real(kind=KMCDF)::NPOWER0Ave
+        real(kind=KMCDF)::NPOWER1DIV2Ave
+        real(kind=KMCDF)::NPOWER1Ave
+        real(kind=KMCDF)::NPOWER3DIV2Ave
+        real(kind=KMCDF)::N1
+        real(kind=KMCDF)::N2
+        real(kind=KMCDF)::N3
+        real(kind=KMCDF)::Rave
         real(kind=KMCDF),dimension(:,:),allocatable::ImplantedRate
         real(kind=KMCDF),dimension(:),allocatable::FSurfAccum
         real(kind=KMCDF),dimension(:),allocatable::FOutAccum
@@ -134,10 +134,6 @@ module NUCLEATION_SPACEDIST
         NNodes = Host_SimBoxes%NNodes
 
         allocate(tempNBPVChangeRate(NNodes,CKind))
-
-        allocate(NPOWER0Ave(NNodes),NPOWER1DIV2Ave(NNodes),NPOWER1Ave(NNodes),NPOWER3DIV2Ave(NNodes))
-
-        allocate(N1(NNodes),N2(NNodes),N3(NNodes),Rave(NNodes))
 
         allocate(ImplantedRate(NNodes,CKind))
 
@@ -246,8 +242,8 @@ module NUCLEATION_SPACEDIST
 
             TSTEP = maxval(Concent)*Host_SimuCtrlParam%MaxReactChangeRate/maxval(dabs(tempNBPVChangeRate))
 
-            write(*,*) "!---------------------"
-            write(*,*) "TSTEP1",TSTEP
+!            write(*,*) "!---------------------"
+!            write(*,*) "TSTEP1",TSTEP
 
             DO IKind = 1,CKind
                 DO INode = 1,NNodes
@@ -457,7 +453,7 @@ module NUCLEATION_SPACEDIST
 
             !if(Concent(CKind) .GT. 1.D-10) then
             if(DSQRT(dble(sum(ClustersKind(CKind)%m_Atoms(:)%m_NA)))*sum(Concent(1:NNodes,CKind)) .GT. &
-               sum(NPOWER1DIV2Ave)*Host_SimuCtrlParam%DumplicateFactor) then
+               NPOWER1DIV2Ave*Host_SimuCtrlParam%DumplicateFactor) then
 
                write(*,*) "---Expand Clusters kind---"
 
@@ -557,14 +553,14 @@ module NUCLEATION_SPACEDIST
         real(kind=KMCDF)::TSTEP
         real(kind=KMCDF)::deta
         real(kind=KMCDF),dimension(:,:),allocatable::tempNBPVChangeRate
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER0Ave
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER1DIV2Ave
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER1Ave
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER3DIV2Ave
-        real(kind=KMCDF),dimension(:),allocatable::N1
-        real(kind=KMCDF),dimension(:),allocatable::N2
-        real(kind=KMCDF),dimension(:),allocatable::N3
-        real(kind=KMCDF),dimension(:),allocatable::Rave
+        real(kind=KMCDF)::NPOWER0Ave
+        real(kind=KMCDF)::NPOWER1DIV2Ave
+        real(kind=KMCDF)::NPOWER1Ave
+        real(kind=KMCDF)::NPOWER3DIV2Ave
+        real(kind=KMCDF)::N1
+        real(kind=KMCDF)::N2
+        real(kind=KMCDF)::N3
+        real(kind=KMCDF)::Rave
         real(kind=KMCDF),dimension(:,:),allocatable::ImplantedRate
         real(kind=KMCDF),dimension(:),allocatable::FSurfAccum
         real(kind=KMCDF),dimension(:),allocatable::FOutAccum
@@ -598,10 +594,6 @@ module NUCLEATION_SPACEDIST
         allocate(tempNBPVChangeRate(NNodes,CKind))
 
         allocate(ImplantedRate(NNodes,CKind))
-
-        allocate(NPOWER0Ave(NNodes),NPOWER1DIV2Ave(NNodes),NPOWER1Ave(NNodes),NPOWER3DIV2Ave(NNodes))
-
-        allocate(N1(NNodes),N2(NNodes),N3(NNodes),Rave(NNodes))
 
         allocate(FSurfAccum(NNodes))
 
@@ -921,7 +913,7 @@ module NUCLEATION_SPACEDIST
 
             !if(Concent(CKind) .GT. 1.D-10) then
             if(DSQRT(dble(sum(ClustersKind(CKind)%m_Atoms(:)%m_NA)))*sum(Concent(1:NNodes,CKind)) .GT. &
-               sum(NPOWER1DIV2Ave)*Host_SimuCtrlParam%DumplicateFactor) then
+               NPOWER1DIV2Ave*Host_SimuCtrlParam%DumplicateFactor) then
 
                write(*,*) "---Expand Clusters kind---"
 
@@ -1046,47 +1038,64 @@ module NUCLEATION_SPACEDIST
         !---Dummy Vars---
         type(SimulationBoxes)::Host_SimBoxes
         type(SimulationCtrlParam),target::Host_SimuCtrlParam
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER0Ave
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER1DIV2Ave
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER1Ave
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER3DIV2Ave
+        real(kind=KMCDF)::NPOWER0Ave
+        real(kind=KMCDF)::NPOWER1DIV2Ave
+        real(kind=KMCDF)::NPOWER1Ave
+        real(kind=KMCDF)::NPOWER3DIV2Ave
         !---Local Vars---
         integer::CKind
-        real(kind=KMCDF)::Temp
         integer::I
         integer::NNodes
         integer::INode
+        real(kind=KMCDF)::TotalThickness
         !---Body---
         NNodes = Host_SimBoxes%NNodes
 
         CKind = Host_SimBoxes%CKind
 
-        Associate(ClustersKind=>Host_SimBoxes%m_ClustersInfo_CPU%ClustersKindArray,Concent=>Host_SimBoxes%m_ClustersInfo_CPU%Concentrate)
+        NPOWER0Ave = 0.D0
+        NPOWER1DIV2Ave = 0.D0
+        NPOWER1Ave = 0.D0
+        NPOWER3DIV2Ave = 0.D0
+
+        Associate(ClustersKind=>Host_SimBoxes%m_ClustersInfo_CPU%ClustersKindArray,Concent=>Host_SimBoxes%m_ClustersInfo_CPU%Concentrate, &
+                 NodeSpace=>Host_SimBoxes%NodeSpace)
+
+          TotalThickness = sum(NodeSpace)
+
+          if(TotalThickness .LE. 0) then
+            write(*,*) "MFPSCUERROR: The system thickness cannot less than 0"
+            write(*,*) "If you want to simulate the situation of an no-space distribution and uniform system"
+            write(*,*) "You can special the node number = 1 and set the Neumann boundary condition."
+            pause
+            stop
+          end if
 
           DO INode = 1,NNodes
 
-            NPOWER0Ave(INode) = Dumplicate*sum(Concent(INode,1:CKind))
+            NPOWER0Ave = NPOWER0Ave + Dumplicate*sum(Concent(INode,1:CKind))*NodeSpace(INode)
 
-            Temp = 0.D0
             DO I = 1,CKind
-                Temp = Temp + (sum(ClustersKind(I)%m_Atoms(:)%m_NA)**(0.5D0))*Concent(INode,I)
+                NPOWER1DIV2Ave = NPOWER1DIV2Ave + Dumplicate*(sum(ClustersKind(I)%m_Atoms(:)%m_NA)**(0.5D0))*Concent(INode,I)*NodeSpace(INode)
             END DO
-            NPOWER1DIV2Ave(INode) = Dumplicate*Temp
 
-            Temp = 0.D0
             DO I = 1,CKind
-                Temp = Temp + sum(ClustersKind(I)%m_Atoms(:)%m_NA)*Concent(INode,I)
+                NPOWER1Ave = NPOWER1Ave + Dumplicate*sum(ClustersKind(I)%m_Atoms(:)%m_NA)*Concent(INode,I)*NodeSpace(INode)
             END DO
-            NPOWER1Ave(INode) = Dumplicate*Temp
 
-            Temp = 0.D0
             DO I = 1,CKind
-                Temp = Temp + (sum(ClustersKind(I)%m_Atoms(:)%m_NA)**(1.5D0))*Concent(INode,I)
+                NPOWER3DIV2Ave = NPOWER3DIV2Ave + Dumplicate*(sum(ClustersKind(I)%m_Atoms(:)%m_NA)**(1.5D0))*Concent(INode,I)*NodeSpace(INode)
             END DO
-            NPOWER3DIV2Ave(INode) = Dumplicate*Temp
+
           END DO
 
+          NPOWER0Ave = NPOWER0Ave/TotalThickness
+          NPOWER1DIV2Ave = NPOWER1DIV2Ave/TotalThickness
+          NPOWER1Ave = NPOWER1Ave/TotalThickness
+          NPOWER3DIV2Ave = NPOWER3DIV2Ave/TotalThickness
+
         END Associate
+
         return
     end subroutine
 
@@ -1190,57 +1199,40 @@ module NUCLEATION_SPACEDIST
         integer,intent(in)::Step
         real(kind=KMCDF),intent(in)::TTime
         real(kind=KMCDF),intent(in)::TStep
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER0Ave
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER1DIV2Ave
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER1Ave
-        real(kind=KMCDF),dimension(:),allocatable::NPOWER3DIV2Ave
-        real(kind=KMCDF),dimension(:),allocatable::N1
-        real(kind=KMCDF),dimension(:),allocatable::N2
-        real(kind=KMCDF),dimension(:),allocatable::N3
-        real(kind=KMCDF),dimension(:),allocatable::Rave
-        !---Local Vars---
-        integer::CKind
-        integer::I
-        integer::NNodes
-        integer::INode
+        real(kind=KMCDF)::NPOWER0Ave
+        real(kind=KMCDF)::NPOWER1DIV2Ave
+        real(kind=KMCDF)::NPOWER1Ave
+        real(kind=KMCDF)::NPOWER3DIV2Ave
+        real(kind=KMCDF)::N1
+        real(kind=KMCDF)::N2
+        real(kind=KMCDF)::N3
+        real(kind=KMCDF)::Rave
         !---Body---
-
-        NNodes = Host_SimBoxes%NNodes
-
-        CKind = Host_SimBoxes%CKind
 
         N1 = 0.D0
         N2 = 0.D0
         N3 = 0.D0
         Rave = 0.D0
 
-        Associate(ClustersKind=>Host_SimBoxes%m_ClustersInfo_CPU%ClustersKindArray,Concent=>Host_SimBoxes%m_ClustersInfo_CPU%Concentrate)
+        if(NPOWER0Ave .GT. 0) then
+            N1 = (NPOWER1DIV2Ave/NPOWER0Ave)**2
 
-          DO INode = 1,NNodes
+            N2 = NPOWER1Ave/NPOWER0Ave
 
-            if(NPOWER0Ave(INode) .GT. 0) then
-                N1(INode) = (NPOWER1DIV2Ave((INode))/NPOWER0Ave(INode))**2
+            N3 = (NPOWER3DIV2Ave/NPOWER0Ave)**(dble(2)/dble(3))
 
-                N2(INode) = NPOWER1Ave(INode)/NPOWER0Ave(INode)
+            Rave = DSQRT(N1/m_RNFACTOR)
+        end if
 
-                N3(INode) = (NPOWER3DIV2Ave(INode)/NPOWER0Ave(INode))**(dble(2)/dble(3))
+        write(6,FMT="(15(A15,1x))") "Step","Time","TStep","NPOWER0Ave","NPOWER1DIV2Ave","NPOWER1Ave","NPOWER3DIV2Ave","N1","N2","N3","Rave(nm)"
 
-                Rave(INode) = DSQRT(N1(INode)/m_RNFACTOR)
-            end if
-          END DO
+        write(6,FMT="(I15,1x,15(E15.8,1x))") Step,TTime,TStep,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave, &
+                                             N1,N2,N3,Rave*C_CM2NM
 
-          write(6,FMT="(15(A15,1x))") "Step","Time","TStep","NPOWER0Ave","NPOWER1DIV2Ave","NPOWER1Ave","NPOWER3DIV2Ave","N1","N2","N3","Rave(nm)"
+        write(m_StatisticFile,FMT="(I15,1x,15(E15.8,1x))") Step,TTime,TStep,NPOWER0Ave,NPOWER1DIV2Ave,NPOWER1Ave,NPOWER3DIV2Ave, &
+                                             N1,N2,N3,Rave*C_CM2NM
 
-          write(6,FMT="(I15,1x,15(E15.8,1x))") Step,TTime,TStep,sum(NPOWER0Ave)/NNodes,sum(NPOWER1DIV2Ave)/NNodes,sum(NPOWER1Ave)/NNodes,sum(NPOWER3DIV2Ave)/NNodes, &
-                                             sum(N1)/NNodes,sum(N2)/NNodes,sum(N3)/NNodes,sum(Rave)*C_CM2NM/NNodes
-
-          write(m_StatisticFile,FMT="(I15,1x,15(E15.8,1x))") Step,TTime,TStep,sum(NPOWER0Ave)/NNodes,sum(NPOWER1DIV2Ave)/NNodes,sum(NPOWER1Ave)/NNodes,sum(NPOWER3DIV2Ave)/NNodes, &
-                                             sum(N1)/NNodes,sum(N2)/NNodes,sum(N3)/NNodes,sum(Rave)*C_CM2NM/NNodes
-
-          Flush(m_StatisticFile)
-
-
-         END associate
+        Flush(m_StatisticFile)
 
         return
     end subroutine

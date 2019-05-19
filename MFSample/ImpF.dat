@@ -19,7 +19,7 @@
   &GROUPSUBCTL   ! #2
          &TYPE The implantation cluster distribution type = 0 ! 0 by simple inner way, 1 by from external file, 2 by function
 
-	 &FLUX THE implantation flux = 0.D0  , RelectRatio = 0.682074         !  (1/s*cm^2) the He flux in PFM are 1.D18~1.D20(1/s*cm^2)
+	 &FLUX THE implantation flux = 1.D20  , RelectRatio = 0.682074         !  (1/s*cm^2) the He flux in PFM are 1.D18~1.D20(1/s*cm^2)
 
          &SIZESUBCTL
             &NATOMDIST The atoms number in each cluster distribution as Gauss that central = 1 , distribution half width = 0.0 , left cut = 0.9 , right cut = 1.1

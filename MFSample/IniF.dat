@@ -59,12 +59,12 @@
 
       &SPACEDISTSUBCTL    ! (current for depth distribution only)
           &NNODES The spatical nodes number = 20
-          &NODESPACE The space for each node = 31.5935 (LU)
+          &NODESPACE The space for each node = 31.5935 (LU)  ! 631.87
       &ENDSUBCTL
 
       &CLUSTERRANGESUBCTL
-	  &CLUSTERSGROUP The max clusters group = 200
-          &RANGE The clusters atoms start from = 1 , end to = 200 	
+	  &CLUSTERSGROUP The max clusters group = 10
+          &RANGE The clusters atoms start from = 1 , end to = 10 	
       &ENDSUBCTL
 
       &GROUPSUBCTL

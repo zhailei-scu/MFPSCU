@@ -248,7 +248,7 @@
 
           &REACTION  #1
 	  	&REACTPAIRS The reaction pairs "He#1-Inf@W#0" , "He#1-Inf@W#0"
-	  	&REACTCOEFF The type for reaction coefficient = 1 , The corresponded value = -1    ! 1 by fix value (<0 means would not happen, >=1 means must happen), 2 by  Arrhenius(Prefactor,ActEng) 
+	  	&REACTCOEFF The type for reaction coefficient = 1 , The corresponded value = 1    ! 1 by fix value (<0 means would not happen, >=1 means must happen), 2 by  Arrhenius(Prefactor,ActEng) 
 	  	&ECR The effecitive capture radius type = 2                                                                 ! 1 by fix value (LU), 2 by  bubble model             
           &ENDSUBCTL
 	  !

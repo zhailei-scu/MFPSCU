@@ -203,23 +203,24 @@ module NUCLEATION_SPACEDIST_GPU
 
         CKind = Host_Boxes%CKind
 
-        allocate(m_ImplantedRate(NNodes,CKind))
+        call AllocateArray_Host(m_ImplantedRate,NNodes,CKind,"m_ImplantedRate")
 
-        allocate(FSurfAccum(NNodes))
+        call AllocateArray_Host(FSurfAccum,NNodes,"FSurfAccum")
 
-        allocate(FOutAccum(NNodes))
+        call AllocateArray_Host(FOutAccum,NNodes,"FOutAccum")
 
-        allocate(CSurfAccum(NNodes))
+        call AllocateArray_Host(CSurfAccum,NNodes,"CSurfAccum")
 
-        allocate(COutAccum(NNodes))
+        call AllocateArray_Host(COutAccum,NNodes,"COutAccum")
 
-        allocate(FSurfEachStep(NNodes))
+        call AllocateArray_Host(FSurfEachStep,NNodes,"FSurfEachStep")
 
-        allocate(FOutEachStep(NNodes))
+        call AllocateArray_Host(FOutEachStep,NNodes,"FOutEachStep")
 
-        allocate(CSurfEachStep(NNodes))
+        call AllocateArray_Host(CSurfEachStep,NNodes,"CSurfEachStep")
 
-        allocate(COutEachStep(NNodes))
+        call AllocateArray_Host(COutEachStep,NNodes,"COutEachStep")
+
 
         FSurfAccum = 0.D0
 
@@ -305,7 +306,7 @@ module NUCLEATION_SPACEDIST_GPU
             call Calc_ReactionRate(Host_SimBoxes,Host_SimuCtrlParam,dm_Concentrate,dm_NodeSpace,dm_ClustersKindArray,dm_tempNBPVChangeRate, &
                                    dm_Reduced_MaxConcent,dm_Reduced_MaxChangeRate,dm_Reduced_MinTStep,TSTEP)
 
-            write(*,*) "TSTEP",TSTEP
+            !write(*,*) "TSTEP",TSTEP
 
             call DoReactionAndDiffusion(Host_SimBoxes,Host_SimuCtrlParam,dm_Concentrate,dm_NodeSpace,dm_ClustersKindArray,dm_tempNBPVChangeRate, &
                                         dm_ImplantedRate,dm_MatrixA,dm_MatrixB,dm_MatrixC,dm_MatrixD,dm_w,dm_h,TSTEP)
@@ -358,10 +359,12 @@ module NUCLEATION_SPACEDIST_GPU
             end if
 
             !if(Concent(CKind) .GT. 1.D-10) then
-            if(DSQRT(dble(sum(ClustersKind(CKind)%m_Atoms(:)%m_NA)))*sum(Concent(1:NNodes,CKind)) .GT. &
+            if(DSQRT(dble(sum(ClustersKind(CKind)%m_Atoms(:)%m_NA)))*sum(dm_Concentrate(1:NNodes,CKind)) .GT. &
                NPOWER1DIV2Ave*Host_SimuCtrlParam%DumplicateFactor) then
 
                 write(*,*) "---Expand Clusters kind---"
+
+                Concent = dm_Concentrate
 
                 if(TheImplantSection%ImplantFlux .GT. 0.D0) then
                     call Host_SimBoxes%ReSizeClusterKind_CPU(Host_SimuCtrlParam,m_RNFACTOR,m_FREESURDIFPRE,CKind*2)
@@ -488,8 +491,8 @@ module NUCLEATION_SPACEDIST_GPU
 
         TSTEP = Host_SimuCtrlParam%MaxReactChangeRate*maxval(Reduced_MaxConcent)/maxval(Reduced_MaxChangeRate)
 
-        write(*,*)"!-------------------------------"
-        write(*,*) "TSTEP1",TSTEP
+        !write(*,*)"!-------------------------------"
+        !write(*,*) "TSTEP1",TSTEP
 
         call Kernel_AdjustlTimeStep<<<blocks,threads>>>(NNodes,CKind,TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate,Dev_Concent,Dev_NodeSpace, &
                                                         Dev_ClusterKindArray,Dev_tempNBPVChangeRate,Reduced_MinTStep)
