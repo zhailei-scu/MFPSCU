@@ -130,9 +130,6 @@ module NUCLEATION_GRUB
 
                         deta = Dumplicate*NBPAPV(IKind)*NBPAPV(JKind)*(DSQRT(NATOMS(IKind)) + DSQRT(NATOMS(JKind)))*(NATOMS(IKind)**(-2) + NATOMS(JKind)**(-2))
 
-                        write(*,*) (DSQRT(NATOMS(IKind)) + DSQRT(NATOMS(JKind)))*(NATOMS(IKind)**(-2) + NATOMS(JKind)**(-2))*Pre/Concentration
-                        pause
-
                         if(IKind .eq. JKind) then
 
                             Factor = 0.5D0

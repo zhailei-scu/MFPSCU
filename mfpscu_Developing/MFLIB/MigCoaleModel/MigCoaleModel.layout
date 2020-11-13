@@ -2,19 +2,49 @@
 <CodeBlocks_layout_file>
 	<FileVersion major="1" minor="0" />
 	<ActiveTarget name="Debug" />
+	<File name="../sor/MigCoaleModel/Nucleation_SpaceDist_GPU.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="19339" topLine="480" />
+		</Cursor>
+	</File>
+	<File name="../sor/MigCoaleModel/Nucleation_SpaceDist_NewTest.F90" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="441" topLine="234" />
+		</Cursor>
+	</File>
+	<File name="../sor/MigCoaleModel/Nucleation_SpaceDist_GPU_NewTest.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="21188" topLine="501" />
+		</Cursor>
+	</File>
+	<File name="../sor/MigCoaleModel/MigCoale_AddOnData_Host.F90" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="516" topLine="12" />
+		</Cursor>
+	</File>
+	<File name="../sor/MigCoaleModel/MigCoale_Evolution_DepthDist.F90" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="128" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="../sor/MigCoaleModel/Nucleation_SpaceDist_GPU_NewtonInter.F90" open="1" top="1" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="8185" topLine="246" />
+		</Cursor>
+	</File>
+	<File name="../sor/MigCoaleModel/Nucleation_Implant.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="4109" topLine="111" />
+		</Cursor>
+	</File>
 	<File name="../sor/MigCoaleModel/Nucleation_SpaceDist.F90" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="20282" topLine="429" />
+			<Cursor1 position="0" topLine="216" />
 		</Cursor>
 	</File>
-	<File name="../sor/MigCoaleModel/MigCoale_Statistic_CPU.F90" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="../sor/MigCoaleModel/MigCoale_Statistic_CPU.F90" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="6771" topLine="155" />
-		</Cursor>
-	</File>
-	<File name="../sor/MigCoaleModel/MigCoale_TYPEDEF_StatisticInfo.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="85" topLine="0" />
+			<Cursor1 position="6771" topLine="153" />
 		</Cursor>
 	</File>
 	<File name="../sor/MigCoaleModel/MigCoale_Evolution_UniformDist.F90" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -22,39 +52,29 @@
 			<Cursor1 position="81" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="../sor/MigCoaleModel/Nucleation_SpaceDist_GPU.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="../sor/MigCoaleModel/Nucleation_Grub.F90" open="1" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="30091" topLine="658" />
+			<Cursor1 position="3487" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="../sor/MigCoaleModel/Nucleation_Grub.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="../sor/MigCoaleModel/MigCoale_Implantation.F90" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="3284" topLine="192" />
+			<Cursor1 position="60603" topLine="57" />
 		</Cursor>
 	</File>
-	<File name="../sor/MigCoaleModel/MigCoale_Implantation.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="../sor/MigCoaleModel/MigCoale_TYPEDEF_StatisticInfo.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="3089" topLine="1382" />
+			<Cursor1 position="85" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="../sor/MigCoaleModel/MigCoale_AddOnData_Dev.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="324" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="../sor/MigCoaleModel/MigCoale_Evolution_DepthDist.F90" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="128" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="../sor/MigCoaleModel/Nucleation_Implant.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2481" topLine="75" />
-		</Cursor>
-	</File>
-	<File name="../sor/MigCoaleModel/MigCoale_Evolution_ThreeDimDist.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="../sor/MigCoaleModel/MigCoale_Evolution_ThreeDimDist.F90" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="38" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="../sor/MigCoaleModel/MigCoale_AddOnData_Dev.F90" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="29" topLine="0" />
 		</Cursor>
 	</File>
 	<File name="../sor/MigCoaleModel/MigCoale_TYPEDEF_SimRecord.F90" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -62,14 +82,9 @@
 			<Cursor1 position="3033" topLine="60" />
 		</Cursor>
 	</File>
-	<File name="../sor/MigCoaleModel/MigCoale_TimeCtl.F90" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="../sor/MigCoaleModel/MigCoale_TimeCtl.F90" open="1" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="10835" topLine="196" />
-		</Cursor>
-	</File>
-	<File name="../sor/MigCoaleModel/MigCoale_AddOnData_Host.F90" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="524" topLine="0" />
+			<Cursor1 position="10835" topLine="0" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

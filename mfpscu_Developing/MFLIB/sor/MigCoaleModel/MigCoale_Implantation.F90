@@ -1599,6 +1599,8 @@ module MIGCOALE_IMPLANTATION
 
          AccumThick_Implant = AccumThick_Implant + this%LayerThick(ILayer)
 
+         write(*,*) "AccumThick_Implant",AccumThick_Implant
+
          DO JLayer = LayerStart,Host_Boxes%NNodes
             AccumThick = AccumThick + Host_Boxes%NodeSpace(JLayer)
 
@@ -1615,31 +1617,26 @@ module MIGCOALE_IMPLANTATION
 
          DO JLayer = OccupyLayer_End,1,-1
 
-            OccupyLayer_Start = JLayer
+             OccupyLayer_Start = JLayer
 
-            AccumThickTemp = AccumThickTemp - Host_Boxes%NodeSpace(JLayer)
+             AccumThickTemp = AccumThickTemp - Host_Boxes%NodeSpace(JLayer)
 
-            if(AccumThickTemp .LE. AccumThick_Implant) then
+             if(AccumThickTemp .LE. (AccumThick_Implant - this%LayerThick(ILayer))) then
                 exit
-            end if
+             end if
          END DO
 
          AccumThickTemp = AccumThick
 
          DO JLayer = OccupyLayer_End,OccupyLayer_Start,-1
-
-            if(JLayer .eq. OccupyLayer_Start) then
-                Percent = (AccumThickTemp - (AccumThick_Implant - this%LayerThick(ILayer)) )/this%LayerThick(ILayer)
-
-                Percent = min(Percent,1.D0)
-            else if(JLayer .eq. OccupyLayer_End) then
+            if(JLayer .eq. OccupyLayer_End) then
                 AccumThickTemp = AccumThickTemp - Host_Boxes%NodeSpace(JLayer)
-                Percent = (AccumThick_Implant - AccumThickTemp)/this%LayerThick(ILayer)
-
-                Percent = min(Percent,1.D0)
+                Percent = (AccumThick_Implant - AccumThickTemp)/Host_Boxes%NodeSpace(JLayer)
+            else if(JLayer .eq. OccupyLayer_Start) then
+                Percent = (AccumThickTemp - (AccumThick_Implant - this%LayerThick(ILayer)) )/Host_Boxes%NodeSpace(JLayer)
             else
                 AccumThickTemp = AccumThickTemp - Host_Boxes%NodeSpace(JLayer)
-                Percent = Host_Boxes%NodeSpace(JLayer)/this%LayerThick(ILayer)
+                Percent = 1.D0
             end if
 
             DO IGroup = 1,MaxGroups

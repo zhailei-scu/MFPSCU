@@ -13,6 +13,10 @@ program MEANFIELDNUCLEATION_SPACEDIST_CPU
     !---Exclute the main process---
     call AppShell_Main_CPU(nmpi,procid)
 
+    !call InitSimu()
+
+    !call NucleationSimu()
+
     write(*,*) "---End MEANFIELDNUCLEATION_SPACEDIST---"
 
     pause

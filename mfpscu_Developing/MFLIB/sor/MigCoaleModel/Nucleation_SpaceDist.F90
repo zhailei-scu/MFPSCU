@@ -129,6 +129,8 @@ module NUCLEATION_SPACEDIST
         type(ReactionValue)::TheReactionValue
         real(kind=KMCDF)::ReactionCoeff
         real(kind=KMCDF)::SFlux
+        real(kind=KMCDF)::MaxConcent
+        real(kind=KMCDF)::MaxChangeRate
         !---Body---
         CKind = Host_SimBoxes%CKind
         NNodes = Host_SimBoxes%NNodes
@@ -240,10 +242,25 @@ module NUCLEATION_SPACEDIST
                 END DO
             END DO
 
-            TSTEP = maxval(Concent)*Host_SimuCtrlParam%MaxReactChangeRate/maxval(dabs(tempNBPVChangeRate))
+            tempNBPVChangeRate = tempNBPVChangeRate + ImplantedRate
 
-!            write(*,*) "!---------------------"
-!            write(*,*) "TSTEP1",TSTEP
+            MaxConcent = maxval(Concent)
+            MaxChangeRate = maxval(dabs(tempNBPVChangeRate))
+
+            if(MaxConcent .GT. 0.D0 .AND. MaxChangeRate .GT. 0.D0) then
+                TSTEP = Host_SimuCtrlParam%MaxReactChangeRate*MaxConcent/MaxChangeRate
+            else
+                TSTEP = 1.D-10
+            end if
+
+            write(*,*) "!---------------------"
+            write(*,*) "TSTEP1",TSTEP
+            write(*,*) "maxval(Concent)",maxval(Concent)
+            write(*,*) "maxval(dabs(tempNBPVChangeRate))",maxval(dabs(tempNBPVChangeRate))
+            write(*,*) "maxloc(Concent)",maxloc(Concent)
+            write(*,*) "maxloc(dabs(tempNBPVChangeRate))",maxloc(dabs(tempNBPVChangeRate))
+            write(*,*) "maxloc(ImplantedRate)",maxloc(ImplantedRate)
+            write(*,*) "maxval(ImplantedRate)",maxval(ImplantedRate)
 
             DO IKind = 1,CKind
                 DO INode = 1,NNodes
@@ -351,7 +368,7 @@ module NUCLEATION_SPACEDIST
                             MatC(INode) = -DiffGradient2
                         end if
 
-                        MatD(INode) = Concent(INode,IKind)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
+                        MatD(INode) = Concent(INode,IKind)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(INode,IKind)*NodeSpace(INode)
                     else if(INode .eq. NNodes) then  ! Low surface
 
                         DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(INode)
@@ -390,14 +407,14 @@ module NUCLEATION_SPACEDIST
                         end if
 
                         MatC(INode) = 0.D0
-                        MatD(INode) = Concent(INode,IKind)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
+                        MatD(INode) = Concent(INode,IKind)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(INode,IKind)*NodeSpace(INode)
                     else
                         DiffGradient1 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode-1) + NodeSpace(INode))
                         DiffGradient2 = (ClustersKind(IKind)%m_DiffCoeff + ClustersKind(IKind)%m_DiffCoeff)/(NodeSpace(INode) + NodeSpace(INode+1))
                         MatA(INode) = -DiffGradient1
                         MatB(INode) = NodeSpace(INode)/TSTEP + (DiffGradient1 + DiffGradient2)
                         MatC(INode) = -DiffGradient2
-                        MatD(INode) = Concent(INode,IKind)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(INode,IKind)*NodeSpace(INode) + ImplantedRate(INode,IKind)*NodeSpace(INode)
+                        MatD(INode) = Concent(INode,IKind)*NodeSpace(INode)/TSTEP + tempNBPVChangeRate(INode,IKind)*NodeSpace(INode)
                     end if
 
                 END DO
@@ -489,15 +506,17 @@ module NUCLEATION_SPACEDIST
 
                         Concent(INode,(CKind -1)/2+2:CKind) = 0.D0
 
-                        DO I = 1,(CKind -1)/2 + 1
+                    END DO
+
+                    DO I = 1,(CKind -1)/2 + 1
                             if(2*I .LE. CKind) then
                                 ClustersKind(I) = ClustersKind(2*I)
                             else
                                 ClustersKind(I) = ClustersKind(2*I - 1)
                             end if
-                        END DO
+                    END DO
 
-                        DO I = (CKind -1)/2 + 2,CKind
+                    DO I = (CKind -1)/2 + 2,CKind
                             ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA = 2*ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA
                             TheDiffusorValue = Host_SimBoxes%m_DiffusorTypesMap%get(ClustersKind(I))
 
@@ -517,9 +536,9 @@ module NUCLEATION_SPACEDIST
                                     ! Here we adopt a model that D=D0*(1/R)**Gama
                                     ClustersKind(I)%m_DiffCoeff = m_FREESURDIFPRE*(ClustersKind(I)%m_RAD**(-p_GAMMA))
                             end select
-                        END DO
-
                     END DO
+
+
                     Dumplicate = Dumplicate*2
                     write(*,*) "Dumplicate",Dumplicate
                 end if
@@ -586,6 +605,8 @@ module NUCLEATION_SPACEDIST
         real(kind=KMCDF)::ReactionCoeff
         type(ReactionValue)::TheReactionValue
         real(kind=KMCDF)::SFlux
+        real(kind=KMCDF)::MaxConcent
+        real(kind=KMCDF)::MaxChangeRate
         !---Body---
         CKind = Host_SimBoxes%CKind
 
@@ -700,7 +721,14 @@ module NUCLEATION_SPACEDIST
                 END DO
             END DO
 
-            TSTEP = maxval(Concent)*Host_SimuCtrlParam%MaxReactChangeRate/maxval(dabs(tempNBPVChangeRate))
+            MaxConcent = maxval(Concent)
+            MaxChangeRate = maxval(dabs(tempNBPVChangeRate))
+
+            if(MaxConcent .GT. 0.D0 .AND. MaxChangeRate .GT. 0.D0) then
+                TSTEP = Host_SimuCtrlParam%MaxReactChangeRate*MaxConcent/MaxChangeRate
+            else
+                TSTEP = 1.D-10
+            end if
 
             DO IKind = 1,CKind
                 DO INode = 1,NNodes
@@ -948,16 +976,17 @@ module NUCLEATION_SPACEDIST
                         END DO
 
                         Concent(INode,(CKind -1)/2+2:CKind) = 0.D0
+                    END DO
 
-                        DO I = 1,(CKind -1)/2 + 1
+                    DO I = 1,(CKind -1)/2 + 1
                             if(2*I .LE. CKind) then
                                 ClustersKind(I) = ClustersKind(2*I)
                             else
                                 ClustersKind(I) = ClustersKind(2*I - 1)
                             end if
-                        END DO
+                    END DO
 
-                        DO I = (CKind -1)/2 + 2,CKind
+                    DO I = (CKind -1)/2 + 2,CKind
                             ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA = 2*ClustersKind(I)%m_Atoms(1:p_ATOMS_GROUPS_NUMBER)%m_NA
                             TheDiffusorValue = Host_SimBoxes%m_DiffusorTypesMap%get(ClustersKind(I))
 
@@ -977,9 +1006,9 @@ module NUCLEATION_SPACEDIST
                                     ! Here we adopt a model that D=D0*(1/R)**Gama
                                     ClustersKind(I)%m_DiffCoeff = m_FREESURDIFPRE*(ClustersKind(I)%m_RAD**(-p_GAMMA))
                             end select
-                        END DO
-
                     END DO
+
+
                     Dumplicate = Dumplicate*2
                     write(*,*) "Dumplicate",Dumplicate
                 end if

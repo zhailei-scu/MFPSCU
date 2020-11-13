@@ -1,4 +1,4 @@
-module NUCLEATION_SPACEDIST_GPU
+module NUCLEATION_SPACEDIST_GPU_NEWTONINTER
     use cudafor
     use MFLIB_GLOBAL
     use MCMF_CONSTANTS_GPU
@@ -52,16 +52,16 @@ module NUCLEATION_SPACEDIST_GPU
 
     contains
 
-    subroutine InitSimu_SpaceDist_GPU(Host_Boxes,Host_SimuCtrlParam)
+    subroutine InitSimu_SpaceDist_GPU_NEWTONINTER(Host_Boxes,Host_SimuCtrlParam)
         implicit none
         !---Dummy Vars---
         type(SimulationBoxes)::Host_Boxes
         type(SimulationCtrlParam)::Host_SimuCtrlParam
         !---Body---
 
-        call Init_Global_Arrays_CPU(Host_Boxes,Host_SimuCtrlParam)
+        call Init_Global_Arrays_CPU_NEWTONINTER(Host_Boxes,Host_SimuCtrlParam)
 
-        call Init_Global_Arrays_GPU(Host_Boxes,Host_SimuCtrlParam)
+        call Init_Global_Arrays_GPU_NEWTONINTER(Host_Boxes,Host_SimuCtrlParam)
 
         call AvailableIOUnit(m_StatisticFile)
 
@@ -72,10 +72,10 @@ module NUCLEATION_SPACEDIST_GPU
         write(m_StatisticFile,FMT="(15(A15,1x))") "Step","Time","TStep","NPOWER0Ave","NPOWER1DIV2Ave","NPOWER1Ave","NPOWER3DIV2Ave","N1","N2","N3","Rave(nm)"
 
         return
-    end subroutine InitSimu_SpaceDist_GPU
+    end subroutine InitSimu_SpaceDist_GPU_NEWTONINTER
 
     !***************************************************
-    subroutine Init_Global_Arrays_GPU(Host_Boxes,Host_SimuCtrlParam)
+    subroutine Init_Global_Arrays_GPU_NEWTONINTER(Host_Boxes,Host_SimuCtrlParam)
         !---Dummy Vars---
         type(SimulationBoxes)::Host_Boxes
         type(SimulationCtrlParam)::Host_SimuCtrlParam
@@ -187,10 +187,10 @@ module NUCLEATION_SPACEDIST_GPU
 
 
         return
-    end subroutine Init_Global_Arrays_GPU
+    end subroutine Init_Global_Arrays_GPU_NEWTONINTER
 
     !***************************************************
-    subroutine Init_Global_Arrays_CPU(Host_Boxes,Host_SimuCtrlParam)
+    subroutine Init_Global_Arrays_CPU_NEWTONINTER(Host_Boxes,Host_SimuCtrlParam)
         !---Dummy Vars---
         type(SimulationBoxes)::Host_Boxes
         type(SimulationCtrlParam)::Host_SimuCtrlParam
@@ -231,10 +231,10 @@ module NUCLEATION_SPACEDIST_GPU
         COutAccum = 0.D0
 
         return
-    end subroutine Init_Global_Arrays_CPU
+    end subroutine Init_Global_Arrays_CPU_NEWTONINTER
 
     !***************************************************
-    subroutine NucleationSimu_SpaceDist_Balance_GrubDumplicate_GPU(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
+    subroutine NucleationSimu_SpaceDist_Balance_GrubDumplicate_GPU_NEWTONINTER(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
         use RAND32_MODULE
         implicit none
         !---Dummy Vars---
@@ -303,13 +303,13 @@ module NUCLEATION_SPACEDIST_GPU
 
             COutEachStep = 0.D0
 
-            call Calc_ReactionRate(Host_SimBoxes,Host_SimuCtrlParam,dm_Concentrate,dm_NodeSpace,dm_ClustersKindArray,dm_tempNBPVChangeRate,dm_ImplantedRate, &
+            call Calc_ReactionRate(Host_SimBoxes,Host_SimuCtrlParam,dm_Concentrate,dm_NodeSpace,dm_ClustersKindArray,dm_tempNBPVChangeRate, &
                                    dm_Reduced_MaxConcent,dm_Reduced_MaxChangeRate,dm_Reduced_MinTStep,TSTEP)
 
 !            write(*,*) "TSTEP",TSTEP
 
             call DoReactionAndDiffusion(Host_SimBoxes,Host_SimuCtrlParam,dm_Concentrate,dm_NodeSpace,dm_ClustersKindArray,dm_tempNBPVChangeRate, &
-                                        dm_MatrixA,dm_MatrixB,dm_MatrixC,dm_MatrixD,dm_w,dm_h,TSTEP)
+                                        dm_ImplantedRate,dm_MatrixA,dm_MatrixB,dm_MatrixC,dm_MatrixD,dm_w,dm_h,TSTEP)
 
 !                DiffGradient2 = ClustersKind(IKind)%m_DiffCoeff/NodeSpace(NNodes)
 !                FOutEachStep(IKind) = DiffGradient2*Concent(NNodes,IKind)
@@ -380,9 +380,9 @@ module NUCLEATION_SPACEDIST_GPU
                     CKind = CKind*2
                     NNodes = Host_SimBoxes%NNodes
 
-                    call Init_Global_Arrays_CPU(Host_SimBoxes,Host_SimuCtrlParam)
+                    call Init_Global_Arrays_CPU_NEWTONINTER(Host_SimBoxes,Host_SimuCtrlParam)
 
-                    call Init_Global_Arrays_GPU(Host_SimBoxes,Host_SimuCtrlParam)
+                    call Init_Global_Arrays_GPU_NEWTONINTER(Host_SimBoxes,Host_SimuCtrlParam)
 
                     call TheImplantSection%Cal_ImplantClustersRate(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,m_ImplantedRate)
 
@@ -456,11 +456,11 @@ module NUCLEATION_SPACEDIST_GPU
         END DO
 
         return
-    end subroutine NucleationSimu_SpaceDist_Balance_GrubDumplicate_GPU
+    end subroutine NucleationSimu_SpaceDist_Balance_GrubDumplicate_GPU_NEWTONINTER
 
     !***************************************************
     subroutine Calc_ReactionRate(Host_SimBoxes,Host_SimuCtrlParam,Dev_Concent,Dev_NodeSpace,Dev_ClusterKindArray,Dev_tempNBPVChangeRate,&
-                                 Dev_ImplantedRate,Reduced_MaxConcent,Reduced_MaxChangeRate,Reduced_MinTStep,TSTEP)
+                                 Reduced_MaxConcent,Reduced_MaxChangeRate,Reduced_MinTStep,TSTEP)
         implicit none
         !---Dummy Vars---
         type(SimulationBoxes)::Host_SimBoxes
@@ -469,7 +469,6 @@ module NUCLEATION_SPACEDIST_GPU
         real(kind=KMCDF),device,dimension(:),allocatable::Dev_NodeSpace
         type(ACluster),device,dimension(:),allocatable::Dev_ClusterKindArray
         real(kind=KMCDF),device,dimension(:,:),allocatable::Dev_tempNBPVChangeRate
-        real(kind=KMCDF),device,dimension(:,:),allocatable::Dev_ImplantedRate
         real(kind=KMCDF),device,dimension(:),allocatable::Reduced_MaxConcent
         real(kind=KMCDF),device,dimension(:),allocatable::Reduced_MaxChangeRate
         real(kind=KMCDF),device,dimension(:),allocatable::Reduced_MinTStep
@@ -499,7 +498,7 @@ module NUCLEATION_SPACEDIST_GPU
         call Kernel_CalReaction_Vanish<<<blocks,threads>>>(NNodes,CKind,Dev_Concent,Dev_ClusterKindArray,Dev_tempNBPVChangeRate)
 
         call Kernel_CalReaction_Generate<<<blocks,threads>>>(NNodes,CKind,Host_SimuCtrlParam%MaxReactChangeRate,Dev_Concent,Dev_ClusterKindArray,&
-                                                             Dev_ImplantedRate,Dev_tempNBPVChangeRate,Reduced_MaxConcent,Reduced_MaxChangeRate)
+                                                             Dev_tempNBPVChangeRate,Reduced_MaxConcent,Reduced_MaxChangeRate)
 
 
         MaxConcent = maxval(Reduced_MaxConcent)
@@ -508,14 +507,14 @@ module NUCLEATION_SPACEDIST_GPU
         if(MaxConcent .GT. 0.D0 .AND. MaxChangeRate .GT. 0.D0) then
             TSTEP = Host_SimuCtrlParam%MaxReactChangeRate*MaxConcent/MaxChangeRate
         else
-            TSTEP = 1.D-12
+            TSTEP = 1.D-10
         end if
 
 
-        write(*,*)"!-------------------------------"
-        write(*,*) "TSTEP1",TSTEP
-        write(*,*) "maxval(Reduced_MaxConcent)",maxval(Reduced_MaxConcent)
-        write(*,*) "maxval(Reduced_MaxChangeRate)",maxval(Reduced_MaxChangeRate)
+!        write(*,*)"!-------------------------------"
+!        write(*,*) "TSTEP1",TSTEP
+!        write(*,*) "maxval(Reduced_MaxConcent)",maxval(Reduced_MaxConcent)
+!        write(*,*) "maxval(Reduced_MaxChangeRate)",maxval(Reduced_MaxChangeRate)
 
         call Kernel_AdjustlTimeStep<<<blocks,threads>>>(NNodes,CKind,TSTEP,Host_SimuCtrlParam%MaxDiffuseChangeRate,Dev_Concent,Dev_NodeSpace, &
                                                         Dev_ClusterKindArray,Dev_tempNBPVChangeRate,Reduced_MinTStep)
@@ -528,7 +527,7 @@ module NUCLEATION_SPACEDIST_GPU
 
     !***************************************************
     subroutine DoReactionAndDiffusion(Host_SimBoxes,Host_SimuCtrlParam,Dev_Concent,Dev_NodeSpace,Dev_ClusterKindArray,Dev_tempNBPVChangeRate,&
-                                      Dev_MatrixA,Dev_MatrixB,Dev_MatrixC,Dev_MatrixD,Dev_w,Dev_h,TSTEP)
+                                      Dev_ImplantedRate,Dev_MatrixA,Dev_MatrixB,Dev_MatrixC,Dev_MatrixD,Dev_w,Dev_h,TSTEP)
         implicit none
         !---Dummy Vars---
         type(SimulationBoxes)::Host_SimBoxes
@@ -537,6 +536,7 @@ module NUCLEATION_SPACEDIST_GPU
         real(kind=KMCDF),device,dimension(:),allocatable::Dev_NodeSpace
         type(ACluster),device,dimension(:),allocatable::Dev_ClusterKindArray
         real(kind=KMCDF),device,dimension(:,:),allocatable::Dev_tempNBPVChangeRate
+        real(kind=KMCDF),device,dimension(:,:),allocatable::Dev_ImplantedRate
         real(kind=KMCDF),device,dimension(:,:),allocatable::Dev_MatrixA
         real(kind=KMCDF),device,dimension(:,:),allocatable::Dev_MatrixB
         real(kind=KMCDF),device,dimension(:,:),allocatable::Dev_MatrixC
@@ -564,7 +564,7 @@ module NUCLEATION_SPACEDIST_GPU
         threads = dim3(BX,BY,1)
 
         call Kernel_DoReaction_And_NodeDiffusion_Balance<<<blocks,threads>>>(NNodes,CKind,TSTEP,Dev_Concent,Dev_NodeSpace,&
-                                                         Dev_ClusterKindArray,Dev_tempNBPVChangeRate,&
+                                                         Dev_ClusterKindArray,Dev_tempNBPVChangeRate,Dev_ImplantedRate,&
                                                          Dev_MatrixA,Dev_MatrixB,Dev_MatrixC,Dev_MatrixD,Dev_w,Dev_h)
 
 
@@ -631,7 +631,7 @@ module NUCLEATION_SPACEDIST_GPU
     end subroutine Kernel_CalReaction_Vanish
 
     !***************************************************
-    attributes(global) subroutine Kernel_CalReaction_Generate(NNodes,CKind,MaxReactChangeRate,Dev_Concent,Dev_ClusterKindArray,Dev_ImplantedRate,&
+    attributes(global) subroutine Kernel_CalReaction_Generate(NNodes,CKind,MaxReactChangeRate,Dev_Concent,Dev_ClusterKindArray, &
                                                               Dev_tempNBPVChangeRate,Reduced_MaxConcent,Reduced_MaxChangeRate)
         implicit none
         !---Dummy Vars---
@@ -640,7 +640,6 @@ module NUCLEATION_SPACEDIST_GPU
         real(kind=KMCDF),value::MaxReactChangeRate
         real(kind=KMCDF),device::Dev_Concent(:,:)
         type(ACluster),device::Dev_ClusterKindArray(:)
-        real(kind=KMCDF),device::Dev_ImplantedRate(:,:)
         real(kind=KMCDF),device::Dev_tempNBPVChangeRate(:,:)
         real(kind=KMCDF),device::Reduced_MaxConcent(:)
         real(kind=KMCDF),device::Reduced_MaxChangeRate(:)
@@ -704,8 +703,6 @@ module NUCLEATION_SPACEDIST_GPU
 
 !            end if
             END DO
-
-            Dev_tempNBPVChangeRate(INode,LKind) = Dev_tempNBPVChangeRate(INode,LKind) + Dev_ImplantedRate(INode,LKind)
 
             Shared_MaxConcent(tid) = Dev_Concent(INode,LKind)
             Shared_MaxChangeRate(tid) = DABS(Dev_tempNBPVChangeRate(INode,LKind))
@@ -861,7 +858,7 @@ module NUCLEATION_SPACEDIST_GPU
 
     !***************************************************
     attributes(global) subroutine Kernel_DoReaction_And_NodeDiffusion_Balance(NNodes,CKind,TSTEP,Dev_Concent,Dev_NodeSpace,&
-                                                                              Dev_ClusterKindArray,Dev_tempNBPVChangeRate,&
+                                                                              Dev_ClusterKindArray,Dev_tempNBPVChangeRate,Dev_ImplantedRate,&
                                                                               Dev_MatrixA,Dev_MatrixB,Dev_MatrixC,Dev_MatrixD,Dev_w,Dev_h)
         implicit none
         !---Dummy Vars---
@@ -872,6 +869,7 @@ module NUCLEATION_SPACEDIST_GPU
         real(kind=KMCDF),device::Dev_NodeSpace(:)
         type(ACluster),device::Dev_ClusterKindArray(:)
         real(kind=KMCDF),device::Dev_tempNBPVChangeRate(:,:)
+        real(kind=KMCDF),device::Dev_ImplantedRate(:,:)
         real(kind=KMCDF),device::Dev_MatrixA(NNodes,CKind)
         real(kind=KMCDF),device::Dev_MatrixB(NNodes,CKind)
         real(kind=KMCDF),device::Dev_MatrixC(NNodes,CKind)
@@ -930,7 +928,7 @@ module NUCLEATION_SPACEDIST_GPU
                         Dev_MatrixC(INode,IKind) = -DiffGradient2
                     end if
 
-                    Dev_MatrixD(INode,IKind) = Dev_Concent(INode,IKind)*Dev_NodeSpace(INode)/TSTEP + Dev_tempNBPVChangeRate(INode,IKind)*Dev_NodeSpace(INode)
+                    Dev_MatrixD(INode,IKind) = Dev_Concent(INode,IKind)*Dev_NodeSpace(INode)/TSTEP + Dev_tempNBPVChangeRate(INode,IKind)*Dev_NodeSpace(INode) + Dev_ImplantedRate(INode,IKind)*Dev_NodeSpace(INode)
                 else if(INode .eq. NNodes) then  ! Low surface
 
                     DiffGradient2 = Dev_ClusterKindArray(IKind)%m_DiffCoeff/Dev_NodeSpace(INode)
@@ -961,14 +959,14 @@ module NUCLEATION_SPACEDIST_GPU
                     end if
 
                     Dev_MatrixC(INode,IKind) = 0.D0
-                    Dev_MatrixD(INode,IKind) = Dev_Concent(INode,IKind)*Dev_NodeSpace(INode)/TSTEP + Dev_tempNBPVChangeRate(INode,IKind)*Dev_NodeSpace(INode)
+                    Dev_MatrixD(INode,IKind) = Dev_Concent(INode,IKind)*Dev_NodeSpace(INode)/TSTEP + Dev_tempNBPVChangeRate(INode,IKind)*Dev_NodeSpace(INode) + Dev_ImplantedRate(INode,IKind)*Dev_NodeSpace(INode)
                 else
                     DiffGradient1 = (Dev_ClusterKindArray(IKind)%m_DiffCoeff + Dev_ClusterKindArray(IKind)%m_DiffCoeff)/(Dev_NodeSpace(INode-1) + Dev_NodeSpace(INode))
                     DiffGradient2 = (Dev_ClusterKindArray(IKind)%m_DiffCoeff + Dev_ClusterKindArray(IKind)%m_DiffCoeff)/(Dev_NodeSpace(INode) + Dev_NodeSpace(INode+1))
                     Dev_MatrixA(INode,IKind) = -DiffGradient1
                     Dev_MatrixB(INode,IKind) = Dev_NodeSpace(INode)/TSTEP + (DiffGradient1 + DiffGradient2)
                     Dev_MatrixC(INode,IKind) = -DiffGradient2
-                    Dev_MatrixD(INode,IKind) = Dev_Concent(INode,IKind)*Dev_NodeSpace(INode)/TSTEP + Dev_tempNBPVChangeRate(INode,IKind)*Dev_NodeSpace(INode)
+                    Dev_MatrixD(INode,IKind) = Dev_Concent(INode,IKind)*Dev_NodeSpace(INode)/TSTEP + Dev_tempNBPVChangeRate(INode,IKind)*Dev_NodeSpace(INode) + Dev_ImplantedRate(INode,IKind)*Dev_NodeSpace(INode)
                 end if
 
             END DO
@@ -1308,4 +1306,4 @@ module NUCLEATION_SPACEDIST_GPU
         return
     end subroutine
 
-end module NUCLEATION_SPACEDIST_GPU
+end module NUCLEATION_SPACEDIST_GPU_NEWTONINTER

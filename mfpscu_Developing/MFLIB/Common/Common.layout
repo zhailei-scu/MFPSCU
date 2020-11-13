@@ -2,16 +2,6 @@
 <CodeBlocks_layout_file>
 	<FileVersion major="1" minor="0" />
 	<ActiveTarget name="Debug" />
-	<File name="../sor/Common/MCMF_Utilities_Former.F90" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="5406" topLine="190" />
-		</Cursor>
-	</File>
-	<File name="../sor/Common/MCMF_TYPEDEF_ATOMSLIST.F90" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="0" topLine="129" />
-		</Cursor>
-	</File>
 	<File name="../sor/Common/MCMF_TYPEDEF_ACLUSTER.F90" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="3868" topLine="120" />
@@ -20,6 +10,31 @@
 	<File name="../sor/Common/MCMF_CONSTANTS.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="21" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="../sor/Common/MCMF_TYPEDEF_ATOMSLIST.F90" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="129" />
+		</Cursor>
+	</File>
+	<File name="../sor/Common/MCMF_TYPEDEF_ReactionsValue.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="16627" topLine="464" />
+		</Cursor>
+	</File>
+	<File name="../sor/Common/MCMF_Utilities.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="426" topLine="442" />
+		</Cursor>
+	</File>
+	<File name="../sor/Common/MCMF_TYPEDEF_DiffusorsValue.F90" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="18575" topLine="547" />
+		</Cursor>
+	</File>
+	<File name="../sor/Common/MCMF_Utilities_Former.F90" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="17742" topLine="589" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

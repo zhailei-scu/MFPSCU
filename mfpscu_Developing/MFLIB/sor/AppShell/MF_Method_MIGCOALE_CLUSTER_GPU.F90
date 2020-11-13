@@ -3,6 +3,7 @@ module MF_Method_MIGCOALE_CLUSTER_GPU
     use MIGCOALE_ADDONDATA_DEV
     use MCMF_CONSTANTS_GPU
     use NUCLEATION_SPACEDIST_GPU
+    use NUCLEATION_SPACEDIST_GPU_NEWTONINTER
     implicit none
 
     contains
@@ -103,9 +104,9 @@ module MF_Method_MIGCOALE_CLUSTER_GPU
         integer::TotalSize
         !---Body---
 
-        call InitSimu_SpaceDist_GPU(Host_SimBoxes,Host_SimuCtrlParam)
+        call InitSimu_SpaceDist_GPU_NEWTONINTER(Host_SimBoxes,Host_SimuCtrlParam)
 
-        call NucleationSimu_SpaceDist_Balance_GrubDumplicate_GPU(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
+        call NucleationSimu_SpaceDist_Balance_GrubDumplicate_GPU_NEWTONINTER(Host_SimBoxes,Host_SimuCtrlParam,TheMigCoaleStatInfoWrap,Record,TheImplantSection)
 
 
 !        Associate(Host_ClustesInfo=>Host_Boxes%m_ClustersInfo_CPU,Dev_ClustesInfo=>Dev_Boxes%dm_ClusterInfo_GPU, &
